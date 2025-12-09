@@ -1,0 +1,1848 @@
+-- ============================================
+-- PRIMEMAR SOCIAL MEDIA - COMPLETE DATABASE SETUP
+-- Run this entire script in Supabase SQL Editor
+-- ============================================
+
+-- Enable necessary extensions
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- ============================================
+-- 1. CREATE TABLES IF NOT EXISTS
+-- ============================================
+
+-- Users profiles table
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'profiles') THEN
+        CREATE TABLE profiles (
+            id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
+            name TEXT NOT NULL,
+            username TEXT UNIQUE NOT NULL,
+            email TEXT UNIQUE NOT NULL,
+            avatar TEXT DEFAULT 'https://ui-avatars.com/api/?name=User&background=3b82f6&color=fff&size=128',
+            bio TEXT,
+            location TEXT,
+            website TEXT,
+            phone TEXT,
+            gender TEXT CHECK (gender IN ('male', 'female', 'other', 'prefer_not_to_say')),
+            birthdate DATE,
+            is_private BOOLEAN DEFAULT FALSE,
+            is_verified BOOLEAN DEFAULT FALSE,
+            is_online BOOLEAN DEFAULT FALSE,
+            last_seen TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            followers_count INTEGER DEFAULT 0 CHECK (followers_count >= 0),
+            following_count INTEGER DEFAULT 0 CHECK (following_count >= 0),
+            posts_count INTEGER DEFAULT 0 CHECK (posts_count >= 0),
+            stories_count INTEGER DEFAULT 0 CHECK (stories_count >= 0),
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        );
+        RAISE NOTICE 'Created profiles table';
+    ELSE
+        RAISE NOTICE 'profiles table already exists';
+    END IF;
+END $$;
+
+-- Posts table
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'posts') THEN
+        CREATE TABLE posts (
+            id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+            author_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+            content TEXT NOT NULL,
+            media JSONB DEFAULT '[]',
+            tags TEXT[] DEFAULT '{}',
+            mentions UUID[] DEFAULT '{}',
+            location JSONB,
+            privacy TEXT DEFAULT 'public' CHECK (privacy IN ('public', 'private', 'friends', 'custom')),
+            likes_count INTEGER DEFAULT 0 CHECK (likes_count >= 0),
+            comments_count INTEGER DEFAULT 0 CHECK (comments_count >= 0),
+            shares_count INTEGER DEFAULT 0 CHECK (shares_count >= 0),
+            saves_count INTEGER DEFAULT 0 CHECK (saves_count >= 0),
+            view_count INTEGER DEFAULT 0 CHECK (view_count >= 0),
+            is_edited BOOLEAN DEFAULT FALSE,
+            edited_at TIMESTAMP WITH TIME ZONE,
+            is_pinned BOOLEAN DEFAULT FALSE,
+            pinned_at TIMESTAMP WITH TIME ZONE,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        );
+        RAISE NOTICE 'Created posts table';
+    ELSE
+        RAISE NOTICE 'posts table already exists';
+    END IF;
+END $$;
+
+-- Post likes table
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'post_likes') THEN
+        CREATE TABLE post_likes (
+            id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+            post_id UUID REFERENCES posts(id) ON DELETE CASCADE NOT NULL,
+            user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+            reaction TEXT DEFAULT 'like' CHECK (reaction IN ('like', 'love', 'laugh', 'wow', 'sad', 'angry')),
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            UNIQUE(post_id, user_id)
+        );
+        RAISE NOTICE 'Created post_likes table';
+    ELSE
+        RAISE NOTICE 'post_likes table already exists';
+    END IF;
+END $$;
+
+-- Comments table
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'comments') THEN
+        CREATE TABLE comments (
+            id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+            post_id UUID REFERENCES posts(id) ON DELETE CASCADE NOT NULL,
+            user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+            parent_id UUID REFERENCES comments(id) ON DELETE CASCADE,
+            content TEXT NOT NULL,
+            media JSONB,
+            likes_count INTEGER DEFAULT 0 CHECK (likes_count >= 0),
+            replies_count INTEGER DEFAULT 0 CHECK (replies_count >= 0),
+            is_edited BOOLEAN DEFAULT FALSE,
+            edited_at TIMESTAMP WITH TIME ZONE,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        );
+        RAISE NOTICE 'Created comments table';
+    ELSE
+        RAISE NOTICE 'comments table already exists';
+    END IF;
+END $$;
+
+-- Comment likes table
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'comment_likes') THEN
+        CREATE TABLE comment_likes (
+            id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+            comment_id UUID REFERENCES comments(id) ON DELETE CASCADE NOT NULL,
+            user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            UNIQUE(comment_id, user_id)
+        );
+        RAISE NOTICE 'Created comment_likes table';
+    ELSE
+        RAISE NOTICE 'comment_likes table already exists';
+    END IF;
+END $$;
+
+-- Stories table
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'stories') THEN
+        CREATE TABLE stories (
+            id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+            user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+            media_url TEXT NOT NULL,
+            media_type TEXT NOT NULL CHECK (media_type IN ('image', 'video')),
+            thumbnail_url TEXT,
+            duration INTEGER DEFAULT 5,
+            text_content TEXT,
+            text_color TEXT DEFAULT '#FFFFFF',
+            text_size INTEGER DEFAULT 16,
+            bg_color TEXT DEFAULT '#000000',
+            location JSONB,
+            mentions UUID[] DEFAULT '{}',
+            views_count INTEGER DEFAULT 0 CHECK (views_count >= 0),
+            replies_count INTEGER DEFAULT 0 CHECK (replies_count >= 0),
+            is_archived BOOLEAN DEFAULT FALSE,
+            expires_at TIMESTAMP WITH TIME ZONE DEFAULT (NOW() + INTERVAL '24 hours'),
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        );
+        RAISE NOTICE 'Created stories table';
+    ELSE
+        RAISE NOTICE 'stories table already exists';
+    END IF;
+END $$;
+
+-- Story views table
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'story_views') THEN
+        CREATE TABLE story_views (
+            id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+            story_id UUID REFERENCES stories(id) ON DELETE CASCADE NOT NULL,
+            user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+            viewed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            watched_duration INTEGER DEFAULT 0,
+            UNIQUE(story_id, user_id)
+        );
+        RAISE NOTICE 'Created story_views table';
+    ELSE
+        RAISE NOTICE 'story_views table already exists';
+    END IF;
+END $$;
+
+-- Story replies table
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'story_replies') THEN
+        CREATE TABLE story_replies (
+            id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+            story_id UUID REFERENCES stories(id) ON DELETE CASCADE NOT NULL,
+            user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+            content TEXT NOT NULL,
+            media JSONB,
+            is_read BOOLEAN DEFAULT FALSE,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        );
+        RAISE NOTICE 'Created story_replies table';
+    ELSE
+        RAISE NOTICE 'story_replies table already exists';
+    END IF;
+END $$;
+
+-- Follows table
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'follows') THEN
+        CREATE TABLE follows (
+            id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+            follower_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+            following_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+            is_mutual BOOLEAN DEFAULT FALSE,
+            requested_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            accepted_at TIMESTAMP WITH TIME ZONE,
+            is_accepted BOOLEAN DEFAULT TRUE,
+            is_blocked BOOLEAN DEFAULT FALSE,
+            blocked_at TIMESTAMP WITH TIME ZONE,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            UNIQUE(follower_id, following_id)
+        );
+        RAISE NOTICE 'Created follows table';
+    ELSE
+        RAISE NOTICE 'follows table already exists';
+    END IF;
+END $$;
+
+-- Conversations table
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'conversations') THEN
+        CREATE TABLE conversations (
+            id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+            user1_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+            user2_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+            last_message TEXT,
+            last_message_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            last_message_sender UUID REFERENCES profiles(id),
+            unread_count_user1 INTEGER DEFAULT 0 CHECK (unread_count_user1 >= 0),
+            unread_count_user2 INTEGER DEFAULT 0 CHECK (unread_count_user2 >= 0),
+            is_blocked BOOLEAN DEFAULT FALSE,
+            blocked_by UUID REFERENCES profiles(id),
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            UNIQUE(user1_id, user2_id)
+        );
+        RAISE NOTICE 'Created conversations table';
+    ELSE
+        RAISE NOTICE 'conversations table already exists';
+    END IF;
+END $$;
+
+-- Messages table
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'messages') THEN
+        CREATE TABLE messages (
+            id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+            conversation_id UUID REFERENCES conversations(id) ON DELETE CASCADE NOT NULL,
+            sender_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+            receiver_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+            content TEXT,
+            media JSONB,
+            message_type TEXT DEFAULT 'text' CHECK (message_type IN ('text', 'image', 'video', 'audio', 'file', 'location', 'contact')),
+            is_read BOOLEAN DEFAULT FALSE,
+            read_at TIMESTAMP WITH TIME ZONE,
+            delivered_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            is_edited BOOLEAN DEFAULT FALSE,
+            edited_at TIMESTAMP WITH TIME ZONE,
+            is_deleted BOOLEAN DEFAULT FALSE,
+            deleted_at TIMESTAMP WITH TIME ZONE,
+            deleted_for_everyone BOOLEAN DEFAULT FALSE,
+            reply_to UUID REFERENCES messages(id) ON DELETE SET NULL,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        );
+        RAISE NOTICE 'Created messages table';
+    ELSE
+        RAISE NOTICE 'messages table already exists';
+    END IF;
+END $$;
+
+-- Message reactions table
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'message_reactions') THEN
+        CREATE TABLE message_reactions (
+            id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+            message_id UUID REFERENCES messages(id) ON DELETE CASCADE NOT NULL,
+            user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+            reaction TEXT NOT NULL,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            UNIQUE(message_id, user_id)
+        );
+        RAISE NOTICE 'Created message_reactions table';
+    ELSE
+        RAISE NOTICE 'message_reactions table already exists';
+    END IF;
+END $$;
+
+-- Calls table
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'calls') THEN
+        CREATE TABLE calls (
+            id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+            caller_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+            receiver_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+            call_type TEXT NOT NULL CHECK (call_type IN ('voice', 'video')),
+            status TEXT NOT NULL CHECK (status IN ('initiated', 'ringing', 'answered', 'rejected', 'missed', 'ended', 'busy')),
+            duration INTEGER DEFAULT 0,
+            started_at TIMESTAMP WITH TIME ZONE,
+            ended_at TIMESTAMP WITH TIME ZONE,
+            caller_connected_at TIMESTAMP WITH TIME ZONE,
+            receiver_connected_at TIMESTAMP WITH TIME ZONE,
+            is_recorded BOOLEAN DEFAULT FALSE,
+            recording_url TEXT,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        );
+        RAISE NOTICE 'Created calls table';
+    ELSE
+        RAISE NOTICE 'calls table already exists';
+    END IF;
+END $$;
+
+-- Notifications table
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'notifications') THEN
+        CREATE TABLE notifications (
+            id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+            user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+            from_user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+            type TEXT NOT NULL CHECK (type IN (
+                'like_post', 'like_comment', 'like_story',
+                'comment_post', 'comment_comment', 'reply_comment', 'reply_story',
+                'follow', 'follow_request', 'follow_accept',
+                'mention_post', 'mention_comment', 'mention_story',
+                'share_post', 'share_story',
+                'message', 'call',
+                'post_tag', 'story_tag',
+                'verified', 'trending',
+                'system', 'update'
+            )),
+            post_id UUID REFERENCES posts(id) ON DELETE CASCADE,
+            comment_id UUID REFERENCES comments(id) ON DELETE CASCADE,
+            story_id UUID REFERENCES stories(id) ON DELETE CASCADE,
+            conversation_id UUID REFERENCES conversations(id) ON DELETE CASCADE,
+            message_id UUID REFERENCES messages(id) ON DELETE CASCADE,
+            call_id UUID REFERENCES calls(id) ON DELETE CASCADE,
+            title TEXT NOT NULL,
+            message TEXT NOT NULL,
+            is_read BOOLEAN DEFAULT FALSE,
+            read_at TIMESTAMP WITH TIME ZONE,
+            metadata JSONB DEFAULT '{}',
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        );
+        RAISE NOTICE 'Created notifications table';
+    ELSE
+        RAISE NOTICE 'notifications table already exists';
+    END IF;
+END $$;
+
+-- Saved posts table
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'saved_posts') THEN
+        CREATE TABLE saved_posts (
+            id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+            user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+            post_id UUID REFERENCES posts(id) ON DELETE CASCADE NOT NULL,
+            collection TEXT DEFAULT 'general',
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            UNIQUE(user_id, post_id)
+        );
+        RAISE NOTICE 'Created saved_posts table';
+    ELSE
+        RAISE NOTICE 'saved_posts table already exists';
+    END IF;
+END $$;
+
+-- Post views table
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'post_views') THEN
+        CREATE TABLE post_views (
+            id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+            post_id UUID REFERENCES posts(id) ON DELETE CASCADE NOT NULL,
+            user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+            viewed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            duration INTEGER DEFAULT 0,
+            UNIQUE(post_id, user_id)
+        );
+        RAISE NOTICE 'Created post_views table';
+    ELSE
+        RAISE NOTICE 'post_views table already exists';
+    END IF;
+END $$;
+
+-- Profile views table
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'profile_views') THEN
+        CREATE TABLE profile_views (
+            id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+            viewer_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+            viewed_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+            viewed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        );
+        RAISE NOTICE 'Created profile_views table';
+    ELSE
+        RAISE NOTICE 'profile_views table already exists';
+    END IF;
+END $$;
+
+-- Hashtags table
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'hashtags') THEN
+        CREATE TABLE hashtags (
+            id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+            tag TEXT UNIQUE NOT NULL,
+            posts_count INTEGER DEFAULT 0 CHECK (posts_count >= 0),
+            stories_count INTEGER DEFAULT 0 CHECK (stories_count >= 0),
+            last_used_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        );
+        RAISE NOTICE 'Created hashtags table';
+    ELSE
+        RAISE NOTICE 'hashtags table already exists';
+    END IF;
+END $$;
+
+-- Post hashtags table
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'post_hashtags') THEN
+        CREATE TABLE post_hashtags (
+            id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+            post_id UUID REFERENCES posts(id) ON DELETE CASCADE NOT NULL,
+            hashtag_id UUID REFERENCES hashtags(id) ON DELETE CASCADE NOT NULL,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            UNIQUE(post_id, hashtag_id)
+        );
+        RAISE NOTICE 'Created post_hashtags table';
+    ELSE
+        RAISE NOTICE 'post_hashtags table already exists';
+    END IF;
+END $$;
+
+-- Story hashtags table
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'story_hashtags') THEN
+        CREATE TABLE story_hashtags (
+            id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+            story_id UUID REFERENCES stories(id) ON DELETE CASCADE NOT NULL,
+            hashtag_id UUID REFERENCES hashtags(id) ON DELETE CASCADE NOT NULL,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            UNIQUE(story_id, hashtag_id)
+        );
+        RAISE NOTICE 'Created story_hashtags table';
+    ELSE
+        RAISE NOTICE 'story_hashtags table already exists';
+    END IF;
+END $$;
+
+-- Groups table
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'groups') THEN
+        CREATE TABLE groups (
+            id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+            name TEXT NOT NULL,
+            description TEXT,
+            avatar TEXT,
+            cover_image TEXT,
+            created_by UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+            privacy TEXT DEFAULT 'private' CHECK (privacy IN ('public', 'private', 'secret')),
+            members_count INTEGER DEFAULT 0 CHECK (members_count >= 0),
+            posts_count INTEGER DEFAULT 0 CHECK (posts_count >= 0),
+            is_active BOOLEAN DEFAULT TRUE,
+            settings JSONB DEFAULT '{
+                "allow_member_posts": true,
+                "approve_new_members": false,
+                "allow_media": true,
+                "allow_polls": true,
+                "allow_events": true
+            }'::jsonb,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        );
+        RAISE NOTICE 'Created groups table';
+    ELSE
+        RAISE NOTICE 'groups table already exists';
+    END IF;
+END $$;
+
+-- Group members table
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'group_members') THEN
+        CREATE TABLE group_members (
+            id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+            group_id UUID REFERENCES groups(id) ON DELETE CASCADE NOT NULL,
+            user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+            role TEXT DEFAULT 'member' CHECK (role IN ('admin', 'moderator', 'member')),
+            joined_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            invited_by UUID REFERENCES profiles(id),
+            is_muted BOOLEAN DEFAULT FALSE,
+            is_banned BOOLEAN DEFAULT FALSE,
+            UNIQUE(group_id, user_id)
+        );
+        RAISE NOTICE 'Created group_members table';
+    ELSE
+        RAISE NOTICE 'group_members table already exists';
+    END IF;
+END $$;
+
+-- Group posts table
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'group_posts') THEN
+        CREATE TABLE group_posts (
+            id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+            group_id UUID REFERENCES groups(id) ON DELETE CASCADE NOT NULL,
+            post_id UUID REFERENCES posts(id) ON DELETE CASCADE NOT NULL,
+            pinned BOOLEAN DEFAULT FALSE,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            UNIQUE(group_id, post_id)
+        );
+        RAISE NOTICE 'Created group_posts table';
+    ELSE
+        RAISE NOTICE 'group_posts table already exists';
+    END IF;
+END $$;
+
+-- Communities table
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'communities') THEN
+        CREATE TABLE communities (
+            id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+            name TEXT NOT NULL,
+            description TEXT,
+            avatar TEXT,
+            cover_image TEXT,
+            created_by UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+            category TEXT,
+            rules JSONB DEFAULT '[]'::jsonb,
+            privacy TEXT DEFAULT 'public' CHECK (privacy IN ('public', 'private', 'restricted')),
+            members_count INTEGER DEFAULT 0 CHECK (members_count >= 0),
+            posts_count INTEGER DEFAULT 0 CHECK (posts_count >= 0),
+            is_active BOOLEAN DEFAULT TRUE,
+            settings JSONB DEFAULT '{
+                "allow_images": true,
+                "allow_videos": true,
+                "allow_links": true,
+                "moderate_posts": false,
+                "send_notifications": true
+            }'::jsonb,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        );
+        RAISE NOTICE 'Created communities table';
+    ELSE
+        RAISE NOTICE 'communities table already exists';
+    END IF;
+END $$;
+
+-- Community members table
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'community_members') THEN
+        CREATE TABLE community_members (
+            id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+            community_id UUID REFERENCES communities(id) ON DELETE CASCADE NOT NULL,
+            user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+            role TEXT DEFAULT 'member' CHECK (role IN ('admin', 'moderator', 'member')),
+            joined_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            is_muted BOOLEAN DEFAULT FALSE,
+            is_banned BOOLEAN DEFAULT FALSE,
+            UNIQUE(community_id, user_id)
+        );
+        RAISE NOTICE 'Created community_members table';
+    ELSE
+        RAISE NOTICE 'community_members table already exists';
+    END IF;
+END $$;
+
+-- Reports table
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'reports') THEN
+        CREATE TABLE reports (
+            id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+            reporter_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+            reported_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+            post_id UUID REFERENCES posts(id) ON DELETE CASCADE,
+            comment_id UUID REFERENCES comments(id) ON DELETE CASCADE,
+            story_id UUID REFERENCES stories(id) ON DELETE CASCADE,
+            group_id UUID REFERENCES groups(id) ON DELETE CASCADE,
+            community_id UUID REFERENCES communities(id) ON DELETE CASCADE,
+            report_type TEXT NOT NULL CHECK (report_type IN (
+                'spam', 'harassment', 'hate_speech', 'violence', 'nudity',
+                'false_information', 'intellectual_property', 'other'
+            )),
+            description TEXT,
+            status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'reviewing', 'resolved', 'dismissed')),
+            resolved_by UUID REFERENCES profiles(id),
+            resolved_at TIMESTAMP WITH TIME ZONE,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        );
+        RAISE NOTICE 'Created reports table';
+    ELSE
+        RAISE NOTICE 'reports table already exists';
+    END IF;
+END $$;
+
+-- Blocks table
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'blocks') THEN
+        CREATE TABLE blocks (
+            id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+            blocker_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+            blocked_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+            reason TEXT,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            UNIQUE(blocker_id, blocked_id)
+        );
+        RAISE NOTICE 'Created blocks table';
+    ELSE
+        RAISE NOTICE 'blocks table already exists';
+    END IF;
+END $$;
+
+-- Polls table
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'polls') THEN
+        CREATE TABLE polls (
+            id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+            post_id UUID REFERENCES posts(id) ON DELETE CASCADE NOT NULL,
+            question TEXT NOT NULL,
+            options JSONB NOT NULL,
+            is_multiple BOOLEAN DEFAULT FALSE,
+            ends_at TIMESTAMP WITH TIME ZONE,
+            total_votes INTEGER DEFAULT 0,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        );
+        RAISE NOTICE 'Created polls table';
+    ELSE
+        RAISE NOTICE 'polls table already exists';
+    END IF;
+END $$;
+
+-- Poll votes table
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'poll_votes') THEN
+        CREATE TABLE poll_votes (
+            id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+            poll_id UUID REFERENCES polls(id) ON DELETE CASCADE NOT NULL,
+            user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+            option_id TEXT NOT NULL,
+            voted_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            UNIQUE(poll_id, user_id)
+        );
+        RAISE NOTICE 'Created poll_votes table';
+    ELSE
+        RAISE NOTICE 'poll_votes table already exists';
+    END IF;
+END $$;
+
+-- Events table
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'events') THEN
+        CREATE TABLE events (
+            id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+            creator_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+            title TEXT NOT NULL,
+            description TEXT,
+            cover_image TEXT,
+            location TEXT,
+            address JSONB,
+            start_time TIMESTAMP WITH TIME ZONE NOT NULL,
+            end_time TIMESTAMP WITH TIME ZONE,
+            is_online BOOLEAN DEFAULT FALSE,
+            meeting_link TEXT,
+            privacy TEXT DEFAULT 'public' CHECK (privacy IN ('public', 'private', 'friends')),
+            attendees_count INTEGER DEFAULT 0,
+            maybe_count INTEGER DEFAULT 0,
+            not_going_count INTEGER DEFAULT 0,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        );
+        RAISE NOTICE 'Created events table';
+    ELSE
+        RAISE NOTICE 'events table already exists';
+    END IF;
+END $$;
+
+-- Event attendees table
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'event_attendees') THEN
+        CREATE TABLE event_attendees (
+            id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+            event_id UUID REFERENCES events(id) ON DELETE CASCADE NOT NULL,
+            user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+            status TEXT DEFAULT 'going' CHECK (status IN ('going', 'maybe', 'not_going')),
+            responded_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            UNIQUE(event_id, user_id)
+        );
+        RAISE NOTICE 'Created event_attendees table';
+    ELSE
+        RAISE NOTICE 'event_attendees table already exists';
+    END IF;
+END $$;
+
+-- User settings table
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'user_settings') THEN
+        CREATE TABLE user_settings (
+            id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+            user_id UUID REFERENCES profiles(id) ON DELETE CASCADE UNIQUE NOT NULL,
+            privacy_settings JSONB DEFAULT '{
+                "profile_visibility": "public",
+                "message_privacy": "everyone",
+                "story_privacy": "friends",
+                "post_privacy": "public",
+                "online_status": "everyone",
+                "read_receipts": true,
+                "typing_indicators": true
+            }'::jsonb,
+            notification_settings JSONB DEFAULT '{
+                "likes": true,
+                "comments": true,
+                "follows": true,
+                "mentions": true,
+                "messages": true,
+                "calls": true,
+                "recommendations": true
+            }'::jsonb,
+            theme_settings JSONB DEFAULT '{
+                "theme": "light",
+                "font_size": "medium",
+                "reduce_motion": false,
+                "high_contrast": false
+            }'::jsonb,
+            language TEXT DEFAULT 'en',
+            timezone TEXT DEFAULT 'UTC',
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        );
+        RAISE NOTICE 'Created user_settings table';
+    ELSE
+        RAISE NOTICE 'user_settings table already exists';
+    END IF;
+END $$;
+
+-- ============================================
+-- 2. CREATE OR REPLACE FUNCTIONS (FIXED)
+-- ============================================
+
+-- Function to handle new user registration
+CREATE OR REPLACE FUNCTION handle_new_user()
+RETURNS TRIGGER AS $$
+DECLARE
+    username_base TEXT;
+    final_username TEXT;
+    counter INTEGER := 0;
+BEGIN
+    -- Generate base username from name or email
+    username_base := LOWER(REGEXP_REPLACE(
+        COALESCE(NEW.raw_user_meta_data->>'name', SPLIT_PART(NEW.email, '@', 1)),
+        '[^a-zA-Z0-9]', '', 'g'
+    ));
+    
+    -- Ensure username is not empty
+    IF username_base = '' THEN
+        username_base := 'user';
+    END IF;
+    
+    -- Check if username exists and add number if needed
+    final_username := username_base;
+    WHILE EXISTS (SELECT 1 FROM profiles WHERE username = final_username) LOOP
+        counter := counter + 1;
+        final_username := username_base || counter;
+    END LOOP;
+    
+    -- Insert profile
+    INSERT INTO public.profiles (
+        id,
+        name,
+        username,
+        email,
+        avatar,
+        created_at,
+        updated_at
+    ) VALUES (
+        NEW.id,
+        COALESCE(NEW.raw_user_meta_data->>'name', SPLIT_PART(NEW.email, '@', 1)),
+        final_username,
+        NEW.email,
+        'https://ui-avatars.com/api/?name=' || 
+        ENCODE(CONVERT_TO(COALESCE(NEW.raw_user_meta_data->>'name', SPLIT_PART(NEW.email, '@', 1)), 'UTF8'), 'base64') ||
+        '&background=3b82f6&color=fff&size=128',
+        NOW(),
+        NOW()
+    );
+    
+    -- Create default user settings
+    INSERT INTO public.user_settings (user_id) VALUES (NEW.id);
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Function to update user last seen
+CREATE OR REPLACE FUNCTION update_user_last_seen()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE profiles 
+    SET 
+        last_seen = NOW(),
+        is_online = true,
+        updated_at = NOW()
+    WHERE id = auth.uid();
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to update follower counts
+CREATE OR REPLACE FUNCTION update_follower_counts()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF TG_OP = 'INSERT' THEN
+        -- Update following count for follower
+        UPDATE profiles 
+        SET following_count = following_count + 1,
+            updated_at = NOW()
+        WHERE id = NEW.follower_id;
+        
+        -- Update followers count for following
+        UPDATE profiles 
+        SET followers_count = followers_count + 1,
+            updated_at = NOW()
+        WHERE id = NEW.following_id;
+        
+        -- Check for mutual follow
+        IF EXISTS (
+            SELECT 1 FROM follows 
+            WHERE follower_id = NEW.following_id 
+            AND following_id = NEW.follower_id
+            AND is_accepted = true
+        ) THEN
+            UPDATE follows 
+            SET is_mutual = true 
+            WHERE id = NEW.id;
+            
+            UPDATE follows 
+            SET is_mutual = true 
+            WHERE follower_id = NEW.following_id 
+            AND following_id = NEW.follower_id;
+        END IF;
+        
+    ELSIF TG_OP = 'DELETE' THEN
+        -- Update following count for follower
+        UPDATE profiles 
+        SET following_count = GREATEST(following_count - 1, 0),
+            updated_at = NOW()
+        WHERE id = OLD.follower_id;
+        
+        -- Update followers count for following
+        UPDATE profiles 
+        SET followers_count = GREATEST(followers_count - 1, 0),
+            updated_at = NOW()
+        WHERE id = OLD.following_id;
+        
+        -- Update mutual follow if existed
+        IF OLD.is_mutual THEN
+            UPDATE follows 
+            SET is_mutual = false 
+            WHERE follower_id = OLD.following_id 
+            AND following_id = OLD.follower_id;
+        END IF;
+    END IF;
+    
+    RETURN COALESCE(NEW, OLD);
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to update post like counts
+CREATE OR REPLACE FUNCTION update_post_like_count()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF TG_OP = 'INSERT' THEN
+        UPDATE posts 
+        SET likes_count = likes_count + 1,
+            updated_at = NOW()
+        WHERE id = NEW.post_id;
+        
+    ELSIF TG_OP = 'DELETE' THEN
+        UPDATE posts 
+        SET likes_count = GREATEST(likes_count - 1, 0),
+            updated_at = NOW()
+        WHERE id = OLD.post_id;
+    END IF;
+    
+    RETURN COALESCE(NEW, OLD);
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to update post comment counts
+CREATE OR REPLACE FUNCTION update_post_comment_count()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF TG_OP = 'INSERT' THEN
+        UPDATE posts 
+        SET comments_count = comments_count + 1,
+            updated_at = NOW()
+        WHERE id = NEW.post_id;
+        
+    ELSIF TG_OP = 'DELETE' THEN
+        UPDATE posts 
+        SET comments_count = GREATEST(comments_count - 1, 0),
+            updated_at = NOW()
+        WHERE id = OLD.post_id;
+    END IF;
+    
+    RETURN COALESCE(NEW, OLD);
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to update comment reply counts
+CREATE OR REPLACE FUNCTION update_comment_reply_count()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF TG_OP = 'INSERT' AND NEW.parent_id IS NOT NULL THEN
+        UPDATE comments 
+        SET replies_count = replies_count + 1,
+            updated_at = NOW()
+        WHERE id = NEW.parent_id;
+        
+    ELSIF TG_OP = 'DELETE' AND OLD.parent_id IS NOT NULL THEN
+        UPDATE comments 
+        SET replies_count = GREATEST(replies_count - 1, 0),
+            updated_at = NOW()
+        WHERE id = OLD.parent_id;
+    END IF;
+    
+    RETURN COALESCE(NEW, OLD);
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to update comment like counts
+CREATE OR REPLACE FUNCTION update_comment_like_count()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF TG_OP = 'INSERT' THEN
+        UPDATE comments 
+        SET likes_count = likes_count + 1,
+            updated_at = NOW()
+        WHERE id = NEW.comment_id;
+        
+    ELSIF TG_OP = 'DELETE' THEN
+        UPDATE comments 
+        SET likes_count = GREATEST(likes_count - 1, 0),
+            updated_at = NOW()
+        WHERE id = OLD.comment_id;
+    END IF;
+    
+    RETURN COALESCE(NEW, OLD);
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to update conversation last message
+CREATE OR REPLACE FUNCTION update_conversation_last_message()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE conversations 
+    SET 
+        last_message = NEW.content,
+        last_message_at = NEW.created_at,
+        last_message_sender = NEW.sender_id,
+        updated_at = NOW()
+    WHERE id = NEW.conversation_id;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to reset unread count when message is read
+CREATE OR REPLACE FUNCTION reset_conversation_unread_count()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF TG_OP = 'UPDATE' AND NEW.is_read = true AND OLD.is_read = false THEN
+        UPDATE conversations 
+        SET 
+            unread_count_user1 = CASE 
+                WHEN NEW.receiver_id = user1_id THEN GREATEST(unread_count_user1 - 1, 0)
+                ELSE unread_count_user1
+            END,
+            unread_count_user2 = CASE 
+                WHEN NEW.receiver_id = user2_id THEN GREATEST(unread_count_user2 - 1, 0)
+                ELSE unread_count_user2
+            END,
+            updated_at = NOW()
+        WHERE id = NEW.conversation_id;
+    END IF;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to mark user as offline
+CREATE OR REPLACE FUNCTION mark_user_offline(user_uuid UUID)
+RETURNS VOID AS $$
+BEGIN
+    UPDATE profiles 
+    SET 
+        is_online = false,
+        last_seen = NOW(),
+        updated_at = NOW()
+    WHERE id = user_uuid;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Function to mark user as online
+CREATE OR REPLACE FUNCTION mark_user_online(user_uuid UUID)
+RETURNS VOID AS $$
+BEGIN
+    UPDATE profiles 
+    SET 
+        is_online = true,
+        last_seen = NOW(),
+        updated_at = NOW()
+    WHERE id = user_uuid;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Function to get online friends
+CREATE OR REPLACE FUNCTION get_online_friends(user_uuid UUID)
+RETURNS TABLE (
+    friend_id UUID,
+    friend_name TEXT,
+    friend_username TEXT,
+    friend_avatar TEXT,
+    last_seen TIMESTAMP WITH TIME ZONE,
+    is_online BOOLEAN
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        p.id,
+        p.name,
+        p.username,
+        p.avatar,
+        p.last_seen,
+        p.is_online
+    FROM follows f
+    JOIN profiles p ON p.id = f.following_id
+    WHERE f.follower_id = user_uuid
+    AND f.is_accepted = true
+    AND p.is_online = true
+    ORDER BY p.last_seen DESC;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to cleanup old data
+CREATE OR REPLACE FUNCTION cleanup_old_data()
+RETURNS VOID AS $$
+BEGIN
+    -- Archive expired stories
+    UPDATE stories 
+    SET is_archived = true 
+    WHERE expires_at <= NOW() 
+    AND is_archived = false;
+    
+    -- Delete old archived stories
+    DELETE FROM stories 
+    WHERE expires_at < NOW() - INTERVAL '48 hours'
+    AND is_archived = true;
+    
+    -- Mark users offline if inactive for 30 minutes
+    UPDATE profiles 
+    SET is_online = false
+    WHERE last_seen < NOW() - INTERVAL '30 minutes'
+    AND is_online = true;
+    
+    -- Delete old notifications
+    DELETE FROM notifications 
+    WHERE created_at < NOW() - INTERVAL '30 days';
+    
+    -- Archive old posts with low engagement
+    UPDATE posts 
+    SET privacy = 'private'
+    WHERE created_at < NOW() - INTERVAL '1 year'
+    AND (likes_count + comments_count + shares_count) < 10;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to extract hashtags from content
+CREATE OR REPLACE FUNCTION extract_hashtags(
+    p_content TEXT
+)
+RETURNS VOID AS $$
+DECLARE
+    tag RECORD;
+BEGIN
+    -- Extract hashtags from content using regex
+    FOR tag IN 
+        SELECT DISTINCT LOWER(SUBSTRING(match[1] FROM 2)) as tag
+        FROM REGEXP_MATCHES(p_content, '(#[a-zA-Z0-9_]+)', 'g') as match
+    LOOP
+        -- Skip if tag is empty
+        IF tag.tag = '' THEN
+            CONTINUE;
+        END IF;
+        
+        -- Get or create hashtag
+        INSERT INTO hashtags (tag) 
+        VALUES (tag.tag)
+        ON CONFLICT (tag) 
+        DO UPDATE SET last_used_at = NOW();
+    END LOOP;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to process post content for hashtags
+CREATE OR REPLACE FUNCTION process_post_hashtags()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF TG_OP = 'INSERT' OR (TG_OP = 'UPDATE' AND NEW.content != OLD.content) THEN
+        PERFORM extract_hashtags(NEW.content);
+    END IF;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to process story content for hashtags
+CREATE OR REPLACE FUNCTION process_story_hashtags()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF TG_OP = 'INSERT' OR (TG_OP = 'UPDATE' AND NEW.text_content != OLD.text_content) THEN
+        PERFORM extract_hashtags(NEW.text_content);
+    END IF;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to create notification (FIXED PARAMETER ORDER)
+CREATE OR REPLACE FUNCTION create_notification(
+    p_user_id UUID,
+    p_from_user_id UUID,
+    p_type TEXT,
+    p_title TEXT,
+    p_message TEXT,
+    p_post_id UUID DEFAULT NULL,
+    p_comment_id UUID DEFAULT NULL,
+    p_story_id UUID DEFAULT NULL,
+    p_conversation_id UUID DEFAULT NULL,
+    p_message_id UUID DEFAULT NULL,
+    p_call_id UUID DEFAULT NULL,
+    p_metadata JSONB DEFAULT '{}'::jsonb
+)
+RETURNS UUID AS $$
+DECLARE
+    notification_id UUID;
+BEGIN
+    INSERT INTO notifications (
+        user_id,
+        from_user_id,
+        type,
+        title,
+        message,
+        post_id,
+        comment_id,
+        story_id,
+        conversation_id,
+        message_id,
+        call_id,
+        metadata,
+        created_at
+    ) VALUES (
+        p_user_id,
+        p_from_user_id,
+        p_type,
+        p_title,
+        p_message,
+        p_post_id,
+        p_comment_id,
+        p_story_id,
+        p_conversation_id,
+        p_message_id,
+        p_call_id,
+        p_metadata,
+        NOW()
+    )
+    RETURNING id INTO notification_id;
+    
+    RETURN notification_id;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to handle like notifications
+CREATE OR REPLACE FUNCTION handle_like_notification()
+RETURNS TRIGGER AS $$
+DECLARE
+    post_author_id UUID;
+    comment_author_id UUID;
+    liker_name TEXT;
+BEGIN
+    -- Get liker's name
+    SELECT name INTO liker_name FROM profiles WHERE id = NEW.user_id;
+    
+    IF TG_TABLE_NAME = 'post_likes' THEN
+        -- For post likes
+        SELECT author_id INTO post_author_id FROM posts WHERE id = NEW.post_id;
+        
+        -- Don't notify if liking own post
+        IF post_author_id = NEW.user_id THEN
+            RETURN NEW;
+        END IF;
+        
+        PERFORM create_notification(
+            post_author_id,
+            NEW.user_id,
+            'like_post',
+            'New Like',
+            liker_name || ' liked your post',
+            NEW.post_id
+        );
+        
+    ELSIF TG_TABLE_NAME = 'comment_likes' THEN
+        -- For comment likes
+        SELECT user_id INTO comment_author_id FROM comments WHERE id = NEW.comment_id;
+        
+        -- Don't notify if liking own comment
+        IF comment_author_id = NEW.user_id THEN
+            RETURN NEW;
+        END IF;
+        
+        PERFORM create_notification(
+            comment_author_id,
+            NEW.user_id,
+            'like_comment',
+            'New Like',
+            liker_name || ' liked your comment',
+            NULL,
+            NEW.comment_id
+        );
+    END IF;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to handle comment notifications
+CREATE OR REPLACE FUNCTION handle_comment_notification()
+RETURNS TRIGGER AS $$
+DECLARE
+    post_author_id UUID;
+    comment_author_id UUID;
+    commenter_name TEXT;
+BEGIN
+    -- Get commenter's name
+    SELECT name INTO commenter_name FROM profiles WHERE id = NEW.user_id;
+    
+    IF NEW.parent_id IS NULL THEN
+        -- For main comment on post
+        SELECT author_id INTO post_author_id FROM posts WHERE id = NEW.post_id;
+        
+        -- Don't notify if commenting on own post
+        IF post_author_id = NEW.user_id THEN
+            RETURN NEW;
+        END IF;
+        
+        PERFORM create_notification(
+            post_author_id,
+            NEW.user_id,
+            'comment_post',
+            'New Comment',
+            commenter_name || ' commented on your post',
+            NEW.post_id,
+            NEW.id
+        );
+        
+    ELSE
+        -- For reply to comment
+        SELECT user_id INTO comment_author_id FROM comments WHERE id = NEW.parent_id;
+        
+        -- Don't notify if replying to own comment
+        IF comment_author_id = NEW.user_id THEN
+            RETURN NEW;
+        END IF;
+        
+        PERFORM create_notification(
+            comment_author_id,
+            NEW.user_id,
+            'reply_comment',
+            'New Reply',
+            commenter_name || ' replied to your comment',
+            NEW.post_id,
+            NEW.id
+        );
+    END IF;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to handle follow notifications
+CREATE OR REPLACE FUNCTION handle_follow_notification()
+RETURNS TRIGGER AS $$
+DECLARE
+    follower_name TEXT;
+BEGIN
+    -- Get follower's name
+    SELECT name INTO follower_name FROM profiles WHERE id = NEW.follower_id;
+    
+    PERFORM create_notification(
+        NEW.following_id,
+        NEW.follower_id,
+        'follow',
+        'New Follower',
+        follower_name || ' started following you'
+    );
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to handle message notifications
+CREATE OR REPLACE FUNCTION handle_message_notification()
+RETURNS TRIGGER AS $$
+DECLARE
+    sender_name TEXT;
+    receiver_id UUID;
+BEGIN
+    -- Get sender's name
+    SELECT name INTO sender_name FROM profiles WHERE id = NEW.sender_id;
+    
+    -- Get receiver id (the other user in the conversation)
+    SELECT 
+        CASE 
+            WHEN NEW.sender_id = c.user1_id THEN c.user2_id
+            ELSE c.user1_id
+        END INTO receiver_id
+    FROM conversations c
+    WHERE c.id = NEW.conversation_id;
+    
+    PERFORM create_notification(
+        receiver_id,
+        NEW.sender_id,
+        'message',
+        'New Message',
+        sender_name || ' sent you a message',
+        NULL,
+        NULL,
+        NULL,
+        NEW.conversation_id,
+        NEW.id
+    );
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- ============================================
+-- 3. CREATE TRIGGERS
+-- ============================================
+
+-- Drop existing triggers if they exist
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+DROP TRIGGER IF EXISTS update_follower_counts_trigger ON follows;
+DROP TRIGGER IF EXISTS update_post_like_count_trigger ON post_likes;
+DROP TRIGGER IF EXISTS update_post_comment_count_trigger ON comments;
+DROP TRIGGER IF EXISTS update_comment_reply_count_trigger ON comments;
+DROP TRIGGER IF EXISTS update_comment_like_count_trigger ON comment_likes;
+DROP TRIGGER IF EXISTS update_conversation_last_message_trigger ON messages;
+DROP TRIGGER IF EXISTS reset_conversation_unread_count_trigger ON messages;
+DROP TRIGGER IF EXISTS process_post_hashtags_trigger ON posts;
+DROP TRIGGER IF EXISTS process_story_hashtags_trigger ON stories;
+DROP TRIGGER IF EXISTS handle_post_like_notification_trigger ON post_likes;
+DROP TRIGGER IF EXISTS handle_comment_like_notification_trigger ON comment_likes;
+DROP TRIGGER IF EXISTS handle_comment_notification_trigger ON comments;
+DROP TRIGGER IF EXISTS handle_follow_notification_trigger ON follows;
+DROP TRIGGER IF EXISTS handle_message_notification_trigger ON messages;
+DROP TRIGGER IF EXISTS update_user_activity_on_post ON posts;
+DROP TRIGGER IF EXISTS update_user_activity_on_comment ON comments;
+DROP TRIGGER IF EXISTS update_user_activity_on_message ON messages;
+DROP TRIGGER IF EXISTS update_user_activity_on_like ON post_likes;
+DROP TRIGGER IF EXISTS update_user_activity_on_follow ON follows;
+DROP TRIGGER IF EXISTS update_user_activity_on_story ON stories;
+
+-- Create triggers
+CREATE TRIGGER on_auth_user_created
+    AFTER INSERT ON auth.users
+    FOR EACH ROW EXECUTE FUNCTION handle_new_user();
+
+CREATE TRIGGER update_follower_counts_trigger
+    AFTER INSERT OR DELETE ON follows
+    FOR EACH ROW EXECUTE FUNCTION update_follower_counts();
+
+CREATE TRIGGER update_post_like_count_trigger
+    AFTER INSERT OR DELETE ON post_likes
+    FOR EACH ROW EXECUTE FUNCTION update_post_like_count();
+
+CREATE TRIGGER update_post_comment_count_trigger
+    AFTER INSERT OR DELETE ON comments
+    FOR EACH ROW EXECUTE FUNCTION update_post_comment_count();
+
+CREATE TRIGGER update_comment_reply_count_trigger
+    AFTER INSERT OR DELETE ON comments
+    FOR EACH ROW EXECUTE FUNCTION update_comment_reply_count();
+
+CREATE TRIGGER update_comment_like_count_trigger
+    AFTER INSERT OR DELETE ON comment_likes
+    FOR EACH ROW EXECUTE FUNCTION update_comment_like_count();
+
+CREATE TRIGGER update_conversation_last_message_trigger
+    AFTER INSERT ON messages
+    FOR EACH ROW EXECUTE FUNCTION update_conversation_last_message();
+
+CREATE TRIGGER reset_conversation_unread_count_trigger
+    AFTER UPDATE ON messages
+    FOR EACH ROW EXECUTE FUNCTION reset_conversation_unread_count();
+
+CREATE TRIGGER process_post_hashtags_trigger
+    AFTER INSERT OR UPDATE ON posts
+    FOR EACH ROW EXECUTE FUNCTION process_post_hashtags();
+
+CREATE TRIGGER process_story_hashtags_trigger
+    AFTER INSERT OR UPDATE ON stories
+    FOR EACH ROW EXECUTE FUNCTION process_story_hashtags();
+
+CREATE TRIGGER handle_post_like_notification_trigger
+    AFTER INSERT ON post_likes
+    FOR EACH ROW EXECUTE FUNCTION handle_like_notification();
+
+CREATE TRIGGER handle_comment_like_notification_trigger
+    AFTER INSERT ON comment_likes
+    FOR EACH ROW EXECUTE FUNCTION handle_like_notification();
+
+CREATE TRIGGER handle_comment_notification_trigger
+    AFTER INSERT ON comments
+    FOR EACH ROW EXECUTE FUNCTION handle_comment_notification();
+
+CREATE TRIGGER handle_follow_notification_trigger
+    AFTER INSERT ON follows
+    FOR EACH ROW EXECUTE FUNCTION handle_follow_notification();
+
+CREATE TRIGGER handle_message_notification_trigger
+    AFTER INSERT ON messages
+    FOR EACH ROW EXECUTE FUNCTION handle_message_notification();
+
+-- User activity triggers
+CREATE TRIGGER update_user_activity_on_post
+    AFTER INSERT ON posts
+    FOR EACH ROW EXECUTE FUNCTION update_user_last_seen();
+
+CREATE TRIGGER update_user_activity_on_comment
+    AFTER INSERT ON comments
+    FOR EACH ROW EXECUTE FUNCTION update_user_last_seen();
+
+CREATE TRIGGER update_user_activity_on_message
+    AFTER INSERT ON messages
+    FOR EACH ROW EXECUTE FUNCTION update_user_last_seen();
+
+CREATE TRIGGER update_user_activity_on_like
+    AFTER INSERT ON post_likes
+    FOR EACH ROW EXECUTE FUNCTION update_user_last_seen();
+
+CREATE TRIGGER update_user_activity_on_follow
+    AFTER INSERT ON follows
+    FOR EACH ROW EXECUTE FUNCTION update_user_last_seen();
+
+CREATE TRIGGER update_user_activity_on_story
+    AFTER INSERT ON stories
+    FOR EACH ROW EXECUTE FUNCTION update_user_last_seen();
+
+-- ============================================
+-- 4. CREATE INDEXES
+-- ============================================
+
+-- Create indexes if they don't exist
+DO $$ 
+BEGIN
+    -- Profiles indexes
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_profiles_username') THEN
+        CREATE INDEX idx_profiles_username ON profiles(username);
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_profiles_email') THEN
+        CREATE INDEX idx_profiles_email ON profiles(email);
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_profiles_created_at') THEN
+        CREATE INDEX idx_profiles_created_at ON profiles(created_at DESC);
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_profiles_is_online') THEN
+        CREATE INDEX idx_profiles_is_online ON profiles(is_online);
+    END IF;
+    
+    -- Posts indexes
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_posts_author_id') THEN
+        CREATE INDEX idx_posts_author_id ON posts(author_id);
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_posts_created_at') THEN
+        CREATE INDEX idx_posts_created_at ON posts(created_at DESC);
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_posts_privacy') THEN
+        CREATE INDEX idx_posts_privacy ON posts(privacy);
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_posts_likes_count') THEN
+        CREATE INDEX idx_posts_likes_count ON posts(likes_count DESC);
+    END IF;
+    
+    -- Comments indexes
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_comments_post_id') THEN
+        CREATE INDEX idx_comments_post_id ON comments(post_id);
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_comments_user_id') THEN
+        CREATE INDEX idx_comments_user_id ON comments(user_id);
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_comments_parent_id') THEN
+        CREATE INDEX idx_comments_parent_id ON comments(parent_id);
+    END IF;
+    
+    -- Stories indexes
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_stories_user_id') THEN
+        CREATE INDEX idx_stories_user_id ON stories(user_id);
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_stories_expires_at') THEN
+        CREATE INDEX idx_stories_expires_at ON stories(expires_at);
+    END IF;
+    
+    -- Follows indexes
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_follows_follower_id') THEN
+        CREATE INDEX idx_follows_follower_id ON follows(follower_id);
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_follows_following_id') THEN
+        CREATE INDEX idx_follows_following_id ON follows(following_id);
+    END IF;
+    
+    -- Conversations indexes
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_conversations_user1_id') THEN
+        CREATE INDEX idx_conversations_user1_id ON conversations(user1_id);
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_conversations_user2_id') THEN
+        CREATE INDEX idx_conversations_user2_id ON conversations(user2_id);
+    END IF;
+    
+    -- Messages indexes
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_messages_conversation_id') THEN
+        CREATE INDEX idx_messages_conversation_id ON messages(conversation_id);
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_messages_sender_id') THEN
+        CREATE INDEX idx_messages_sender_id ON messages(sender_id);
+    END IF;
+    
+    -- Notifications indexes
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_notifications_user_id') THEN
+        CREATE INDEX idx_notifications_user_id ON notifications(user_id);
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_notifications_created_at') THEN
+        CREATE INDEX idx_notifications_created_at ON notifications(created_at DESC);
+    END IF;
+    
+    -- Hashtags indexes
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_hashtags_tag') THEN
+        CREATE INDEX idx_hashtags_tag ON hashtags(tag);
+    END IF;
+    
+END $$;
+
+-- ============================================
+-- 5. CREATE VIEWS
+-- ============================================
+
+-- Drop existing views if they exist
+DROP VIEW IF EXISTS conversation_list;
+DROP VIEW IF EXISTS user_feed;
+DROP VIEW IF EXISTS user_notifications;
+DROP VIEW IF EXISTS trending_hashtags;
+DROP VIEW IF EXISTS user_stats;
+DROP VIEW IF EXISTS post_analytics;
+
+-- Create views
+CREATE OR REPLACE VIEW conversation_list AS
+SELECT 
+    c.*,
+    u1.name as user1_name,
+    u1.username as user1_username,
+    u1.avatar as user1_avatar,
+    u1.is_online as user1_online,
+    u1.last_seen as user1_last_seen,
+    u2.name as user2_name,
+    u2.username as user2_username,
+    u2.avatar as user2_avatar,
+    u2.is_online as user2_online,
+    u2.last_seen as user2_last_seen
+FROM conversations c
+JOIN profiles u1 ON c.user1_id = u1.id
+JOIN profiles u2 ON c.user2_id = u2.id;
+
+CREATE OR REPLACE VIEW user_feed AS
+SELECT 
+    p.*,
+    pr.name as author_name,
+    pr.username as author_username,
+    pr.avatar as author_avatar,
+    pr.is_online as author_online,
+    pr.is_verified as author_verified
+FROM posts p
+JOIN profiles pr ON p.author_id = pr.id
+WHERE p.privacy = 'public'
+ORDER BY p.created_at DESC;
+
+CREATE OR REPLACE VIEW user_notifications AS
+SELECT 
+    n.*,
+    fu.name as from_user_name,
+    fu.username as from_user_username,
+    fu.avatar as from_user_avatar,
+    fu.is_online as from_user_online
+FROM notifications n
+LEFT JOIN profiles fu ON n.from_user_id = fu.id
+ORDER BY n.created_at DESC;
+
+CREATE OR REPLACE VIEW trending_hashtags AS
+SELECT 
+    h.*,
+    (h.posts_count * 0.6 + h.stories_count * 0.4) as trend_score
+FROM hashtags h
+WHERE h.last_used_at > NOW() - INTERVAL '7 days'
+ORDER BY trend_score DESC
+LIMIT 20;
+
+CREATE OR REPLACE VIEW user_stats AS
+SELECT 
+    p.*,
+    COUNT(DISTINCT CASE WHEN f.is_accepted = true THEN f.follower_id END) as total_followers,
+    COUNT(DISTINCT CASE WHEN f2.is_accepted = true THEN f2.following_id END) as total_following,
+    COUNT(DISTINCT po.id) as total_posts,
+    COUNT(DISTINCT s.id) as total_stories,
+    COALESCE(SUM(po.likes_count), 0) as total_likes_received,
+    COALESCE(SUM(po.comments_count), 0) as total_comments_received,
+    COALESCE(SUM(po.shares_count), 0) as total_shares_received,
+    MAX(po.created_at) as last_post_at
+FROM profiles p
+LEFT JOIN follows f ON p.id = f.following_id
+LEFT JOIN follows f2 ON p.id = f2.follower_id
+LEFT JOIN posts po ON p.id = po.author_id
+LEFT JOIN stories s ON p.id = s.user_id
+GROUP BY p.id;
+
+CREATE OR REPLACE VIEW post_analytics AS
+SELECT 
+    p.*,
+    pr.name as author_name,
+    pr.username as author_username,
+    pr.avatar as author_avatar,
+    COUNT(DISTINCT pl.user_id) as unique_likes,
+    COUNT(DISTINCT c.user_id) as unique_commenters,
+    COUNT(DISTINCT pv.user_id) as unique_views,
+    COUNT(DISTINCT sp.user_id) as save_count
+FROM posts p
+JOIN profiles pr ON p.author_id = pr.id
+LEFT JOIN post_likes pl ON p.id = pl.post_id
+LEFT JOIN comments c ON p.id = c.post_id
+LEFT JOIN post_views pv ON p.id = pv.post_id
+LEFT JOIN saved_posts sp ON p.id = sp.post_id
+GROUP BY p.id, pr.id;
+
+-- ============================================
+-- 6. ENABLE ROW LEVEL SECURITY
+-- ============================================
+
+-- Enable RLS on all tables
+DO $$ 
+DECLARE
+    table_name TEXT;
+BEGIN
+    FOR table_name IN 
+        SELECT tablename FROM pg_tables 
+        WHERE schemaname = 'public' 
+        AND tablename IN (
+            'profiles', 'posts', 'post_likes', 'comments', 'comment_likes',
+            'stories', 'story_views', 'story_replies', 'follows', 'conversations',
+            'messages', 'message_reactions', 'calls', 'notifications', 'saved_posts',
+            'post_views', 'profile_views', 'hashtags', 'post_hashtags', 'story_hashtags',
+            'groups', 'group_members', 'group_posts', 'communities', 'community_members',
+            'reports', 'blocks', 'polls', 'poll_votes', 'events', 'event_attendees', 'user_settings'
+        )
+    LOOP
+        EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY', table_name);
+    END LOOP;
+END $$;
+
+-- ============================================
+-- 7. CREATE BASIC RLS POLICIES
+-- ============================================
+
+-- Profiles policies
+DROP POLICY IF EXISTS "Public profiles are viewable by everyone" ON profiles;
+CREATE POLICY "Public profiles are viewable by everyone" ON profiles
+    FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
+CREATE POLICY "Users can update own profile" ON profiles
+    FOR UPDATE USING (auth.uid() = id);
+
+DROP POLICY IF EXISTS "Users can insert own profile" ON profiles;
+CREATE POLICY "Users can insert own profile" ON profiles
+    FOR INSERT WITH CHECK (auth.uid() = id);
+
+-- Posts policies
+DROP POLICY IF EXISTS "Public posts are viewable by everyone" ON posts;
+CREATE POLICY "Public posts are viewable by everyone" ON posts
+    FOR SELECT USING (privacy = 'public' OR author_id = auth.uid());
+
+DROP POLICY IF EXISTS "Users can create posts" ON posts;
+CREATE POLICY "Users can create posts" ON posts
+    FOR INSERT WITH CHECK (auth.uid() = author_id);
+
+DROP POLICY IF EXISTS "Users can update own posts" ON posts;
+CREATE POLICY "Users can update own posts" ON posts
+    FOR UPDATE USING (auth.uid() = author_id);
+
+-- Comments policies
+DROP POLICY IF EXISTS "Comments are viewable by post viewers" ON comments;
+CREATE POLICY "Comments are viewable by post viewers" ON comments
+    FOR SELECT USING (EXISTS (
+        SELECT 1 FROM posts p WHERE p.id = comments.post_id AND (
+            p.privacy = 'public' OR p.author_id = auth.uid()
+        )
+    ));
+
+DROP POLICY IF EXISTS "Users can create comments" ON comments;
+CREATE POLICY "Users can create comments" ON comments
+    FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+-- Follows policies
+DROP POLICY IF EXISTS "Follow relationships are viewable by everyone" ON follows;
+CREATE POLICY "Follow relationships are viewable by everyone" ON follows
+    FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Users can create follows" ON follows;
+CREATE POLICY "Users can create follows" ON follows
+    FOR INSERT WITH CHECK (auth.uid() = follower_id);
+
+-- Messages policies
+DROP POLICY IF EXISTS "Users can view messages in their conversations" ON messages;
+CREATE POLICY "Users can view messages in their conversations" ON messages
+    FOR SELECT USING (auth.uid() = sender_id OR auth.uid() = receiver_id);
+
+DROP POLICY IF EXISTS "Users can send messages" ON messages;
+CREATE POLICY "Users can send messages" ON messages
+    FOR INSERT WITH CHECK (auth.uid() = sender_id);
+
+-- Notifications policies
+DROP POLICY IF EXISTS "Users can view own notifications" ON notifications;
+CREATE POLICY "Users can view own notifications" ON notifications
+    FOR SELECT USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "System can create notifications" ON notifications;
+CREATE POLICY "System can create notifications" ON notifications
+    FOR INSERT WITH CHECK (true);
+
+-- User settings policies
+DROP POLICY IF EXISTS "Users can view own settings" ON user_settings;
+CREATE POLICY "Users can view own settings" ON user_settings
+    FOR SELECT USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can update own settings" ON user_settings;
+CREATE POLICY "Users can update own settings" ON user_settings
+    FOR UPDATE USING (auth.uid() = user_id);
+
+-- ============================================
+-- 8. INSERT SAMPLE DATA
+-- ============================================
+
+-- Insert sample hashtags
+INSERT INTO hashtags (tag) VALUES 
+    ('socialmedia'),
+    ('technology'),
+    ('photography'),
+    ('travel'),
+    ('food'),
+    ('fitness'),
+    ('music'),
+    ('art'),
+    ('business'),
+    ('education')
+ON CONFLICT (tag) DO NOTHING;
+
+-- ============================================
+-- 9. FINAL SETUP COMPLETE
+-- ============================================
+
+DO $$
+BEGIN
+    RAISE NOTICE '============================================';
+    RAISE NOTICE 'PRIMEMAR SOCIAL MEDIA DATABASE SETUP COMPLETE';
+    RAISE NOTICE '============================================';
+    RAISE NOTICE 'All tables checked/created successfully';
+    RAISE NOTICE 'All functions created/replaced';
+    RAISE NOTICE 'All triggers created';
+    RAISE NOTICE 'All indexes created';
+    RAISE NOTICE 'All views created';
+    RAISE NOTICE 'RLS enabled on all tables';
+    RAISE NOTICE 'Sample data inserted';
+    RAISE NOTICE '============================================';
+    RAISE NOTICE '';
+    RAISE NOTICE 'IMPORTANT FUNCTIONS:';
+    RAISE NOTICE '1. mark_user_online(user_uuid) - Mark user as online';
+    RAISE NOTICE '2. mark_user_offline(user_uuid) - Mark user as offline';
+    RAISE NOTICE '3. get_online_friends(user_uuid) - Get online friends list';
+    RAISE NOTICE '4. cleanup_old_data() - Clean expired data (run daily)';
+    RAISE NOTICE '============================================';
+    RAISE NOTICE '';
+    RAISE NOTICE 'IMPORTANT VIEWS:';
+    RAISE NOTICE '1. conversation_list - All conversations with user details';
+    RAISE NOTICE '2. user_feed - Public posts feed';
+    RAISE NOTICE '3. user_notifications - Notifications with user details';
+    RAISE NOTICE '4. trending_hashtags - Trending hashtags';
+    RAISE NOTICE '5. user_stats - User statistics';
+    RAISE NOTICE '6. post_analytics - Post analytics';
+    RAISE NOTICE '============================================';
+END $$;
