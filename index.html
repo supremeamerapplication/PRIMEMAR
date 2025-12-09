@@ -58,6 +58,167 @@
             transition: background-color 0.3s, color 0.3s;
         }
 
+        /* Database Setup Modal */
+        .db-setup-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-primary);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            padding: 2rem;
+        }
+
+        .db-setup-content {
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .db-setup-step {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .setup-success {
+            border-left: 4px solid var(--success-color);
+        }
+
+        .setup-error {
+            border-left: 4px solid var(--accent-color);
+        }
+
+        .setup-loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .step-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .step-description {
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+
+        .sql-code {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 1rem;
+            font-family: monospace;
+            text-align: left;
+            overflow-x: auto;
+            margin-bottom: 1.5rem;
+            font-size: 0.875rem;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .copy-btn {
+            margin-top: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-size: 0.875rem;
+        }
+
+        .copy-btn:hover {
+            background: var(--primary-hover);
+        }
+
+        .step-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            padding: 0.75rem;
+            border-radius: var(--radius-md);
+            background: var(--bg-tertiary);
+        }
+
+        .status-success {
+            color: var(--success-color);
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .status-error {
+            color: var(--accent-color);
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .status-loading {
+            color: var(--warning-color);
+            background: rgba(245, 158, 11, 0.1);
+        }
+
+        .step-actions {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: center;
+            margin-top: 1.5rem;
+        }
+
+        .retry-btn {
+            padding: 0.75rem 1.5rem;
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .retry-btn:hover {
+            background: #dc2626;
+        }
+
+        .continue-btn {
+            padding: 0.75rem 1.5rem;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .continue-btn:hover {
+            background: var(--primary-hover);
+        }
+
+        .skip-btn {
+            padding: 0.75rem 1.5rem;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .skip-btn:hover {
+            background: var(--bg-tertiary);
+        }
+
         /* Scrollbar Styling */
         ::-webkit-scrollbar {
             width: 8px;
@@ -1317,6 +1478,200 @@
     </style>
 </head>
 <body>
+    <!-- Database Setup Modal -->
+    <div id="dbSetupModal" class="db-setup-modal">
+        <div class="db-setup-content">
+            <div class="logo mb-6">
+                <div class="logo-icon">PM</div>
+                <span class="text-2xl font-bold">PrimeMar</span>
+            </div>
+            
+            <div class="db-setup-step" id="setupStep1">
+                <h3 class="step-title">Database Setup Required</h3>
+                <p class="step-description">
+                    It looks like this is your first time using PrimeMar. You need to set up the database tables in Supabase.
+                </p>
+                
+                <div class="sql-code" id="sqlCode">
+-- Run this SQL in your Supabase SQL Editor
+-- 1. Create profiles table
+CREATE TABLE IF NOT EXISTS profiles (
+    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    username TEXT UNIQUE NOT NULL,
+    email TEXT NOT NULL,
+    avatar TEXT,
+    bio TEXT,
+    location TEXT,
+    website TEXT,
+    followers_count INTEGER DEFAULT 0,
+    following_count INTEGER DEFAULT 0,
+    posts_count INTEGER DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
+);
+
+-- 2. Enable Row Level Security
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+
+-- 3. Create policies
+CREATE POLICY "Public profiles are viewable by everyone" ON profiles
+    FOR SELECT USING (true);
+
+CREATE POLICY "Users can insert their own profile" ON profiles
+    FOR INSERT WITH CHECK (auth.uid() = id);
+
+CREATE POLICY "Users can update own profile" ON profiles
+    FOR UPDATE USING (auth.uid() = id);
+
+-- 4. Create posts table
+CREATE TABLE IF NOT EXISTS posts (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    author_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    content TEXT NOT NULL,
+    media JSONB DEFAULT '[]',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
+);
+
+-- 5. Posts policies
+ALTER TABLE posts ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Posts are viewable by everyone" ON posts
+    FOR SELECT USING (true);
+
+CREATE POLICY "Users can create posts" ON posts
+    FOR INSERT WITH CHECK (auth.uid() = author_id);
+
+CREATE POLICY "Users can update own posts" ON posts
+    FOR UPDATE USING (auth.uid() = author_id);
+
+CREATE POLICY "Users can delete own posts" ON posts
+    FOR DELETE USING (auth.uid() = author_id);
+
+-- 6. Create simplified versions of other tables
+CREATE TABLE IF NOT EXISTS likes (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    post_id UUID REFERENCES posts(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
+    UNIQUE(post_id, user_id)
+);
+
+CREATE TABLE IF NOT EXISTS comments (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    post_id UUID REFERENCES posts(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
+);
+
+CREATE TABLE IF NOT EXISTS follows (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    follower_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    following_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
+    UNIQUE(follower_id, following_id)
+);
+
+CREATE TABLE IF NOT EXISTS conversations (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user1_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    user2_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    last_message TEXT,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
+    UNIQUE(user1_id, user2_id)
+);
+
+CREATE TABLE IF NOT EXISTS messages (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    conversation_id UUID REFERENCES conversations(id) ON DELETE CASCADE,
+    sender_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    receiver_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    content TEXT,
+    media JSONB,
+    read BOOLEAN DEFAULT false,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
+);
+
+CREATE TABLE IF NOT EXISTS notifications (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    from_user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    type TEXT NOT NULL,
+    data JSONB,
+    message TEXT NOT NULL,
+    read BOOLEAN DEFAULT false,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
+);
+
+CREATE TABLE IF NOT EXISTS stories (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    media_url TEXT NOT NULL,
+    media_type TEXT NOT NULL,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
+);
+
+-- 7. Create storage buckets (run separately in Storage section)
+-- Create buckets named: avatars, images, videos, story-images, story-videos
+                </div>
+                
+                <button class="copy-btn" onclick="app.copySQL()">
+                    <i class="fas fa-copy"></i> Copy SQL
+                </button>
+                
+                <div class="step-status" id="dbStatus">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Copy and run the SQL above in your Supabase SQL Editor</span>
+                </div>
+                
+                <div class="step-actions">
+                    <button class="retry-btn" onclick="app.checkDatabase()">
+                        <i class="fas fa-redo"></i> Check Database
+                    </button>
+                    <button class="skip-btn" onclick="app.skipDatabaseSetup()">
+                        Skip for Now
+                    </button>
+                </div>
+            </div>
+            
+            <div class="db-setup-step hidden" id="setupStep2">
+                <div class="setup-loading">
+                    <div class="spinner"></div>
+                    <h3 class="step-title">Setting Up Database...</h3>
+                    <p class="step-description">Please wait while we check your database setup.</p>
+                </div>
+            </div>
+            
+            <div class="db-setup-step hidden setup-success" id="setupStep3">
+                <i class="fas fa-check-circle" style="font-size: 3rem; color: var(--success-color); margin-bottom: 1rem;"></i>
+                <h3 class="step-title">Database Setup Complete!</h3>
+                <p class="step-description">Your database has been successfully set up. You can now use all features of PrimeMar.</p>
+                <div class="step-actions">
+                    <button class="continue-btn" onclick="app.closeDatabaseSetup()">
+                        Continue to App
+                    </button>
+                </div>
+            </div>
+            
+            <div class="db-setup-step hidden setup-error" id="setupStep4">
+                <i class="fas fa-exclamation-circle" style="font-size: 3rem; color: var(--accent-color); margin-bottom: 1rem;"></i>
+                <h3 class="step-title">Database Setup Failed</h3>
+                <p class="step-description" id="errorMessage">There was an error setting up the database.</p>
+                <div class="step-actions">
+                    <button class="retry-btn" onclick="app.checkDatabase()">
+                        <i class="fas fa-redo"></i> Try Again
+                    </button>
+                    <button class="skip-btn" onclick="app.skipDatabaseSetup()">
+                        Skip for Now
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Container -->
     <div id="toastContainer"></div>
 
@@ -1756,6 +2111,7 @@
                 this.localStream = null;
                 this.remoteStream = null;
                 this.dataChannel = null;
+                this.isDatabaseSetup = false;
                 
                 // Real-time subscriptions
                 this.subscriptions = {
@@ -1776,24 +2132,29 @@
                     // Load theme
                     this.loadTheme();
                     
-                    // Check for existing session
-                    const { data: { session } } = await this.supabase.auth.getSession();
+                    // Check database setup first
+                    await this.checkDatabase();
                     
-                    if (session) {
-                        this.currentUser = session.user;
-                        await this.loadProfile();
-                        this.showApp();
-                        await this.loadInitialData();
-                        this.setupRealtimeSubscriptions();
-                    } else {
-                        this.showAuth();
+                    // If database is setup, check for session
+                    if (this.isDatabaseSetup) {
+                        const { data: { session } } = await this.supabase.auth.getSession();
+                        
+                        if (session) {
+                            this.currentUser = session.user;
+                            await this.loadProfile();
+                            this.showApp();
+                            await this.loadInitialData();
+                            this.setupRealtimeSubscriptions();
+                        } else {
+                            this.showAuth();
+                        }
                     }
                     
                     this.setupEventListeners();
                     
                     // Listen for auth state changes
                     this.supabase.auth.onAuthStateChange(async (event, session) => {
-                        if (event === 'SIGNED_IN' && session) {
+                        if (event === 'SIGNED_IN' && session && this.isDatabaseSetup) {
                             this.currentUser = session.user;
                             await this.loadProfile();
                             this.showApp();
@@ -1811,6 +2172,101 @@
                     console.error('Initialization error:', error);
                     this.showToast('Failed to initialize app. Please refresh.', 'error');
                 }
+            }
+
+            // Database Setup
+            async checkDatabase() {
+                try {
+                    this.showSetupStep(2);
+                    
+                    // Check if profiles table exists
+                    const { data: tableExists, error } = await this.supabase
+                        .from('profiles')
+                        .select('count')
+                        .limit(1);
+                    
+                    if (error && error.code === '42P01') { // Table doesn't exist
+                        this.showSetupStep(1);
+                        this.isDatabaseSetup = false;
+                        document.getElementById('dbSetupModal').classList.remove('hidden');
+                        return false;
+                    }
+                    
+                    // Database is set up
+                    this.isDatabaseSetup = true;
+                    this.showSetupStep(3);
+                    
+                    // Wait a moment before closing
+                    setTimeout(() => {
+                        this.closeDatabaseSetup();
+                    }, 1500);
+                    
+                    return true;
+                    
+                } catch (error) {
+                    console.error('Database check error:', error);
+                    this.showSetupStep(4);
+                    document.getElementById('errorMessage').textContent = error.message;
+                    return false;
+                }
+            }
+
+            showSetupStep(stepNumber) {
+                // Hide all steps
+                document.querySelectorAll('[id^="setupStep"]').forEach(step => {
+                    step.classList.add('hidden');
+                });
+                
+                // Show the requested step
+                const stepElement = document.getElementById(`setupStep${stepNumber}`);
+                if (stepElement) {
+                    stepElement.classList.remove('hidden');
+                }
+                
+                // Update status message
+                const statusElement = document.getElementById('dbStatus');
+                if (statusElement) {
+                    const messages = {
+                        1: 'Copy and run the SQL above in your Supabase SQL Editor',
+                        2: 'Checking database configuration...',
+                        3: 'Database setup complete!',
+                        4: 'Database check failed'
+                    };
+                    
+                    statusElement.innerHTML = `
+                        <i class="fas fa-${stepNumber === 1 ? 'info-circle' : stepNumber === 2 ? 'spinner fa-spin' : stepNumber === 3 ? 'check-circle' : 'exclamation-circle'}"></i>
+                        <span>${messages[stepNumber]}</span>
+                    `;
+                    
+                    // Update status class
+                    statusElement.className = 'step-status';
+                    if (stepNumber === 3) statusElement.classList.add('status-success');
+                    if (stepNumber === 4) statusElement.classList.add('status-error');
+                    if (stepNumber === 2) statusElement.classList.add('status-loading');
+                }
+            }
+
+            copySQL() {
+                const sqlCode = document.getElementById('sqlCode').textContent;
+                navigator.clipboard.writeText(sqlCode)
+                    .then(() => {
+                        this.showToast('SQL copied to clipboard!', 'success');
+                    })
+                    .catch(err => {
+                        console.error('Failed to copy:', err);
+                        this.showToast('Failed to copy SQL', 'error');
+                    });
+            }
+
+            skipDatabaseSetup() {
+                this.isDatabaseSetup = true;
+                this.closeDatabaseSetup();
+                this.showToast('You can still sign up, but some features may not work until the database is set up.', 'warning');
+            }
+
+            closeDatabaseSetup() {
+                document.getElementById('dbSetupModal').classList.add('hidden');
+                this.showAuth();
             }
 
             // Theme Management
@@ -1875,7 +2331,7 @@
                 event.preventDefault();
                 
                 const name = document.getElementById('signupName').value.trim();
-                const username = document.getElementById('signupUsername').value.trim();
+                const username = document.getElementById('signupUsername').value.trim().toLowerCase();
                 const email = document.getElementById('signupEmail').value.trim();
                 const password = document.getElementById('signupPassword').value.trim();
                 
@@ -1889,17 +2345,29 @@
                     return;
                 }
                 
+                // Basic username validation
+                if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+                    this.showToast('Username can only contain letters, numbers, and underscores', 'error');
+                    return;
+                }
+                
                 try {
-                    // Check if username exists
-                    const { data: existingUser } = await this.supabase
-                        .from('profiles')
-                        .select('username')
-                        .eq('username', username)
-                        .single();
-                    
-                    if (existingUser) {
-                        this.showToast('Username already exists', 'error');
-                        return;
+                    // Check if username exists only if database is setup
+                    if (this.isDatabaseSetup) {
+                        try {
+                            const { data: existingUser } = await this.supabase
+                                .from('profiles')
+                                .select('username')
+                                .eq('username', username)
+                                .single();
+                            
+                            if (existingUser) {
+                                this.showToast('Username already exists', 'error');
+                                return;
+                            }
+                        } catch (error) {
+                            // Table might not exist yet, that's ok
+                        }
                     }
                     
                     const { data, error } = await this.supabase.auth.signUp({
@@ -1968,16 +2436,20 @@
                 if (!this.currentUser) return;
                 
                 try {
+                    // Try to get profile from database
                     const { data: profile, error } = await this.supabase
                         .from('profiles')
                         .select('*')
                         .eq('id', this.currentUser.id)
                         .single();
                     
-                    if (error) throw error;
-                    
-                    this.currentProfile = profile;
-                    this.updateProfileUI();
+                    if (error) {
+                        // Profile doesn't exist, create it
+                        await this.createProfile();
+                    } else {
+                        this.currentProfile = profile;
+                        this.updateProfileUI();
+                    }
                     
                 } catch (error) {
                     console.error('Error loading profile:', error);
@@ -1992,7 +2464,7 @@
                 const profile = {
                     id: this.currentUser.id,
                     name: metadata.name || this.currentUser.email.split('@')[0],
-                    username: metadata.username || this.generateUsername(metadata.name),
+                    username: metadata.username || this.generateUsername(metadata.name || this.currentUser.email),
                     email: this.currentUser.email,
                     avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(metadata.name || this.currentUser.email.split('@')[0])}&background=3b82f6&color=fff`,
                     bio: '',
@@ -2005,32 +2477,72 @@
                 };
                 
                 try {
+                    // Check if database is setup
+                    if (!this.isDatabaseSetup) {
+                        // Use localStorage as fallback
+                        localStorage.setItem('profile_' + this.currentUser.id, JSON.stringify(profile));
+                        this.currentProfile = profile;
+                        this.updateProfileUI();
+                        return;
+                    }
+                    
                     const { data, error } = await this.supabase
                         .from('profiles')
                         .insert([profile])
                         .select()
                         .single();
                     
-                    if (error) throw error;
+                    if (error) {
+                        if (error.code === '23505') { // Unique violation
+                            // Try to update instead
+                            const { data: existingProfile } = await this.supabase
+                                .from('profiles')
+                                .select('*')
+                                .eq('id', this.currentUser.id)
+                                .single();
+                            
+                            if (existingProfile) {
+                                this.currentProfile = existingProfile;
+                            } else {
+                                // Fallback to localStorage
+                                localStorage.setItem('profile_' + this.currentUser.id, JSON.stringify(profile));
+                                this.currentProfile = profile;
+                            }
+                        } else {
+                            throw error;
+                        }
+                    } else {
+                        this.currentProfile = data;
+                    }
                     
-                    this.currentProfile = data;
                     this.updateProfileUI();
                     
                 } catch (error) {
                     console.error('Error creating profile:', error);
+                    // Fallback to localStorage
+                    localStorage.setItem('profile_' + this.currentUser.id, JSON.stringify(profile));
                     this.currentProfile = profile;
                     this.updateProfileUI();
                 }
             }
 
             generateUsername(name) {
-                const base = name ? name.toLowerCase().replace(/\s+/g, '') : 'user';
+                const base = name ? name.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '') : 'user';
                 const random = Math.floor(Math.random() * 10000);
-                return `${base}${random}`;
+                return `${base}${random}`.substring(0, 20);
             }
 
             async updateProfile(data) {
                 try {
+                    if (!this.isDatabaseSetup) {
+                        // Update localStorage
+                        Object.assign(this.currentProfile, data);
+                        localStorage.setItem('profile_' + this.currentUser.id, JSON.stringify(this.currentProfile));
+                        this.updateProfileUI();
+                        this.showToast('Profile updated successfully (local storage)', 'success');
+                        return;
+                    }
+                    
                     const { error } = await this.supabase
                         .from('profiles')
                         .update(data)
@@ -2057,7 +2569,15 @@
                         .from('avatars')
                         .upload(fileName, file);
                     
-                    if (uploadError) throw uploadError;
+                    if (uploadError) {
+                        // Bucket might not exist, use URL
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            this.updateProfile({ avatar: e.target.result });
+                        };
+                        reader.readAsDataURL(file);
+                        return;
+                    }
                     
                     const { data: { publicUrl } } = this.supabase.storage
                         .from('avatars')
@@ -2067,7 +2587,12 @@
                     
                 } catch (error) {
                     console.error('Error uploading avatar:', error);
-                    this.showToast('Failed to upload avatar', 'error');
+                    // Fallback to data URL
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        this.updateProfile({ avatar: e.target.result });
+                    };
+                    reader.readAsDataURL(file);
                 }
             }
 
@@ -2082,6 +2607,11 @@
                 }
                 
                 try {
+                    if (!this.isDatabaseSetup) {
+                        this.showToast('Database not set up. Please set up database first.', 'error');
+                        return;
+                    }
+                    
                     const postData = {
                         author_id: this.currentUser.id,
                         content: content,
@@ -2127,7 +2657,7 @@
                     
                 } catch (error) {
                     console.error('Error creating post:', error);
-                    this.showToast('Failed to create post', 'error');
+                    this.showToast('Failed to create post. Please check database setup.', 'error');
                 }
             }
 
@@ -2144,7 +2674,20 @@
                             .from(bucket)
                             .upload(fileName, file);
                         
-                        if (uploadError) throw uploadError;
+                        if (uploadError) {
+                            // Bucket might not exist, use data URL
+                            const dataUrl = await new Promise((resolve) => {
+                                const reader = new FileReader();
+                                reader.onload = (e) => resolve(e.target.result);
+                                reader.readAsDataURL(file);
+                            });
+                            
+                            urls.push({
+                                url: dataUrl,
+                                type: file.type.startsWith('video') ? 'video' : 'image'
+                            });
+                            continue;
+                        }
                         
                         const { data: { publicUrl } } = this.supabase.storage
                             .from(bucket)
@@ -2157,6 +2700,17 @@
                         
                     } catch (error) {
                         console.error('Error uploading media:', error);
+                        // Fallback to data URL
+                        const dataUrl = await new Promise((resolve) => {
+                            const reader = new FileReader();
+                            reader.onload = (e) => resolve(e.target.result);
+                            reader.readAsDataURL(file);
+                        });
+                        
+                        urls.push({
+                            url: dataUrl,
+                            type: file.type.startsWith('video') ? 'video' : 'image'
+                        });
                     }
                 }
                 
@@ -2165,6 +2719,11 @@
 
             async likePost(postId) {
                 try {
+                    if (!this.isDatabaseSetup) {
+                        this.showToast('Database not set up', 'warning');
+                        return;
+                    }
+                    
                     // Check if already liked
                     const { data: existingLike } = await this.supabase
                         .from('likes')
@@ -2218,6 +2777,11 @@
                 if (!content.trim()) return;
                 
                 try {
+                    if (!this.isDatabaseSetup) {
+                        this.showToast('Database not set up', 'warning');
+                        return;
+                    }
+                    
                     const { data: comment } = await this.supabase
                         .from('comments')
                         .insert([{
@@ -2266,6 +2830,11 @@
 
             // Stories
             async createStory() {
+                if (!this.isDatabaseSetup) {
+                    this.showToast('Database not set up. Please set up database first.', 'error');
+                    return;
+                }
+                
                 const input = document.createElement('input');
                 input.type = 'file';
                 input.accept = 'image/*,video/*';
@@ -2284,7 +2853,10 @@
                             .from(bucket)
                             .upload(fileName, file);
                         
-                        if (uploadError) throw uploadError;
+                        if (uploadError) {
+                            this.showToast('Failed to upload story. Please check storage buckets.', 'error');
+                            return;
+                        }
                         
                         const { data: { publicUrl } } = this.supabase.storage
                             .from(bucket)
@@ -2312,6 +2884,8 @@
 
             async loadStories() {
                 try {
+                    if (!this.isDatabaseSetup) return;
+                    
                     const { data: stories } = await this.supabase
                         .from('stories')
                         .select(`
@@ -2335,6 +2909,11 @@
             // Follow System
             async toggleFollow(userId) {
                 try {
+                    if (!this.isDatabaseSetup) {
+                        this.showToast('Database not set up', 'warning');
+                        return;
+                    }
+                    
                     // Check if already following
                     const { data: existingFollow } = await this.supabase
                         .from('follows')
@@ -2383,6 +2962,8 @@
             // Messages
             async loadConversations() {
                 try {
+                    if (!this.isDatabaseSetup) return;
+                    
                     const { data: conversations } = await this.supabase
                         .from('conversations')
                         .select(`
@@ -2412,6 +2993,8 @@
 
             async loadMessages(conversationId) {
                 try {
+                    if (!this.isDatabaseSetup) return;
+                    
                     const { data: messages } = await this.supabase
                         .from('messages')
                         .select(`
@@ -2449,6 +3032,11 @@
                 }
                 
                 try {
+                    if (!this.isDatabaseSetup) {
+                        this.showToast('Database not set up', 'error');
+                        return;
+                    }
+                    
                     let mediaData = null;
                     if (media) {
                         mediaData = await this.uploadChatMedia(media);
@@ -2490,6 +3078,8 @@
             // Notifications
             async loadNotifications() {
                 try {
+                    if (!this.isDatabaseSetup) return;
+                    
                     const { data: notifications } = await this.supabase
                         .from('notifications')
                         .select(`
@@ -2513,6 +3103,8 @@
 
             async createNotification(data) {
                 try {
+                    if (!this.isDatabaseSetup) return;
+                    
                     await this.supabase
                         .from('notifications')
                         .insert([{
@@ -2538,6 +3130,11 @@
                 }
                 
                 try {
+                    if (!this.isDatabaseSetup) {
+                        this.showToast('Database not set up', 'warning');
+                        return;
+                    }
+                    
                     let results = {};
                     
                     if (type === 'all' || type === 'users') {
@@ -2660,6 +3257,8 @@
 
             // Real-time Subscriptions
             setupRealtimeSubscriptions() {
+                if (!this.isDatabaseSetup) return;
+                
                 // Subscribe to new posts
                 this.subscriptions.posts = this.supabase
                     .channel('public:posts')
@@ -2965,6 +3564,11 @@
 
             // Initial Data Loading
             async loadInitialData() {
+                if (!this.isDatabaseSetup) {
+                    this.showToast('Database not set up. Some features may not work.', 'warning');
+                    return;
+                }
+                
                 await Promise.all([
                     this.loadFeed(),
                     this.loadStories(),
@@ -2975,6 +3579,8 @@
 
             async loadFeed() {
                 try {
+                    if (!this.isDatabaseSetup) return;
+                    
                     const { data: posts } = await this.supabase
                         .from('posts')
                         .select(`
@@ -3007,11 +3613,11 @@
                 }
             }
 
-            // This is a simplified implementation - in a real app, you would need to
-            // implement proper rendering methods for each component
+            // These methods need to be implemented based on your specific UI requirements
             renderFeed(posts) {
                 const container = document.getElementById('feedContainer');
                 // Implement feed rendering
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-newspaper"></i><p>No posts yet. Be the first to post!</p></div>';
             }
 
             renderStories(stories) {
@@ -3191,6 +3797,78 @@
                     document.querySelectorAll('.call-video video').forEach(video => {
                         video.style.display = 'none';
                     });
+                }
+            }
+
+            async uploadChatMedia(file) {
+                try {
+                    const fileExt = file.name.split('.').pop();
+                    const fileName = `${this.currentUser.id}-${Date.now()}.${fileExt}`;
+                    const isVideo = file.type.startsWith('video');
+                    const bucket = isVideo ? 'videos' : 'images';
+                    
+                    const { error: uploadError } = await this.supabase.storage
+                        .from(bucket)
+                        .upload(fileName, file);
+                    
+                    if (uploadError) {
+                        // Fallback to data URL
+                        return await new Promise((resolve) => {
+                            const reader = new FileReader();
+                            reader.onload = (e) => resolve({
+                                url: e.target.result,
+                                type: isVideo ? 'video' : 'image'
+                            });
+                            reader.readAsDataURL(file);
+                        });
+                    }
+                    
+                    const { data: { publicUrl } } = this.supabase.storage
+                        .from(bucket)
+                        .getPublicUrl(fileName);
+                    
+                    return {
+                        url: publicUrl,
+                        type: isVideo ? 'video' : 'image'
+                    };
+                    
+                } catch (error) {
+                    console.error('Error uploading chat media:', error);
+                    // Fallback to data URL
+                    return await new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onload = (e) => resolve({
+                            url: e.target.result,
+                            type: file.type.startsWith('video') ? 'video' : 'image'
+                        });
+                        reader.readAsDataURL(file);
+                    });
+                }
+            }
+
+            async loadUserPosts(userId) {
+                try {
+                    if (!this.isDatabaseSetup) return;
+                    
+                    const { data: posts } = await this.supabase
+                        .from('posts')
+                        .select(`
+                            *,
+                            profiles (
+                                name,
+                                username,
+                                avatar
+                            )
+                        `)
+                        .eq('author_id', userId)
+                        .order('created_at', { ascending: false });
+                    
+                    // Render user posts
+                    const container = document.getElementById('profileContent');
+                    // Implement user posts rendering
+                    
+                } catch (error) {
+                    console.error('Error loading user posts:', error);
                 }
             }
         }
