@@ -543,6 +543,12 @@
             flex-shrink: 0;
         }
 
+        .avatar.small {
+            width: 32px;
+            height: 32px;
+            font-size: 0.875rem;
+        }
+
         .media-preview {
             margin-bottom: 1rem;
             position: relative;
@@ -1756,6 +1762,7 @@
                 this.localStream = null;
                 this.remoteStream = null;
                 this.dataChannel = null;
+                this.currentMedia = [];
                 
                 // Real-time subscriptions
                 this.subscriptions = {
@@ -2118,7 +2125,7 @@
                     // Clear composer
                     document.getElementById('postContent').value = '';
                     document.getElementById('mediaPreview').innerHTML = '';
-                    this.currentMedia = null;
+                    this.currentMedia = [];
                     
                     // Add to feed
                     this.addPostToFeed(post);
@@ -2209,6 +2216,9 @@
                         }
                     }
                     
+                    // Reload feed
+                    await this.loadFeed();
+                    
                 } catch (error) {
                     console.error('Error toggling like:', error);
                 }
@@ -2264,6 +2274,29 @@
                 }
             }
 
+            async addComment(postId) {
+                const input = document.getElementById(`comment-input-${postId}`);
+                const content = input.value.trim();
+                
+                if (!content) return;
+                
+                try {
+                    await this.commentOnPost(postId, content);
+                    input.value = '';
+                    
+                    // Reload comments section
+                    await this.loadFeed();
+                    
+                } catch (error) {
+                    this.showToast('Failed to add comment', 'error');
+                }
+            }
+
+            toggleComments(postId) {
+                const commentsSection = document.getElementById(`comments-${postId}`);
+                commentsSection.classList.toggle('hidden');
+            }
+
             // Stories
             async createStory() {
                 const input = document.createElement('input');
@@ -2300,6 +2333,7 @@
                             }]);
                         
                         this.showToast('Story added!', 'success');
+                        await this.loadStories();
                         
                     } catch (error) {
                         console.error('Error creating story:', error);
@@ -2440,27 +2474,24 @@
                 }
             }
 
-            async sendMessage(content, media = null) {
+            async sendMessage() {
                 if (!this.activeChat) return;
                 
-                if (!content && !media) {
+                const input = document.getElementById('chatInput');
+                const content = input.value.trim();
+                
+                if (!content) {
                     this.showToast('Message cannot be empty', 'error');
                     return;
                 }
                 
                 try {
-                    let mediaData = null;
-                    if (media) {
-                        mediaData = await this.uploadChatMedia(media);
-                    }
-                    
                     const messageData = {
                         conversation_id: this.activeChat.id,
                         sender_id: this.currentUser.id,
                         receiver_id: this.activeChat.user1_id === this.currentUser.id ? 
                             this.activeChat.user2_id : this.activeChat.user1_id,
-                        content: content || '',
-                        media: mediaData,
+                        content: content,
                         created_at: new Date().toISOString()
                     };
                     
@@ -2474,16 +2505,62 @@
                     await this.supabase
                         .from('conversations')
                         .update({
-                            last_message: content || (media ? 'Media shared' : ''),
+                            last_message: content,
                             updated_at: new Date().toISOString()
                         })
                         .eq('id', this.activeChat.id);
                     
                     this.appendMessage(message);
+                    input.value = '';
                     
                 } catch (error) {
                     console.error('Error sending message:', error);
                     this.showToast('Failed to send message', 'error');
+                }
+            }
+
+            async openChat(conversationId) {
+                try {
+                    const { data: conversation } = await this.supabase
+                        .from('conversations')
+                        .select(`
+                            *,
+                            user1:profiles!conversations_user1_id_fkey (
+                                id,
+                                name,
+                                username,
+                                avatar
+                            ),
+                            user2:profiles!conversations_user2_id_fkey (
+                                id,
+                                name,
+                                username,
+                                avatar
+                            )
+                        `)
+                        .eq('id', conversationId)
+                        .single();
+                    
+                    if (!conversation) return;
+                    
+                    this.activeChat = conversation;
+                    
+                    // Update UI
+                    const otherUser = conversation.user1_id === this.currentUser.id ? 
+                        conversation.user2 : conversation.user1;
+                    
+                    document.getElementById('chatName').textContent = otherUser.name;
+                    document.getElementById('chatAvatar').textContent = otherUser.name.charAt(0).toUpperCase();
+                    
+                    // Switch views
+                    document.getElementById('conversationsView').classList.add('hidden');
+                    document.getElementById('chatView').classList.remove('hidden');
+                    
+                    // Load messages
+                    await this.loadMessages(conversationId);
+                    
+                } catch (error) {
+                    console.error('Error opening chat:', error);
                 }
             }
 
@@ -2733,9 +2810,9 @@
                 document.getElementById('profileDisplayBio').textContent = bio || 'No bio yet';
                 
                 // Update stats
-                document.getElementById('postsCount').textContent = posts_count;
-                document.getElementById('followersCount').textContent = followers_count;
-                document.getElementById('followingCount').textContent = following_count;
+                document.getElementById('postsCount').textContent = posts_count || 0;
+                document.getElementById('followersCount').textContent = followers_count || 0;
+                document.getElementById('followingCount').textContent = following_count || 0;
             }
 
             showToast(message, type = 'info') {
@@ -2762,7 +2839,10 @@
                 });
                 
                 // Show selected page
-                document.getElementById(pageId).classList.add('active');
+                const page = document.getElementById(pageId);
+                if (page) {
+                    page.classList.add('active');
+                }
                 
                 // Update navigation
                 document.querySelectorAll('.nav-item').forEach(item => {
@@ -2826,7 +2906,10 @@
                     form.classList.add('hidden');
                 });
                 
-                document.getElementById(`${tab}Form`).classList.remove('hidden');
+                const form = document.getElementById(`${tab}Form`);
+                if (form) {
+                    form.classList.remove('hidden');
+                }
             }
 
             // Event Listeners
@@ -2871,15 +2954,25 @@
                 });
                 
                 // Search
-                document.getElementById('searchInput').addEventListener('input', (e) => {
-                    this.search(e.target.value);
-                });
+                const searchInput = document.getElementById('searchInput');
+                if (searchInput) {
+                    searchInput.addEventListener('input', (e) => {
+                        this.search(e.target.value);
+                    });
+                }
                 
                 // Search tabs
                 document.querySelectorAll('.search-tab').forEach(tab => {
                     tab.addEventListener('click', () => {
                         const query = document.getElementById('searchInput').value;
                         const type = tab.dataset.type;
+                        
+                        // Update active tab
+                        document.querySelectorAll('.search-tab').forEach(t => {
+                            t.classList.remove('active');
+                        });
+                        tab.classList.add('active');
+                        
                         this.search(query, type);
                     });
                 });
@@ -2897,9 +2990,12 @@
                     this.handleAvatarUpload(e);
                 });
                 
-                document.getElementById('chatFileUpload').addEventListener('change', (e) => {
-                    this.handleMediaUpload(e, 'chat');
-                });
+                const chatFileUpload = document.getElementById('chatFileUpload');
+                if (chatFileUpload) {
+                    chatFileUpload.addEventListener('change', (e) => {
+                        this.handleMediaUpload(e, 'chat');
+                    });
+                }
                 
                 // Edit profile
                 document.getElementById('editProfileForm').addEventListener('submit', (e) => {
@@ -2915,6 +3011,7 @@
                     this.currentMedia = files;
                     this.previewMedia(files);
                 } else if (type === 'chat') {
+                    // For chat media upload
                     this.sendMessage('', files[0]);
                 }
             }
@@ -3007,57 +3104,427 @@
                 }
             }
 
-            // This is a simplified implementation - in a real app, you would need to
-            // implement proper rendering methods for each component
+            async loadUserPosts(userId) {
+                try {
+                    const { data: posts } = await this.supabase
+                        .from('posts')
+                        .select(`
+                            *,
+                            profiles (
+                                name,
+                                username,
+                                avatar
+                            ),
+                            likes (user_id),
+                            comments (
+                                id,
+                                user_id,
+                                content,
+                                created_at,
+                                profiles (
+                                    name,
+                                    username,
+                                    avatar
+                                )
+                            )
+                        `)
+                        .eq('author_id', userId)
+                        .order('created_at', { ascending: false });
+                    
+                    this.renderUserPosts(posts || []);
+                    
+                } catch (error) {
+                    console.error('Error loading user posts:', error);
+                }
+            }
+
+            // Rendering Methods
             renderFeed(posts) {
                 const container = document.getElementById('feedContainer');
-                // Implement feed rendering
+                if (!container) return;
+                
+                if (!posts || posts.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-newspaper"></i>
+                            <h3>No posts yet</h3>
+                            <p>Be the first to share something!</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                container.innerHTML = posts.map(post => {
+                    const user = post.profiles || {};
+                    const mediaHtml = post.media && post.media.length > 0 ? post.media.map(media => 
+                        media.type === 'video' ? 
+                            `<video controls class="w-full rounded-md mb-2" src="${media.url}"></video>` :
+                            `<img class="w-full rounded-md mb-2" src="${media.url}" alt="Post image">`
+                    ).join('') : '';
+                    
+                    const likes = post.likes || [];
+                    const comments = post.comments || [];
+                    const isLiked = likes.some(like => like.user_id === this.currentUser?.id);
+                    
+                    return `
+                        <div class="post" data-post-id="${post.id}">
+                            <div class="post-header">
+                                <div class="avatar">${user.name?.charAt(0)?.toUpperCase() || 'U'}</div>
+                                <div class="post-user-info">
+                                    <div class="post-user-name">${user.name || 'Unknown User'}</div>
+                                    <div class="post-user-handle">@${user.username || 'user'}</div>
+                                </div>
+                                <div class="post-time">${this.formatTime(post.created_at)}</div>
+                            </div>
+                            <div class="post-content">${this.formatPostContent(post.content)}</div>
+                            ${mediaHtml ? `<div class="post-media">${mediaHtml}</div>` : ''}
+                            <div class="post-actions">
+                                <button class="post-action ${isLiked ? 'active' : ''}" 
+                                        onclick="app.likePost('${post.id}')">
+                                    <i class="fas fa-heart"></i>
+                                    <span>${likes.length || 0}</span>
+                                </button>
+                                <button class="post-action" onclick="app.toggleComments('${post.id}')">
+                                    <i class="fas fa-comment"></i>
+                                    <span>${comments.length || 0}</span>
+                                </button>
+                                <button class="post-action" onclick="app.sharePost('${post.id}')">
+                                    <i class="fas fa-share"></i>
+                                </button>
+                            </div>
+                            <div id="comments-${post.id}" class="comments-section hidden">
+                                ${this.renderComments(comments)}
+                                <div class="add-comment">
+                                    <div class="avatar small">${this.currentProfile?.name?.charAt(0)?.toUpperCase() || 'U'}</div>
+                                    <input type="text" id="comment-input-${post.id}" class="form-input" 
+                                           placeholder="Write a comment..." 
+                                           onkeypress="if(event.key === 'Enter') app.addComment('${post.id}')">
+                                    <button class="btn btn-primary" onclick="app.addComment('${post.id}')">Post</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
             }
 
             renderStories(stories) {
                 const container = document.getElementById('storiesContainer');
-                // Implement stories rendering
+                if (!container) return;
+                
+                // Keep the "Add Story" button
+                const addStoryBtn = container.querySelector('.story[onclick*="createStory"]');
+                container.innerHTML = '';
+                if (addStoryBtn) container.appendChild(addStoryBtn);
+                
+                if (!stories || stories.length === 0) return;
+                
+                stories.forEach(story => {
+                    const user = story.profiles || {};
+                    const storyEl = document.createElement('div');
+                    storyEl.className = 'story';
+                    storyEl.innerHTML = `
+                        <div class="story-ring">
+                            <div class="story-avatar" style="background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));">
+                                ${user.name?.charAt(0)?.toUpperCase() || 'U'}
+                            </div>
+                        </div>
+                        <div class="story-username">${user.username || 'user'}</div>
+                    `;
+                    storyEl.onclick = () => this.viewStory(story);
+                    container.appendChild(storyEl);
+                });
             }
 
             renderConversations(conversations) {
                 const container = document.getElementById('conversationsList');
-                // Implement conversations rendering
+                if (!container) return;
+                
+                if (!conversations || conversations.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-comments"></i>
+                            <h3>No conversations</h3>
+                            <p>Start a new conversation!</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                container.innerHTML = conversations.map(conv => {
+                    const otherUser = conv.user1_id === this.currentUser.id ? conv.user2 : conv.user1;
+                    return `
+                        <div class="conversation-item" onclick="app.openChat('${conv.id}')">
+                            <div class="avatar">${otherUser?.name?.charAt(0)?.toUpperCase() || 'U'}</div>
+                            <div class="conversation-info">
+                                <div class="conversation-name">${otherUser?.name || 'Unknown User'}</div>
+                                <div class="conversation-last-message">${conv.last_message || 'No messages yet'}</div>
+                            </div>
+                            <div class="text-sm text-text-secondary">${this.formatTime(conv.updated_at)}</div>
+                        </div>
+                    `;
+                }).join('');
             }
 
             renderMessages(messages) {
                 const container = document.getElementById('chatMessages');
-                // Implement messages rendering
+                if (!container) return;
+                
+                container.innerHTML = (messages || []).map(msg => {
+                    const isSent = msg.sender_id === this.currentUser.id;
+                    const user = msg.profiles || {};
+                    return `
+                        <div class="message ${isSent ? 'sent' : 'received'}">
+                            ${!isSent ? `<div class="avatar small">${user.name?.charAt(0)?.toUpperCase() || 'U'}</div>` : ''}
+                            <div class="message-content">
+                                <div>${msg.content || ''}</div>
+                                ${msg.media ? `<div class="mt-2"><img src="${msg.media.url}" style="max-width: 200px; border-radius: var(--radius-md);"></div>` : ''}
+                                <div class="message-time">${this.formatTime(msg.created_at)}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+                // Scroll to bottom
+                container.scrollTop = container.scrollHeight;
             }
 
             renderNotifications(notifications) {
                 const container = document.getElementById('notificationsList');
-                // Implement notifications rendering
+                if (!container) return;
+                
+                if (!notifications || notifications.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-bell"></i>
+                            <h3>No notifications</h3>
+                            <p>Notifications will appear here</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                container.innerHTML = notifications.map(notif => `
+                    <div class="notification-item ${notif.read ? '' : 'unread'}" onclick="app.handleNotificationClick('${notif.id}')">
+                        <div class="avatar small">${notif.from_user?.name?.charAt(0)?.toUpperCase() || 'S'}</div>
+                        <div class="notification-content">
+                            <div>${notif.message}</div>
+                            <div class="notification-time">${this.formatTime(notif.created_at)}</div>
+                        </div>
+                        ${!notif.read ? '<div class="w-2 h-2 rounded-full bg-primary-color"></div>' : ''}
+                    </div>
+                `).join('');
+            }
+
+            renderUserPosts(posts) {
+                const container = document.getElementById('profileContent');
+                if (!container) return;
+                
+                if (!posts || posts.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-newspaper"></i>
+                            <h3>No posts yet</h3>
+                            <p>This user hasn't posted anything yet</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                container.innerHTML = posts.map(post => {
+                    const mediaHtml = post.media && post.media.length > 0 ? post.media.map(media => 
+                        media.type === 'video' ? 
+                            `<video controls class="w-full rounded-md mb-2" src="${media.url}"></video>` :
+                            `<img class="w-full rounded-md mb-2" src="${media.url}" alt="Post image">`
+                    ).join('') : '';
+                    
+                    return `
+                        <div class="post" data-post-id="${post.id}">
+                            <div class="post-content">${this.formatPostContent(post.content)}</div>
+                            ${mediaHtml ? `<div class="post-media">${mediaHtml}</div>` : ''}
+                            <div class="post-time">${this.formatTime(post.created_at)}</div>
+                        </div>
+                    `;
+                }).join('');
             }
 
             renderSearchResults(results, type) {
                 const container = document.getElementById('searchResultsContainer');
-                // Implement search results rendering
+                if (!container) return;
+                
+                let html = '';
+                
+                if (type === 'all' || type === 'users') {
+                    const users = results.users || [];
+                    if (users.length > 0) {
+                        html += `<h3 class="font-semibold mb-2">Users (${users.length})</h3>`;
+                        html += users.map(user => `
+                            <div class="flex items-center gap-3 p-3 border-b border-border-color cursor-pointer hover:bg-bg-secondary" 
+                                 onclick="app.viewProfile('${user.id}')">
+                                <div class="avatar">${user.name?.charAt(0)?.toUpperCase() || 'U'}</div>
+                                <div>
+                                    <div class="font-semibold">${user.name}</div>
+                                    <div class="text-sm text-text-secondary">@${user.username}</div>
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                }
+                
+                if (type === 'all' || type === 'posts') {
+                    const posts = results.posts || [];
+                    if (posts.length > 0) {
+                        html += `<h3 class="font-semibold mb-2 mt-4">Posts (${posts.length})</h3>`;
+                        html += posts.map(post => `
+                            <div class="p-3 border-b border-border-color">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <div class="avatar small">${post.profiles?.name?.charAt(0)?.toUpperCase() || 'U'}</div>
+                                    <div>
+                                        <div class="font-semibold">${post.profiles?.name}</div>
+                                        <div class="text-xs text-text-secondary">${this.formatTime(post.created_at)}</div>
+                                    </div>
+                                </div>
+                                <div class="post-content-preview">${post.content?.substring(0, 100)}${post.content?.length > 100 ? '...' : ''}</div>
+                            </div>
+                        `).join('');
+                    }
+                }
+                
+                container.innerHTML = html || '<div class="empty-state"><p>No results found</p></div>';
             }
 
-            // These methods need to be implemented based on your specific UI requirements
+            renderComments(comments) {
+                return (comments || []).map(comment => `
+                    <div class="comment">
+                        <div class="avatar small">${comment.profiles?.name?.charAt(0)?.toUpperCase() || 'U'}</div>
+                        <div class="comment-content">
+                            <div class="comment-header">
+                                <div class="comment-user">${comment.profiles?.name || 'Unknown'}</div>
+                                <div class="text-xs text-text-secondary">${this.formatTime(comment.created_at)}</div>
+                            </div>
+                            <div class="comment-text">${comment.content}</div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // Helper Methods
+            formatTime(timestamp) {
+                if (!timestamp) return '';
+                const date = new Date(timestamp);
+                const now = new Date();
+                const diffMs = now - date;
+                const diffMins = Math.floor(diffMs / (1000 * 60));
+                const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+                const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+                
+                if (diffMins < 60) return `${diffMins}m ago`;
+                if (diffHours < 24) return `${diffHours}h ago`;
+                if (diffDays < 7) return `${diffDays}d ago`;
+                return date.toLocaleDateString();
+            }
+
+            formatPostContent(content) {
+                if (!content) return '';
+                return content
+                    .replace(/#(\w+)/g, '<span class="hashtag" onclick="app.searchHashtag(\'$1\')">#$1</span>')
+                    .replace(/@(\w+)/g, '<span class="mention" onclick="app.searchUser(\'$1\')">@$1</span>')
+                    .replace(/\n/g, '<br>');
+            }
+
             addPostToFeed(post) {
-                // Add new post to feed
+                const container = document.getElementById('feedContainer');
+                if (!container) return;
+                
+                // If empty state is showing, remove it
+                if (container.querySelector('.empty-state')) {
+                    container.innerHTML = '';
+                }
+                
+                const user = post.profiles || {};
+                const postHtml = `
+                    <div class="post" data-post-id="${post.id}">
+                        <div class="post-header">
+                            <div class="avatar">${user.name?.charAt(0)?.toUpperCase() || 'U'}</div>
+                            <div class="post-user-info">
+                                <div class="post-user-name">${user.name || 'Unknown User'}</div>
+                                <div class="post-user-handle">@${user.username || 'user'}</div>
+                            </div>
+                            <div class="post-time">Just now</div>
+                        </div>
+                        <div class="post-content">${this.formatPostContent(post.content)}</div>
+                        <div class="post-actions">
+                            <button class="post-action" onclick="app.likePost('${post.id}')">
+                                <i class="fas fa-heart"></i>
+                                <span>0</span>
+                            </button>
+                            <button class="post-action" onclick="app.toggleComments('${post.id}')">
+                                <i class="fas fa-comment"></i>
+                                <span>0</span>
+                            </button>
+                            <button class="post-action" onclick="app.sharePost('${post.id}')">
+                                <i class="fas fa-share"></i>
+                            </button>
+                        </div>
+                        <div id="comments-${post.id}" class="comments-section hidden">
+                            <div class="add-comment">
+                                <div class="avatar small">${this.currentProfile?.name?.charAt(0)?.toUpperCase() || 'U'}</div>
+                                <input type="text" id="comment-input-${post.id}" class="form-input" 
+                                       placeholder="Write a comment..." 
+                                       onkeypress="if(event.key === 'Enter') app.addComment('${post.id}')">
+                                <button class="btn btn-primary" onclick="app.addComment('${post.id}')">Post</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                container.insertAdjacentHTML('afterbegin', postHtml);
             }
 
             appendMessage(message) {
-                // Append message to chat
+                const container = document.getElementById('chatMessages');
+                if (!container) return;
+                
+                const isSent = message.sender_id === this.currentUser.id;
+                const user = this.currentProfile;
+                const messageHtml = `
+                    <div class="message ${isSent ? 'sent' : 'received'}">
+                        ${!isSent ? `<div class="avatar small">${user?.name?.charAt(0)?.toUpperCase() || 'U'}</div>` : ''}
+                        <div class="message-content">
+                            <div>${message.content || ''}</div>
+                            <div class="message-time">Just now</div>
+                        </div>
+                    </div>
+                `;
+                
+                container.insertAdjacentHTML('beforeend', messageHtml);
+                container.scrollTop = container.scrollHeight;
             }
 
             handleNewPost(post) {
-                // Handle new post from real-time
+                if (post.author_id !== this.currentUser.id) {
+                    this.showToast('New post from someone you follow!', 'info');
+                    // Reload feed to show new post
+                    this.loadFeed();
+                }
             }
 
             handleNewMessage(message) {
-                // Handle new message from real-time
+                if (this.activeChat && message.conversation_id === this.activeChat.id) {
+                    this.appendMessage(message);
+                } else {
+                    // Show notification for new message
+                    this.showToast('New message received', 'info');
+                    // Reload conversations
+                    this.loadConversations();
+                }
             }
 
             handleNewNotification(notification) {
-                // Handle new notification from real-time
+                this.showToast(notification.message, 'info');
+                // Reload notifications if on notifications page
+                if (document.getElementById('notificationsPage').classList.contains('active')) {
+                    this.loadNotifications();
+                }
             }
 
             // Placeholder methods for unimplemented features
@@ -3079,6 +3546,13 @@
 
             editProfile() {
                 this.showModal('editProfileModal');
+                // Fill form with current data
+                document.getElementById('editName').value = this.currentProfile.name;
+                document.getElementById('editUsername').value = this.currentProfile.username;
+                document.getElementById('editBio').value = this.currentProfile.bio || '';
+                document.getElementById('editWebsite').value = this.currentProfile.website || '';
+                document.getElementById('editLocation').value = this.currentProfile.location || '';
+                document.getElementById('editProfileAvatar').textContent = this.currentProfile.name.charAt(0).toUpperCase();
             }
 
             showSettings() {
@@ -3086,7 +3560,7 @@
             }
 
             showUserPosts() {
-                this.showToast('User posts view coming soon!', 'info');
+                this.loadUserPosts(this.currentUser.id);
             }
 
             showFollowers() {
@@ -3103,6 +3577,31 @@
 
             shareProfile() {
                 this.showToast('Profile sharing coming soon!', 'info');
+            }
+
+            sharePost(postId) {
+                this.showToast('Post sharing coming soon!', 'info');
+            }
+
+            viewProfile(userId) {
+                this.showToast('Profile view coming soon!', 'info');
+            }
+
+            searchHashtag(tag) {
+                document.getElementById('searchInput').value = `#${tag}`;
+                this.showPage('searchPage');
+                this.search(`#${tag}`, 'posts');
+            }
+
+            searchUser(username) {
+                document.getElementById('searchInput').value = `@${username}`;
+                this.showPage('searchPage');
+                this.search(`@${username}`, 'users');
+            }
+
+            handleNotificationClick(notificationId) {
+                this.showToast('Notification clicked', 'info');
+                // In real app, navigate to relevant content
             }
 
             saveProfileChanges() {
@@ -3135,6 +3634,10 @@
 
             markAllNotificationsAsRead() {
                 this.showToast('Mark all as read feature coming soon!', 'info');
+            }
+
+            viewStory(story) {
+                this.showToast('Story viewer coming soon!', 'info');
             }
 
             closeStory() {
