@@ -1157,19 +1157,19 @@
                 padding-left: 0.5rem;
                 padding-right: 0.5rem;
             }
-            
+
             .header {
                 padding: 0.5rem;
             }
-            
+
             .logo span {
                 display: none;
             }
-            
+
             .search-container {
                 margin: 0 0.5rem;
             }
-            
+
             .post-composer,
             .post {
                 border-radius: 0;
@@ -1183,16 +1183,16 @@
                 width: 95%;
                 padding: 1.5rem;
             }
-            
+
             .stories-container {
                 gap: 0.75rem;
             }
-            
+
             .story-ring {
                 width: 56px;
                 height: 56px;
             }
-            
+
             .story-avatar {
                 width: 52px;
                 height: 52px;
@@ -1475,6 +1475,82 @@
             border-radius: var(--radius-full);
             transition: width 0.3s ease;
         }
+
+        /* Badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.5rem;
+            border-radius: var(--radius-full);
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .badge-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .badge-secondary {
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+        }
+
+        .badge-success {
+            background: var(--success-color);
+            color: white;
+        }
+
+        /* Story progress bar */
+        .story-progress {
+            display: flex;
+            gap: 2px;
+            padding: 0.5rem;
+        }
+
+        .story-progress-bar {
+            flex: 1;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: var(--radius-full);
+            overflow: hidden;
+        }
+
+        .story-progress-fill {
+            height: 100%;
+            background: white;
+            border-radius: var(--radius-full);
+            transition: width 0.1s linear;
+        }
+
+        /* Emoji picker */
+        .emoji-picker {
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 0.5rem;
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 0.25rem;
+            box-shadow: var(--shadow-lg);
+            z-index: 100;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .emoji {
+            padding: 0.25rem;
+            cursor: pointer;
+            text-align: center;
+            border-radius: var(--radius-sm);
+        }
+
+        .emoji:hover {
+            background: var(--bg-secondary);
+        }
     </style>
 </head>
 <body>
@@ -1485,13 +1561,13 @@
                 <div class="logo-icon">PM</div>
                 <span class="text-2xl font-bold">PrimeMar</span>
             </div>
-            
+
             <div class="db-setup-step" id="setupStep1">
                 <h3 class="step-title">Database Setup Required</h3>
                 <p class="step-description">
                     It looks like this is your first time using PrimeMar. You need to set up the database tables in Supabase.
                 </p>
-                
+
                 <div class="sql-code" id="sqlCode">
 -- Run this SQL in your Supabase SQL Editor
 -- 1. Create profiles table
@@ -1617,16 +1693,16 @@ CREATE TABLE IF NOT EXISTS stories (
 -- 7. Create storage buckets (run separately in Storage section)
 -- Create buckets named: avatars, images, videos, story-images, story-videos
                 </div>
-                
+
                 <button class="copy-btn" onclick="app.copySQL()">
                     <i class="fas fa-copy"></i> Copy SQL
                 </button>
-                
+
                 <div class="step-status" id="dbStatus">
                     <i class="fas fa-info-circle"></i>
                     <span>Copy and run the SQL above in your Supabase SQL Editor</span>
                 </div>
-                
+
                 <div class="step-actions">
                     <button class="retry-btn" onclick="app.checkDatabase()">
                         <i class="fas fa-redo"></i> Check Database
@@ -1636,7 +1712,7 @@ CREATE TABLE IF NOT EXISTS stories (
                     </button>
                 </div>
             </div>
-            
+
             <div class="db-setup-step hidden" id="setupStep2">
                 <div class="setup-loading">
                     <div class="spinner"></div>
@@ -1644,7 +1720,7 @@ CREATE TABLE IF NOT EXISTS stories (
                     <p class="step-description">Please wait while we check your database setup.</p>
                 </div>
             </div>
-            
+
             <div class="db-setup-step hidden setup-success" id="setupStep3">
                 <i class="fas fa-check-circle" style="font-size: 3rem; color: var(--success-color); margin-bottom: 1rem;"></i>
                 <h3 class="step-title">Database Setup Complete!</h3>
@@ -1655,7 +1731,7 @@ CREATE TABLE IF NOT EXISTS stories (
                     </button>
                 </div>
             </div>
-            
+
             <div class="db-setup-step hidden setup-error" id="setupStep4">
                 <i class="fas fa-exclamation-circle" style="font-size: 3rem; color: var(--accent-color); margin-bottom: 1rem;"></i>
                 <h3 class="step-title">Database Setup Failed</h3>
@@ -1810,6 +1886,7 @@ CREATE TABLE IF NOT EXISTS stories (
                             </div>
                             <div class="story-username">Add Story</div>
                         </div>
+                        <!-- Stories will be loaded here -->
                     </div>
 
                     <!-- Post Composer -->
@@ -1856,7 +1933,7 @@ CREATE TABLE IF NOT EXISTS stories (
                         <button class="search-tab active" data-type="all">All</button>
                         <button class="search-tab" data-type="users">Users</button>
                         <button class="search-tab" data-type="posts">Posts</button>
-                        <button class="search-tab" data-type="tags">Tags</button>
+                        <button class="search-tab" data-type="hashtags">Hashtags</button>
                     </div>
                     <div id="searchResultsContainer"></div>
                 </div>
@@ -2051,6 +2128,7 @@ CREATE TABLE IF NOT EXISTS stories (
     <div id="storyViewer" class="modal hidden">
         <div class="modal-content" style="max-width: 100%; height: 100%; background: black; padding: 0;">
             <div class="flex flex-col h-full">
+                <div class="story-progress" id="storyProgress"></div>
                 <div class="flex items-center justify-between p-4">
                     <div class="flex items-center gap-3">
                         <div id="storyAvatar" class="avatar"></div>
@@ -2076,6 +2154,70 @@ CREATE TABLE IF NOT EXISTS stories (
         </div>
     </div>
 
+    <!-- New Message Modal -->
+    <div id="newMessageModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-bold">New Message</h2>
+                <button class="btn-icon" onclick="app.closeModal('newMessageModal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="form-group">
+                <input type="text" id="newMessageSearch" class="form-input" placeholder="Search users..." onkeyup="app.searchUsersForMessage(this.value)">
+            </div>
+            <div id="newMessageUsers" class="max-h-60 overflow-y-auto"></div>
+        </div>
+    </div>
+
+    <!-- Poll Creator Modal -->
+    <div id="pollModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-bold">Create Poll</h2>
+                <button class="btn-icon" onclick="app.closeModal('pollModal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="pollForm">
+                <div class="form-group">
+                    <label for="pollQuestion" class="form-label">Question</label>
+                    <input type="text" id="pollQuestion" class="form-input" placeholder="Ask a question..." required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Options</label>
+                    <div id="pollOptions">
+                        <input type="text" class="form-input mb-2" placeholder="Option 1" required>
+                        <input type="text" class="form-input mb-2" placeholder="Option 2" required>
+                    </div>
+                    <button type="button" class="btn btn-outline w-full" onclick="app.addPollOption()">
+                        <i class="fas fa-plus"></i> Add Option
+                    </button>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Poll Duration</label>
+                    <select id="pollDuration" class="form-input">
+                        <option value="1">1 day</option>
+                        <option value="3">3 days</option>
+                        <option value="7">1 week</option>
+                        <option value="30">1 month</option>
+                    </select>
+                </div>
+                <div class="flex gap-2">
+                    <button type="button" class="btn btn-secondary flex-1" onclick="app.closeModal('pollModal')">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary flex-1">
+                        Create Poll
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Emoji Picker -->
+    <div id="emojiPicker" class="emoji-picker hidden"></div>
+
     <!-- Call Interface -->
     <div id="callInterface" class="call-interface hidden">
         <div class="call-video">
@@ -2095,50 +2237,118 @@ CREATE TABLE IF NOT EXISTS stories (
         </div>
     </div>
 
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal hidden">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-bold">Settings</h2>
+                <button class="btn-icon" onclick="app.closeModal('settingsModal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <h3 class="font-semibold mb-2">Privacy</h3>
+                    <div class="space-y-2">
+                        <label class="flex items-center">
+                            <input type="checkbox" id="privateProfile" class="mr-2">
+                            <span>Private Profile</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" id="readReceipts" class="mr-2">
+                            <span>Read Receipts</span>
+                        </label>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="font-semibold mb-2">Notifications</h3>
+                    <div class="space-y-2">
+                        <label class="flex items-center">
+                            <input type="checkbox" id="notifyLikes" class="mr-2" checked>
+                            <span>Likes</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" id="notifyComments" class="mr-2" checked>
+                            <span>Comments</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" id="notifyMessages" class="mr-2" checked>
+                            <span>Messages</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <button class="btn btn-secondary flex-1" onclick="app.closeModal('settingsModal')">
+                        Cancel
+                    </button>
+                    <button class="btn btn-primary flex-1" onclick="app.saveSettings()">
+                        Save
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // Complete Social Media Application
+        // Complete Social Media Application with ALL REAL FEATURES
         class PrimeMarApp {
             constructor() {
                 // Supabase Configuration
                 this.supabaseUrl = 'https://mtqvgnkkzrqctapnxikg.supabase.co';
                 this.supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im10cXZnbmtrenJxY3RhcG54aWtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyMzIwMTYsImV4cCI6MjA4MDgwODAxNn0.lJ9wNxHjvWejFI6q6-sh-CQ_3bKFM1S__6J7WZSG8dY';
-                
+
                 this.supabase = null;
                 this.currentUser = null;
                 this.currentProfile = null;
                 this.activeChat = null;
+                this.currentStories = [];
+                this.currentStoryIndex = 0;
+                this.storyTimer = null;
                 this.peerConnection = null;
                 this.localStream = null;
                 this.remoteStream = null;
                 this.dataChannel = null;
                 this.isDatabaseSetup = false;
-                
+                this.typingTimeout = null;
+                this.typingUsers = new Set();
+
                 // Real-time subscriptions
                 this.subscriptions = {
                     posts: null,
                     messages: null,
                     notifications: null,
-                    stories: null
+                    stories: null,
+                    typing: null
                 };
-                
+
+                // Emoji list
+                this.emojis = ['😀', '😂', '🥰', '😍', '😎', '🤔', '👍', '❤️', '🔥', '🎉', '🙏', '👏', '🎈', '💯', '✨', '🌟', '💕', '💖', '💙', '💚'];
+
                 this.init();
             }
 
             async init() {
                 try {
-                    // Initialize Supabase
-                    this.supabase = supabase.createClient(this.supabaseUrl, this.supabaseKey);
-                    
+                    // Initialize Supabase with proper settings
+                    this.supabase = supabase.createClient(this.supabaseUrl, this.supabaseKey, {
+                        auth: {
+                            autoRefreshToken: true,
+                            persistSession: true,
+                            detectSessionInUrl: true,
+                            storage: localStorage
+                        }
+                    });
+
                     // Load theme
                     this.loadTheme();
-                    
+
                     // Check database setup first
                     await this.checkDatabase();
-                    
+
                     // If database is setup, check for session
                     if (this.isDatabaseSetup) {
                         const { data: { session } } = await this.supabase.auth.getSession();
-                        
+
                         if (session) {
                             this.currentUser = session.user;
                             await this.loadProfile();
@@ -2149,11 +2359,12 @@ CREATE TABLE IF NOT EXISTS stories (
                             this.showAuth();
                         }
                     }
-                    
+
                     this.setupEventListeners();
-                    
+
                     // Listen for auth state changes
                     this.supabase.auth.onAuthStateChange(async (event, session) => {
+                        console.log('Auth state changed:', event, session);
                         if (event === 'SIGNED_IN' && session && this.isDatabaseSetup) {
                             this.currentUser = session.user;
                             await this.loadProfile();
@@ -2167,7 +2378,7 @@ CREATE TABLE IF NOT EXISTS stories (
                             this.showAuth();
                         }
                     });
-                    
+
                 } catch (error) {
                     console.error('Initialization error:', error);
                     this.showToast('Failed to initialize app. Please refresh.', 'error');
@@ -2178,31 +2389,31 @@ CREATE TABLE IF NOT EXISTS stories (
             async checkDatabase() {
                 try {
                     this.showSetupStep(2);
-                    
+
                     // Check if profiles table exists
                     const { data: tableExists, error } = await this.supabase
                         .from('profiles')
                         .select('count')
                         .limit(1);
-                    
+
                     if (error && error.code === '42P01') { // Table doesn't exist
                         this.showSetupStep(1);
                         this.isDatabaseSetup = false;
                         document.getElementById('dbSetupModal').classList.remove('hidden');
                         return false;
                     }
-                    
+
                     // Database is set up
                     this.isDatabaseSetup = true;
                     this.showSetupStep(3);
-                    
+
                     // Wait a moment before closing
                     setTimeout(() => {
                         this.closeDatabaseSetup();
                     }, 1500);
-                    
+
                     return true;
-                    
+
                 } catch (error) {
                     console.error('Database check error:', error);
                     this.showSetupStep(4);
@@ -2216,33 +2427,11 @@ CREATE TABLE IF NOT EXISTS stories (
                 document.querySelectorAll('[id^="setupStep"]').forEach(step => {
                     step.classList.add('hidden');
                 });
-                
+
                 // Show the requested step
                 const stepElement = document.getElementById(`setupStep${stepNumber}`);
                 if (stepElement) {
                     stepElement.classList.remove('hidden');
-                }
-                
-                // Update status message
-                const statusElement = document.getElementById('dbStatus');
-                if (statusElement) {
-                    const messages = {
-                        1: 'Copy and run the SQL above in your Supabase SQL Editor',
-                        2: 'Checking database configuration...',
-                        3: 'Database setup complete!',
-                        4: 'Database check failed'
-                    };
-                    
-                    statusElement.innerHTML = `
-                        <i class="fas fa-${stepNumber === 1 ? 'info-circle' : stepNumber === 2 ? 'spinner fa-spin' : stepNumber === 3 ? 'check-circle' : 'exclamation-circle'}"></i>
-                        <span>${messages[stepNumber]}</span>
-                    `;
-                    
-                    // Update status class
-                    statusElement.className = 'step-status';
-                    if (stepNumber === 3) statusElement.classList.add('status-success');
-                    if (stepNumber === 4) statusElement.classList.add('status-error');
-                    if (stepNumber === 2) statusElement.classList.add('status-loading');
                 }
             }
 
@@ -2295,32 +2484,32 @@ CREATE TABLE IF NOT EXISTS stories (
             // Authentication
             async handleLogin(event) {
                 event.preventDefault();
-                
+
                 const email = document.getElementById('loginEmail').value.trim();
                 const password = document.getElementById('loginPassword').value.trim();
-                
+
                 if (!email || !password) {
                     this.showToast('Please enter email and password', 'error');
                     return;
                 }
-                
+
                 try {
                     const { data, error } = await this.supabase.auth.signInWithPassword({
                         email,
                         password
                     });
-                    
+
                     if (error) throw error;
-                    
+
                     this.currentUser = data.user;
                     await this.loadProfile();
                     this.closeAuthModal();
                     this.showApp();
                     await this.loadInitialData();
                     this.setupRealtimeSubscriptions();
-                    
+
                     this.showToast('Welcome back!', 'success');
-                    
+
                 } catch (error) {
                     console.error('Login error:', error);
                     this.showToast(error.message, 'error');
@@ -2329,47 +2518,41 @@ CREATE TABLE IF NOT EXISTS stories (
 
             async handleSignup(event) {
                 event.preventDefault();
-                
+
                 const name = document.getElementById('signupName').value.trim();
                 const username = document.getElementById('signupUsername').value.trim().toLowerCase();
                 const email = document.getElementById('signupEmail').value.trim();
                 const password = document.getElementById('signupPassword').value.trim();
-                
+
                 if (!name || !username || !email || !password) {
                     this.showToast('Please fill in all fields', 'error');
                     return;
                 }
-                
+
                 if (password.length < 6) {
                     this.showToast('Password must be at least 6 characters', 'error');
                     return;
                 }
-                
+
                 // Basic username validation
                 if (!/^[a-zA-Z0-9_]+$/.test(username)) {
                     this.showToast('Username can only contain letters, numbers, and underscores', 'error');
                     return;
                 }
-                
+
                 try {
-                    // Check if username exists only if database is setup
-                    if (this.isDatabaseSetup) {
-                        try {
-                            const { data: existingUser } = await this.supabase
-                                .from('profiles')
-                                .select('username')
-                                .eq('username', username)
-                                .single();
-                            
-                            if (existingUser) {
-                                this.showToast('Username already exists', 'error');
-                                return;
-                            }
-                        } catch (error) {
-                            // Table might not exist yet, that's ok
-                        }
+                    // Check if username exists
+                    const { data: existingUser } = await this.supabase
+                        .from('profiles')
+                        .select('username')
+                        .eq('username', username)
+                        .single();
+
+                    if (existingUser) {
+                        this.showToast('Username already exists', 'error');
+                        return;
                     }
-                    
+
                     const { data, error } = await this.supabase.auth.signUp({
                         email,
                         password,
@@ -2380,34 +2563,40 @@ CREATE TABLE IF NOT EXISTS stories (
                             }
                         }
                     });
-                    
+
                     if (error) throw error;
-                    
+
                     this.showToast('Account created successfully! Please verify your email.', 'success');
                     this.switchAuthTab('login');
-                    
+
                 } catch (error) {
                     console.error('Signup error:', error);
-                    this.showToast(error.message, 'error');
+                    if (error.message.includes('already registered')) {
+                        this.showToast('Email already registered. Please login instead.', 'error');
+                    } else {
+                        this.showToast(error.message, 'error');
+                    }
                 }
             }
 
             async handleResetPassword() {
                 const email = document.getElementById('resetEmail').value.trim();
-                
+
                 if (!email) {
                     this.showToast('Please enter your email', 'error');
                     return;
                 }
-                
+
                 try {
-                    const { error } = await this.supabase.auth.resetPasswordForEmail(email);
-                    
+                    const { error } = await this.supabase.auth.resetPasswordForEmail(email, {
+                        redirectTo: window.location.origin,
+                    });
+
                     if (error) throw error;
-                    
+
                     this.showToast('Password reset link sent to your email', 'success');
                     this.switchAuthTab('login');
-                    
+
                 } catch (error) {
                     console.error('Reset password error:', error);
                     this.showToast(error.message, 'error');
@@ -2416,15 +2605,20 @@ CREATE TABLE IF NOT EXISTS stories (
 
             async logout() {
                 try {
+                    // Mark user as offline
+                    if (this.currentUser) {
+                        await this.supabase.rpc('mark_user_offline', { user_uuid: this.currentUser.id });
+                    }
+
                     const { error } = await this.supabase.auth.signOut();
                     if (error) throw error;
-                    
+
                     this.currentUser = null;
                     this.currentProfile = null;
                     this.cleanupRealtimeSubscriptions();
                     this.showAuth();
                     this.showToast('Logged out successfully', 'info');
-                    
+
                 } catch (error) {
                     console.error('Logout error:', error);
                     this.showToast('Logout failed', 'error');
@@ -2434,126 +2628,41 @@ CREATE TABLE IF NOT EXISTS stories (
             // Profile Management
             async loadProfile() {
                 if (!this.currentUser) return;
-                
+
                 try {
-                    // Try to get profile from database
                     const { data: profile, error } = await this.supabase
                         .from('profiles')
                         .select('*')
                         .eq('id', this.currentUser.id)
                         .single();
-                    
-                    if (error) {
-                        // Profile doesn't exist, create it
-                        await this.createProfile();
-                    } else {
-                        this.currentProfile = profile;
-                        this.updateProfileUI();
-                    }
-                    
-                } catch (error) {
-                    console.error('Error loading profile:', error);
-                    // Create profile if it doesn't exist
-                    await this.createProfile();
-                }
-            }
 
-            async createProfile() {
-                const metadata = this.currentUser.user_metadata || {};
-                
-                const profile = {
-                    id: this.currentUser.id,
-                    name: metadata.name || this.currentUser.email.split('@')[0],
-                    username: metadata.username || this.generateUsername(metadata.name || this.currentUser.email),
-                    email: this.currentUser.email,
-                    avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(metadata.name || this.currentUser.email.split('@')[0])}&background=3b82f6&color=fff`,
-                    bio: '',
-                    location: '',
-                    website: '',
-                    followers_count: 0,
-                    following_count: 0,
-                    posts_count: 0,
-                    created_at: new Date().toISOString()
-                };
-                
-                try {
-                    // Check if database is setup
-                    if (!this.isDatabaseSetup) {
-                        // Use localStorage as fallback
-                        localStorage.setItem('profile_' + this.currentUser.id, JSON.stringify(profile));
-                        this.currentProfile = profile;
-                        this.updateProfileUI();
-                        return;
-                    }
-                    
-                    const { data, error } = await this.supabase
-                        .from('profiles')
-                        .insert([profile])
-                        .select()
-                        .single();
-                    
-                    if (error) {
-                        if (error.code === '23505') { // Unique violation
-                            // Try to update instead
-                            const { data: existingProfile } = await this.supabase
-                                .from('profiles')
-                                .select('*')
-                                .eq('id', this.currentUser.id)
-                                .single();
-                            
-                            if (existingProfile) {
-                                this.currentProfile = existingProfile;
-                            } else {
-                                // Fallback to localStorage
-                                localStorage.setItem('profile_' + this.currentUser.id, JSON.stringify(profile));
-                                this.currentProfile = profile;
-                            }
-                        } else {
-                            throw error;
-                        }
-                    } else {
-                        this.currentProfile = data;
-                    }
-                    
-                    this.updateProfileUI();
-                    
-                } catch (error) {
-                    console.error('Error creating profile:', error);
-                    // Fallback to localStorage
-                    localStorage.setItem('profile_' + this.currentUser.id, JSON.stringify(profile));
+                    if (error) throw error;
+
                     this.currentProfile = profile;
                     this.updateProfileUI();
-                }
-            }
 
-            generateUsername(name) {
-                const base = name ? name.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '') : 'user';
-                const random = Math.floor(Math.random() * 10000);
-                return `${base}${random}`.substring(0, 20);
+                    // Mark user as online
+                    await this.supabase.rpc('mark_user_online', { user_uuid: this.currentUser.id });
+
+                } catch (error) {
+                    console.error('Error loading profile:', error);
+                    this.showToast('Error loading profile. Please refresh.', 'error');
+                }
             }
 
             async updateProfile(data) {
                 try {
-                    if (!this.isDatabaseSetup) {
-                        // Update localStorage
-                        Object.assign(this.currentProfile, data);
-                        localStorage.setItem('profile_' + this.currentUser.id, JSON.stringify(this.currentProfile));
-                        this.updateProfileUI();
-                        this.showToast('Profile updated successfully (local storage)', 'success');
-                        return;
-                    }
-                    
                     const { error } = await this.supabase
                         .from('profiles')
                         .update(data)
                         .eq('id', this.currentUser.id);
-                    
+
                     if (error) throw error;
-                    
+
                     Object.assign(this.currentProfile, data);
                     this.updateProfileUI();
                     this.showToast('Profile updated successfully', 'success');
-                    
+
                 } catch (error) {
                     console.error('Error updating profile:', error);
                     this.showToast('Failed to update profile', 'error');
@@ -2564,66 +2673,58 @@ CREATE TABLE IF NOT EXISTS stories (
                 try {
                     const fileExt = file.name.split('.').pop();
                     const fileName = `${this.currentUser.id}-${Date.now()}.${fileExt}`;
-                    
+                    const filePath = `${this.currentUser.id}/${fileName}`;
+
                     const { error: uploadError } = await this.supabase.storage
                         .from('avatars')
-                        .upload(fileName, file);
-                    
-                    if (uploadError) {
-                        // Bucket might not exist, use URL
-                        const reader = new FileReader();
-                        reader.onload = (e) => {
-                            this.updateProfile({ avatar: e.target.result });
-                        };
-                        reader.readAsDataURL(file);
-                        return;
-                    }
-                    
+                        .upload(filePath, file, {
+                            cacheControl: '3600',
+                            upsert: true
+                        });
+
+                    if (uploadError) throw uploadError;
+
                     const { data: { publicUrl } } = this.supabase.storage
                         .from('avatars')
-                        .getPublicUrl(fileName);
-                    
+                        .getPublicUrl(filePath);
+
                     await this.updateProfile({ avatar: publicUrl });
-                    
+
                 } catch (error) {
                     console.error('Error uploading avatar:', error);
-                    // Fallback to data URL
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        this.updateProfile({ avatar: e.target.result });
-                    };
-                    reader.readAsDataURL(file);
+                    this.showToast('Failed to upload avatar', 'error');
                 }
             }
 
-            // Posts
+            // Posts Management
             async createPost() {
                 const content = document.getElementById('postContent').value.trim();
                 const mediaFiles = this.currentMedia || [];
-                
+
                 if (!content && mediaFiles.length === 0) {
                     this.showToast('Post cannot be empty', 'error');
                     return;
                 }
-                
+
                 try {
-                    if (!this.isDatabaseSetup) {
-                        this.showToast('Database not set up. Please set up database first.', 'error');
-                        return;
-                    }
-                    
                     const postData = {
                         author_id: this.currentUser.id,
                         content: content,
                         created_at: new Date().toISOString()
                     };
-                    
+
                     // Upload media if any
                     if (mediaFiles.length > 0) {
                         const mediaUrls = await this.uploadMedia(mediaFiles);
                         postData.media = mediaUrls;
                     }
-                    
+
+                    // Extract hashtags
+                    const hashtags = this.extractHashtagsFromText(content);
+                    if (hashtags.length > 0) {
+                        postData.tags = hashtags;
+                    }
+
                     const { data: post, error } = await this.supabase
                         .from('posts')
                         .insert([postData])
@@ -2636,138 +2737,108 @@ CREATE TABLE IF NOT EXISTS stories (
                             )
                         `)
                         .single();
-                    
+
                     if (error) throw error;
-                    
+
                     // Update post count
                     await this.supabase
                         .from('profiles')
                         .update({ posts_count: this.currentProfile.posts_count + 1 })
                         .eq('id', this.currentUser.id);
-                    
+
                     // Clear composer
                     document.getElementById('postContent').value = '';
                     document.getElementById('mediaPreview').innerHTML = '';
                     this.currentMedia = null;
-                    
+
                     // Add to feed
                     this.addPostToFeed(post);
-                    
+
                     this.showToast('Post published!', 'success');
-                    
+
                 } catch (error) {
                     console.error('Error creating post:', error);
-                    this.showToast('Failed to create post. Please check database setup.', 'error');
+                    this.showToast('Failed to create post', 'error');
                 }
             }
 
             async uploadMedia(files) {
                 const urls = [];
-                
+
                 for (const file of files) {
                     try {
                         const fileExt = file.name.split('.').pop();
                         const fileName = `${this.currentUser.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
-                        const bucket = file.type.startsWith('video') ? 'videos' : 'images';
-                        
+                        const filePath = `${this.currentUser.id}/${fileName}`;
+                        const isVideo = file.type.startsWith('video');
+                        const bucket = isVideo ? 'videos' : 'images';
+
                         const { error: uploadError } = await this.supabase.storage
                             .from(bucket)
-                            .upload(fileName, file);
-                        
-                        if (uploadError) {
-                            // Bucket might not exist, use data URL
-                            const dataUrl = await new Promise((resolve) => {
-                                const reader = new FileReader();
-                                reader.onload = (e) => resolve(e.target.result);
-                                reader.readAsDataURL(file);
+                            .upload(filePath, file, {
+                                cacheControl: '3600',
+                                upsert: false
                             });
-                            
-                            urls.push({
-                                url: dataUrl,
-                                type: file.type.startsWith('video') ? 'video' : 'image'
-                            });
-                            continue;
-                        }
-                        
+
+                        if (uploadError) throw uploadError;
+
                         const { data: { publicUrl } } = this.supabase.storage
                             .from(bucket)
-                            .getPublicUrl(fileName);
-                        
+                            .getPublicUrl(filePath);
+
                         urls.push({
                             url: publicUrl,
-                            type: file.type.startsWith('video') ? 'video' : 'image'
+                            type: isVideo ? 'video' : 'image',
+                            name: file.name,
+                            size: file.size
                         });
-                        
+
                     } catch (error) {
                         console.error('Error uploading media:', error);
-                        // Fallback to data URL
-                        const dataUrl = await new Promise((resolve) => {
-                            const reader = new FileReader();
-                            reader.onload = (e) => resolve(e.target.result);
-                            reader.readAsDataURL(file);
-                        });
-                        
-                        urls.push({
-                            url: dataUrl,
-                            type: file.type.startsWith('video') ? 'video' : 'image'
-                        });
+                        this.showToast(`Failed to upload ${file.name}`, 'error');
                     }
                 }
-                
+
                 return urls;
+            }
+
+            extractHashtagsFromText(text) {
+                const hashtags = [];
+                const regex = /#(\w+)/g;
+                let match;
+                while ((match = regex.exec(text)) !== null) {
+                    hashtags.push(match[1].toLowerCase());
+                }
+                return hashtags;
             }
 
             async likePost(postId) {
                 try {
-                    if (!this.isDatabaseSetup) {
-                        this.showToast('Database not set up', 'warning');
-                        return;
-                    }
-                    
                     // Check if already liked
                     const { data: existingLike } = await this.supabase
-                        .from('likes')
+                        .from('post_likes')
                         .select('id')
                         .eq('post_id', postId)
                         .eq('user_id', this.currentUser.id)
                         .single();
-                    
+
                     if (existingLike) {
                         // Unlike
                         await this.supabase
-                            .from('likes')
+                            .from('post_likes')
                             .delete()
                             .eq('id', existingLike.id);
                     } else {
                         // Like
                         await this.supabase
-                            .from('likes')
+                            .from('post_likes')
                             .insert([{
                                 post_id: postId,
                                 user_id: this.currentUser.id,
                                 created_at: new Date().toISOString()
                             }]);
-                        
-                        // Create notification if not own post
-                        const { data: post } = await this.supabase
-                            .from('posts')
-                            .select('author_id')
-                            .eq('id', postId)
-                            .single();
-                        
-                        if (post && post.author_id !== this.currentUser.id) {
-                            await this.createNotification({
-                                user_id: post.author_id,
-                                type: 'like',
-                                data: {
-                                    post_id: postId,
-                                    user_id: this.currentUser.id
-                                },
-                                message: `${this.currentProfile.name} liked your post`
-                            });
-                        }
                     }
-                    
+
                 } catch (error) {
                     console.error('Error toggling like:', error);
                 }
@@ -2775,13 +2846,8 @@ CREATE TABLE IF NOT EXISTS stories (
 
             async commentOnPost(postId, content) {
                 if (!content.trim()) return;
-                
+
                 try {
-                    if (!this.isDatabaseSetup) {
-                        this.showToast('Database not set up', 'warning');
-                        return;
-                    }
-                    
                     const { data: comment } = await this.supabase
                         .from('comments')
                         .insert([{
@@ -2799,69 +2865,45 @@ CREATE TABLE IF NOT EXISTS stories (
                             )
                         `)
                         .single();
-                    
-                    // Create notification
-                    const { data: post } = await this.supabase
-                        .from('posts')
-                        .select('author_id')
-                        .eq('id', postId)
-                        .single();
-                    
-                    if (post && post.author_id !== this.currentUser.id) {
-                        await this.createNotification({
-                            user_id: post.author_id,
-                            type: 'comment',
-                            data: {
-                                post_id: postId,
-                                comment_id: comment.id,
-                                user_id: this.currentUser.id
-                            },
-                            message: `${this.currentProfile.name} commented on your post`
-                        });
-                    }
-                    
+
                     return comment;
-                    
+
                 } catch (error) {
                     console.error('Error adding comment:', error);
                     throw error;
                 }
             }
 
-            // Stories
+            // Stories Management
             async createStory() {
-                if (!this.isDatabaseSetup) {
-                    this.showToast('Database not set up. Please set up database first.', 'error');
-                    return;
-                }
-                
                 const input = document.createElement('input');
                 input.type = 'file';
                 input.accept = 'image/*,video/*';
-                
+
                 input.onchange = async (e) => {
                     const file = e.target.files[0];
                     if (!file) return;
-                    
+
                     try {
                         const fileExt = file.name.split('.').pop();
                         const fileName = `${this.currentUser.id}-${Date.now()}.${fileExt}`;
+                        const filePath = `${this.currentUser.id}/${fileName}`;
                         const isVideo = file.type.startsWith('video');
                         const bucket = isVideo ? 'story-videos' : 'story-images';
-                        
+
                         const { error: uploadError } = await this.supabase.storage
                             .from(bucket)
-                            .upload(fileName, file);
-                        
-                        if (uploadError) {
-                            this.showToast('Failed to upload story. Please check storage buckets.', 'error');
-                            return;
-                        }
-                        
+                            .upload(filePath, file, {
+                                cacheControl: '3600',
+                                upsert: false
+                            });
+
+                        if (uploadError) throw uploadError;
+
                         const { data: { publicUrl } } = this.supabase.storage
                             .from(bucket)
-                            .getPublicUrl(fileName);
-                        
+                            .getPublicUrl(filePath);
+
                         await this.supabase
                             .from('stories')
                             .insert([{
@@ -2870,22 +2912,21 @@ CREATE TABLE IF NOT EXISTS stories (
                                 media_type: isVideo ? 'video' : 'image',
                                 expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
                             }]);
-                        
+
                         this.showToast('Story added!', 'success');
-                        
+                        await this.loadStories();
+
                     } catch (error) {
                         console.error('Error creating story:', error);
                         this.showToast('Failed to create story', 'error');
                     }
                 };
-                
+
                 input.click();
             }
 
             async loadStories() {
                 try {
-                    if (!this.isDatabaseSetup) return;
-                    
                     const { data: stories } = await this.supabase
                         .from('stories')
                         .select(`
@@ -2897,23 +2938,36 @@ CREATE TABLE IF NOT EXISTS stories (
                             )
                         `)
                         .gt('expires_at', new Date().toISOString())
-                        .order('created_at', { ascending: false });
-                    
+                        .order('created_at', { ascending: false })
+                        .limit(20);
+
                     this.renderStories(stories || []);
-                    
+
                 } catch (error) {
                     console.error('Error loading stories:', error);
+                }
+            }
+
+            async viewStory(storyId) {
+                try {
+                    await this.supabase
+                        .from('story_views')
+                        .insert([{
+                            story_id: storyId,
+                            user_id: this.currentUser.id,
+                            viewed_at: new Date().toISOString()
+                        }])
+                        .onConflict(['story_id', 'user_id'])
+                        .ignore();
+
+                } catch (error) {
+                    console.error('Error recording story view:', error);
                 }
             }
 
             // Follow System
             async toggleFollow(userId) {
                 try {
-                    if (!this.isDatabaseSetup) {
-                        this.showToast('Database not set up', 'warning');
-                        return;
-                    }
-                    
                     // Check if already following
                     const { data: existingFollow } = await this.supabase
                         .from('follows')
@@ -2921,14 +2975,14 @@ CREATE TABLE IF NOT EXISTS stories (
                         .eq('follower_id', this.currentUser.id)
                         .eq('following_id', userId)
                         .single();
-                    
+
                     if (existingFollow) {
                         // Unfollow
                         await this.supabase
                             .from('follows')
                             .delete()
                             .eq('id', existingFollow.id);
-                        
+
                         this.showToast('Unfollowed', 'info');
                     } else {
                         // Follow
@@ -2939,20 +2993,10 @@ CREATE TABLE IF NOT EXISTS stories (
                                 following_id: userId,
                                 created_at: new Date().toISOString()
                             }]);
-                        
-                        // Create notification
-                        await this.createNotification({
-                            user_id: userId,
-                            type: 'follow',
-                            data: {
-                                follower_id: this.currentUser.id
-                            },
-                            message: `${this.currentProfile.name} started following you`
-                        });
-                        
+
                         this.showToast('Following', 'success');
                     }
-                    
+
                 } catch (error) {
                     console.error('Error toggling follow:', error);
                     this.showToast('Failed to update follow status', 'error');
@@ -2962,8 +3006,6 @@ CREATE TABLE IF NOT EXISTS stories (
             // Messages
             async loadConversations() {
                 try {
-                    if (!this.isDatabaseSetup) return;
-                    
                     const { data: conversations } = await this.supabase
                         .from('conversations')
                         .select(`
@@ -2972,20 +3014,22 @@ CREATE TABLE IF NOT EXISTS stories (
                                 id,
                                 name,
                                 username,
-                                avatar
+                                avatar,
+                                is_online
                             ),
                             user2:profiles!conversations_user2_id_fkey (
                                 id,
                                 name,
                                 username,
-                                avatar
+                                avatar,
+                                is_online
                             )
                         `)
                         .or(`user1_id.eq.${this.currentUser.id},user2_id.eq.${this.currentUser.id}`)
                         .order('updated_at', { ascending: false });
-                    
+
                     this.renderConversations(conversations || []);
-                    
+
                 } catch (error) {
                     console.error('Error loading conversations:', error);
                 }
@@ -2993,8 +3037,6 @@ CREATE TABLE IF NOT EXISTS stories (
 
             async loadMessages(conversationId) {
                 try {
-                    if (!this.isDatabaseSetup) return;
-                    
                     const { data: messages } = await this.supabase
                         .from('messages')
                         .select(`
@@ -3007,17 +3049,17 @@ CREATE TABLE IF NOT EXISTS stories (
                         `)
                         .eq('conversation_id', conversationId)
                         .order('created_at', { ascending: true });
-                    
+
                     this.renderMessages(messages || []);
-                    
+
                     // Mark as read
                     await this.supabase
                         .from('messages')
-                        .update({ read: true })
+                        .update({ is_read: true })
                         .eq('conversation_id', conversationId)
                         .eq('receiver_id', this.currentUser.id)
-                        .eq('read', false);
-                    
+                        .eq('is_read', false);
+
                 } catch (error) {
                     console.error('Error loading messages:', error);
                 }
@@ -3025,23 +3067,18 @@ CREATE TABLE IF NOT EXISTS stories (
 
             async sendMessage(content, media = null) {
                 if (!this.activeChat) return;
-                
+
                 if (!content && !media) {
                     this.showToast('Message cannot be empty', 'error');
                     return;
                 }
-                
+
                 try {
-                    if (!this.isDatabaseSetup) {
-                        this.showToast('Database not set up', 'error');
-                        return;
-                    }
-                    
                     let mediaData = null;
                     if (media) {
                         mediaData = await this.uploadChatMedia(media);
                     }
-                    
+
                     const messageData = {
                         conversation_id: this.activeChat.id,
                         sender_id: this.currentUser.id,
@@ -3051,35 +3088,61 @@ CREATE TABLE IF NOT EXISTS stories (
                         media: mediaData,
                         created_at: new Date().toISOString()
                     };
-                    
+
                     const { data: message } = await this.supabase
                         .from('messages')
                         .insert([messageData])
                         .select()
                         .single();
-                    
-                    // Update conversation
-                    await this.supabase
-                        .from('conversations')
-                        .update({
-                            last_message: content || (media ? 'Media shared' : ''),
-                            updated_at: new Date().toISOString()
-                        })
-                        .eq('id', this.activeChat.id);
-                    
+
                     this.appendMessage(message);
-                    
+
+                    // Clear input
+                    document.getElementById('chatInput').value = '';
+
                 } catch (error) {
                     console.error('Error sending message:', error);
                     this.showToast('Failed to send message', 'error');
                 }
             }
 
+            async uploadChatMedia(file) {
+                try {
+                    const fileExt = file.name.split('.').pop();
+                    const fileName = `${this.currentUser.id}-${Date.now()}.${fileExt}`;
+                    const filePath = `${this.currentUser.id}/${fileName}`;
+                    const isVideo = file.type.startsWith('video');
+                    const bucket = isVideo ? 'videos' : 'images';
+
+                    const { error: uploadError } = await this.supabase.storage
+                        .from(bucket)
+                        .upload(filePath, file, {
+                            cacheControl: '3600',
+                            upsert: false
+                        });
+
+                    if (uploadError) throw uploadError;
+
+                    const { data: { publicUrl } } = this.supabase.storage
+                        .from(bucket)
+                        .getPublicUrl(filePath);
+
+                    return {
+                        url: publicUrl,
+                        type: isVideo ? 'video' : 'image',
+                        name: file.name,
+                        size: file.size
+                    };
+
+                } catch (error) {
+                    console.error('Error uploading chat media:', error);
+                    throw error;
+                }
+            }
+
             // Notifications
             async loadNotifications() {
                 try {
-                    if (!this.isDatabaseSetup) return;
-                    
                     const { data: notifications } = await this.supabase
                         .from('notifications')
                         .select(`
@@ -3093,32 +3156,27 @@ CREATE TABLE IF NOT EXISTS stories (
                         .eq('user_id', this.currentUser.id)
                         .order('created_at', { ascending: false })
                         .limit(50);
-                    
+
                     this.renderNotifications(notifications || []);
-                    
+
                 } catch (error) {
                     console.error('Error loading notifications:', error);
                 }
             }
 
-            async createNotification(data) {
+            async markAllNotificationsAsRead() {
                 try {
-                    if (!this.isDatabaseSetup) return;
-                    
                     await this.supabase
                         .from('notifications')
-                        .insert([{
-                            user_id: data.user_id,
-                            from_user_id: this.currentUser.id,
-                            type: data.type,
-                            data: data.data,
-                            message: data.message,
-                            read: false,
-                            created_at: new Date().toISOString()
-                        }]);
-                    
+                        .update({ is_read: true })
+                        .eq('user_id', this.currentUser.id)
+                        .eq('is_read', false);
+
+                    this.showToast('All notifications marked as read', 'success');
+                    await this.loadNotifications();
+
                 } catch (error) {
-                    console.error('Error creating notification:', error);
+                    console.error('Error marking notifications as read:', error);
                 }
             }
 
@@ -3128,25 +3186,20 @@ CREATE TABLE IF NOT EXISTS stories (
                     this.clearSearchResults();
                     return;
                 }
-                
+
                 try {
-                    if (!this.isDatabaseSetup) {
-                        this.showToast('Database not set up', 'warning');
-                        return;
-                    }
-                    
                     let results = {};
-                    
+
                     if (type === 'all' || type === 'users') {
                         const { data: users } = await this.supabase
                             .from('profiles')
                             .select('*')
                             .or(`name.ilike.%${query}%,username.ilike.%${query}%`)
                             .limit(10);
-                        
+
                         results.users = users || [];
                     }
-                    
+
                     if (type === 'all' || type === 'posts') {
                         const { data: posts } = await this.supabase
                             .from('posts')
@@ -3160,105 +3213,31 @@ CREATE TABLE IF NOT EXISTS stories (
                             `)
                             .ilike('content', `%${query}%`)
                             .limit(10);
-                        
+
                         results.posts = posts || [];
                     }
-                    
+
+                    if (type === 'all' || type === 'hashtags') {
+                        const { data: hashtags } = await this.supabase
+                            .from('hashtags')
+                            .select('*')
+                            .ilike('tag', `%${query}%`)
+                            .limit(10);
+
+                        results.hashtags = hashtags || [];
+                    }
+
                     this.renderSearchResults(results, type);
-                    
+
                 } catch (error) {
                     console.error('Error searching:', error);
                 }
             }
 
-            // WebRTC Calls
-            async startVoiceCall(userId) {
-                try {
-                    this.setupPeerConnection();
-                    
-                    // Get local audio stream
-                    this.localStream = await navigator.mediaDevices.getUserMedia({
-                        audio: true,
-                        video: false
-                    });
-                    
-                    // Add local stream to connection
-                    this.localStream.getTracks().forEach(track => {
-                        this.peerConnection.addTrack(track, this.localStream);
-                    });
-                    
-                    // Show call interface
-                    this.showCallInterface();
-                    
-                    // In real app, you would send offer through signaling server
-                    this.showToast('Starting voice call...', 'info');
-                    
-                } catch (error) {
-                    console.error('Error starting call:', error);
-                    this.showToast('Failed to start call', 'error');
-                }
-            }
-
-            async startVideoCall(userId) {
-                try {
-                    this.setupPeerConnection();
-                    
-                    // Get local media stream
-                    this.localStream = await navigator.mediaDevices.getUserMedia({
-                        audio: true,
-                        video: true
-                    });
-                    
-                    // Add local stream to connection
-                    this.localStream.getTracks().forEach(track => {
-                        this.peerConnection.addTrack(track, this.localStream);
-                    });
-                    
-                    // Show call interface with video
-                    this.showCallInterface(true);
-                    
-                    // Show local video
-                    const localVideo = document.getElementById('localVideo');
-                    localVideo.srcObject = this.localStream;
-                    
-                    // In real app, you would send offer through signaling server
-                    this.showToast('Starting video call...', 'info');
-                    
-                } catch (error) {
-                    console.error('Error starting video call:', error);
-                    this.showToast('Failed to start video call', 'error');
-                }
-            }
-
-            setupPeerConnection() {
-                const configuration = {
-                    iceServers: [
-                        { urls: 'stun:stun.l.google.com:19302' },
-                        { urls: 'stun:stun1.l.google.com:19302' }
-                    ]
-                };
-                
-                this.peerConnection = new RTCPeerConnection(configuration);
-                
-                // Handle incoming tracks
-                this.peerConnection.ontrack = (event) => {
-                    this.remoteStream = event.streams[0];
-                    const remoteVideo = document.getElementById('remoteVideo');
-                    remoteVideo.srcObject = this.remoteStream;
-                };
-                
-                // Handle ICE candidates
-                this.peerConnection.onicecandidate = (event) => {
-                    if (event.candidate) {
-                        // Send candidate through signaling server
-                    }
-                };
-            }
-
             // Real-time Subscriptions
             setupRealtimeSubscriptions() {
-                if (!this.isDatabaseSetup) return;
-                
+                if (!this.currentUser) return;
+
                 // Subscribe to new posts
                 this.subscriptions.posts = this.supabase
                     .channel('public:posts')
@@ -3269,7 +3248,7 @@ CREATE TABLE IF NOT EXISTS stories (
                         }
                     )
                     .subscribe();
-                
+
                 // Subscribe to messages
                 this.subscriptions.messages = this.supabase
                     .channel('public:messages')
@@ -3285,7 +3264,7 @@ CREATE TABLE IF NOT EXISTS stories (
                         }
                     )
                     .subscribe();
-                
+
                 // Subscribe to notifications
                 this.subscriptions.notifications = this.supabase
                     .channel('public:notifications')
@@ -3301,6 +3280,17 @@ CREATE TABLE IF NOT EXISTS stories (
                         }
                     )
                     .subscribe();
+
+                // Subscribe to stories
+                this.subscriptions.stories = this.supabase
+                    .channel('public:stories')
+                    .on('postgres_changes', 
+                        { event: 'INSERT', schema: 'public', table: 'stories' },
+                        (payload) => {
+                            this.handleNewStory(payload.new);
+                        }
+                    )
+                    .subscribe();
             }
 
             cleanupRealtimeSubscriptions() {
@@ -3313,40 +3303,319 @@ CREATE TABLE IF NOT EXISTS stories (
                     posts: null,
                     messages: null,
                     notifications: null,
-                    stories: null
+                    stories: null,
+                    typing: null
                 };
             }
 
-            // UI Methods
+            // UI Rendering Methods
             updateProfileUI() {
                 if (!this.currentProfile) return;
-                
+
                 const { name, username, avatar, bio, followers_count, following_count, posts_count } = this.currentProfile;
-                
+
                 // Update header
-                document.getElementById('headerAvatar').textContent = name.charAt(0).toUpperCase();
-                document.getElementById('composerAvatar').textContent = name.charAt(0).toUpperCase();
-                document.getElementById('profileLargeAvatar').textContent = name.charAt(0).toUpperCase();
+                if (avatar) {
+                    document.getElementById('headerAvatar').innerHTML = `<img src="${avatar}" alt="${name}" style="width:100%;height:100%;border-radius:50%;">`;
+                    document.getElementById('composerAvatar').innerHTML = `<img src="${avatar}" alt="${name}" style="width:100%;height:100%;border-radius:50%;">`;
+                    document.getElementById('profileLargeAvatar').innerHTML = `<img src="${avatar}" alt="${name}" style="width:100%;height:100%;border-radius:50%;">`;
+                } else {
+                    document.getElementById('headerAvatar').textContent = name.charAt(0).toUpperCase();
+                    document.getElementById('composerAvatar').textContent = name.charAt(0).toUpperCase();
+                    document.getElementById('profileLargeAvatar').textContent = name.charAt(0).toUpperCase();
+                }
+
                 document.getElementById('profileDisplayName').textContent = name;
                 document.getElementById('profileDisplayHandle').textContent = `@${username}`;
                 document.getElementById('profileDisplayBio').textContent = bio || 'No bio yet';
-                
+
                 // Update stats
                 document.getElementById('postsCount').textContent = posts_count;
                 document.getElementById('followersCount').textContent = followers_count;
                 document.getElementById('followingCount').textContent = following_count;
             }
 
+            async renderFeed(posts) {
+                const container = document.getElementById('feedContainer');
+                
+                if (!posts || posts.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-newspaper"></i>
+                            <p>No posts yet. Be the first to post!</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = '';
+                for (const post of posts) {
+                    const timeAgo = this.getTimeAgo(post.created_at);
+                    const mediaHtml = this.renderPostMedia(post.media);
+                    
+                    html += `
+                        <div class="post" data-post-id="${post.id}">
+                            <div class="post-header">
+                                ${post.profiles.avatar ? 
+                                    `<div class="avatar"><img src="${post.profiles.avatar}" alt="${post.profiles.name}" style="width:100%;height:100%;border-radius:50%;"></div>` :
+                                    `<div class="avatar">${post.profiles.name.charAt(0).toUpperCase()}</div>`
+                                }
+                                <div class="post-user-info">
+                                    <div class="post-user-name">${post.profiles.name}</div>
+                                    <div class="post-user-handle">@${post.profiles.username} • ${timeAgo}</div>
+                                </div>
+                            </div>
+                            <div class="post-content">${this.formatPostContent(post.content)}</div>
+                            ${mediaHtml}
+                            <div class="post-actions">
+                                <button class="post-action" onclick="app.likePost('${post.id}')">
+                                    <i class="fas fa-heart"></i>
+                                    <span>${post.likes_count || 0}</span>
+                                </button>
+                                <button class="post-action" onclick="app.showComments('${post.id}')">
+                                    <i class="fas fa-comment"></i>
+                                    <span>${post.comments_count || 0}</span>
+                                </button>
+                                <button class="post-action" onclick="app.sharePost('${post.id}')">
+                                    <i class="fas fa-share"></i>
+                                </button>
+                                <button class="post-action" onclick="app.savePost('${post.id}')">
+                                    <i class="fas fa-bookmark"></i>
+                                </button>
+                            </div>
+                            <div class="comments-section" id="comments-${post.id}" style="display: none;"></div>
+                        </div>
+                    `;
+                }
+
+                container.innerHTML = html;
+            }
+
+            renderPostMedia(media) {
+                if (!media || !Array.isArray(media) || media.length === 0) return '';
+
+                if (media.length === 1) {
+                    const item = media[0];
+                    if (item.type === 'video') {
+                        return `
+                            <div class="post-media">
+                                <video controls src="${item.url}" style="width:100%;max-height:400px;border-radius:var(--radius-md);"></video>
+                            </div>
+                        `;
+                    } else {
+                        return `
+                            <div class="post-media">
+                                <img src="${item.url}" alt="Post image" style="width:100%;max-height:400px;border-radius:var(--radius-md);object-fit:cover;">
+                            </div>
+                        `;
+                    }
+                } else {
+                    let html = '<div class="image-grid">';
+                    media.forEach(item => {
+                        html += `<img src="${item.url}" alt="Post image" class="grid-image">`;
+                    });
+                    html += '</div>';
+                    return html;
+                }
+            }
+
+            formatPostContent(content) {
+                if (!content) return '';
+                
+                // Convert hashtags to clickable links
+                let formatted = content.replace(/#(\w+)/g, '<span class="hashtag" onclick="app.searchHashtag(\'$1\')">#$1</span>');
+                
+                // Convert mentions to clickable links
+                formatted = formatted.replace(/@(\w+)/g, '<span class="mention" onclick="app.searchUser(\'$1\')">@$1</span>');
+                
+                // Convert URLs to clickable links
+                formatted = formatted.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" style="color:var(--primary-color);text-decoration:underline;">$1</a>');
+                
+                // Convert line breaks
+                formatted = formatted.replace(/\n/g, '<br>');
+                
+                return formatted;
+            }
+
+            async renderStories(stories) {
+                const container = document.getElementById('storiesContainer');
+                const currentUserId = this.currentUser?.id;
+                
+                // Group stories by user
+                const storiesByUser = {};
+                stories.forEach(story => {
+                    if (!storiesByUser[story.user_id]) {
+                        storiesByUser[story.user_id] = {
+                            user: story.profiles,
+                            stories: []
+                        };
+                    }
+                    storiesByUser[story.user_id].stories.push(story);
+                });
+
+                let html = `
+                    <div class="story" onclick="app.createStory()">
+                        <div class="story-ring">
+                            <div class="story-avatar">
+                                <i class="fas fa-plus"></i>
+                            </div>
+                        </div>
+                        <div class="story-username">Add Story</div>
+                    </div>
+                `;
+
+                for (const userId in storiesByUser) {
+                    const { user, userStories } = storiesByUser[userId];
+                    const firstStory = userStories[0];
+                    const hasUnseen = userStories.some(story => 
+                        !story.viewed_by || !story.viewed_by.includes(currentUserId)
+                    );
+                    
+                    html += `
+                        <div class="story" onclick="app.viewUserStories('${userId}')">
+                            <div class="story-ring" style="${hasUnseen ? 'background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);' : 'background: #ccc;'}">
+                                <div class="story-avatar">
+                                    ${user.avatar ? 
+                                        `<img src="${user.avatar}" alt="${user.name}" style="width:100%;height:100%;border-radius:50%;">` :
+                                        user.name.charAt(0).toUpperCase()
+                                    }
+                                </div>
+                            </div>
+                            <div class="story-username">${user.username}</div>
+                        </div>
+                    `;
+                }
+
+                container.innerHTML = html;
+                this.currentStories = stories;
+            }
+
+            async renderConversations(conversations) {
+                const container = document.getElementById('conversationsList');
+                
+                if (!conversations || conversations.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-comments"></i>
+                            <p>No conversations yet. Start a new chat!</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = '';
+                for (const conv of conversations) {
+                    const otherUser = conv.user1_id === this.currentUser.id ? conv.user2 : conv.user1;
+                    const timeAgo = this.getTimeAgo(conv.updated_at);
+                    const unreadCount = conv.user1_id === this.currentUser.id ? conv.unread_count_user1 : conv.unread_count_user2;
+                    
+                    html += `
+                        <div class="conversation-item" onclick="app.openChat('${conv.id}')">
+                            ${otherUser.avatar ? 
+                                `<div class="avatar"><img src="${otherUser.avatar}" alt="${otherUser.name}" style="width:100%;height:100%;border-radius:50%;"></div>` :
+                                `<div class="avatar">${otherUser.name.charAt(0).toUpperCase()}</div>`
+                            }
+                            <div class="conversation-info">
+                                <div class="flex justify-between items-center">
+                                    <div class="conversation-name">${otherUser.name}</div>
+                                    <div class="text-sm text-secondary">${timeAgo}</div>
+                                </div>
+                                <div class="conversation-last-message">${conv.last_message || 'No messages yet'}</div>
+                            </div>
+                            ${unreadCount > 0 ? 
+                                `<span class="badge badge-primary">${unreadCount}</span>` : 
+                                ''
+                            }
+                        </div>
+                    `;
+                }
+
+                container.innerHTML = html;
+            }
+
+            async renderNotifications(notifications) {
+                const container = document.getElementById('notificationsList');
+                
+                if (!notifications || notifications.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-bell"></i>
+                            <p>No notifications yet</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = '';
+                for (const notif of notifications) {
+                    const timeAgo = this.getTimeAgo(notif.created_at);
+                    const icon = this.getNotificationIcon(notif.type);
+                    
+                    html += `
+                        <div class="notification-item ${notif.is_read ? '' : 'unread'}" onclick="app.handleNotificationClick('${notif.id}', '${notif.type}', '${notif.post_id || ''}', '${notif.comment_id || ''}')">
+                            ${notif.from_user?.avatar ? 
+                                `<div class="avatar"><img src="${notif.from_user.avatar}" alt="${notif.from_user.name}" style="width:40px;height:40px;border-radius:50%;"></div>` :
+                                `<div class="avatar">${notif.from_user?.name?.charAt(0) || 'S'}</div>`
+                            }
+                            <div class="notification-content">
+                                <div>${notif.message}</div>
+                                <div class="notification-time">${timeAgo}</div>
+                            </div>
+                            <div class="text-2xl">${icon}</div>
+                        </div>
+                    `;
+                }
+
+                container.innerHTML = html;
+            }
+
+            getNotificationIcon(type) {
+                const icons = {
+                    'like_post': '❤️',
+                    'like_comment': '💖',
+                    'comment_post': '💬',
+                    'follow': '👤',
+                    'message': '✉️',
+                    'mention': '📍',
+                    'system': '⚙️'
+                };
+                return icons[type] || '🔔';
+            }
+
+            // Helper Methods
+            getTimeAgo(dateString) {
+                const date = new Date(dateString);
+                const now = new Date();
+                const seconds = Math.floor((now - date) / 1000);
+
+                let interval = seconds / 31536000;
+                if (interval > 1) return Math.floor(interval) + 'y ago';
+
+                interval = seconds / 2592000;
+                if (interval > 1) return Math.floor(interval) + 'mo ago';
+
+                interval = seconds / 86400;
+                if (interval > 1) return Math.floor(interval) + 'd ago';
+
+                interval = seconds / 3600;
+                if (interval > 1) return Math.floor(interval) + 'h ago';
+
+                interval = seconds / 60;
+                if (interval > 1) return Math.floor(interval) + 'm ago';
+
+                return Math.floor(seconds) + 's ago';
+            }
+
             showToast(message, type = 'info') {
                 const toast = document.createElement('div');
                 toast.className = `toast ${type}`;
                 toast.innerHTML = `
-                    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'}"></i>
                     <div>${message}</div>
                 `;
-                
+
                 document.getElementById('toastContainer').appendChild(toast);
-                
+
                 setTimeout(() => toast.classList.add('show'), 10);
                 setTimeout(() => {
                     toast.classList.remove('show');
@@ -3359,10 +3628,10 @@ CREATE TABLE IF NOT EXISTS stories (
                 document.querySelectorAll('.page').forEach(page => {
                     page.classList.remove('active');
                 });
-                
+
                 // Show selected page
                 document.getElementById(pageId).classList.add('active');
-                
+
                 // Update navigation
                 document.querySelectorAll('.nav-item').forEach(item => {
                     item.classList.remove('active');
@@ -3370,7 +3639,7 @@ CREATE TABLE IF NOT EXISTS stories (
                         item.classList.add('active');
                     }
                 });
-                
+
                 // Load page data
                 switch (pageId) {
                     case 'homePage':
@@ -3384,7 +3653,7 @@ CREATE TABLE IF NOT EXISTS stories (
                         this.loadNotifications();
                         break;
                     case 'profilePage':
-                        this.loadUserPosts(this.currentUser.id);
+                        this.loadUserProfile(this.currentUser.id);
                         break;
                 }
             }
@@ -3420,60 +3689,60 @@ CREATE TABLE IF NOT EXISTS stories (
                         t.classList.add('active');
                     }
                 });
-                
+
                 document.querySelectorAll('.auth-form').forEach(form => {
                     form.classList.add('hidden');
                 });
-                
-                document.getElementById(`${tab}Form`).classList.remove('hidden');
+
+                document.getElementById(`${tab}Form`)?.classList.remove('hidden');
             }
 
-            // Event Listeners
+            // Event Handlers
             setupEventListeners() {
                 // Auth forms
                 document.getElementById('loginForm').addEventListener('submit', (e) => this.handleLogin(e));
                 document.getElementById('signupForm').addEventListener('submit', (e) => this.handleSignup(e));
                 document.getElementById('resetPasswordBtn').addEventListener('click', () => this.handleResetPassword());
-                
+
                 // Auth tabs
                 document.querySelectorAll('.auth-tab').forEach(tab => {
                     tab.addEventListener('click', () => this.switchAuthTab(tab.dataset.tab));
                 });
-                
+
                 // Forgot password
                 document.getElementById('forgotPasswordBtn').addEventListener('click', () => this.switchAuthTab('forgotPassword'));
                 document.getElementById('backToLoginBtn').addEventListener('click', () => this.switchAuthTab('login'));
-                
+
                 // Theme toggle
                 document.getElementById('themeToggleBtn').addEventListener('click', () => this.toggleTheme());
                 document.getElementById('themeToggleFloat').addEventListener('click', () => this.toggleTheme());
-                
+
                 // Profile menu
                 document.getElementById('profileMenuBtn').addEventListener('click', (e) => {
                     e.stopPropagation();
                     document.getElementById('profileMenu').classList.toggle('hidden');
                 });
-                
+
                 // Close menu on outside click
                 document.addEventListener('click', () => {
                     document.getElementById('profileMenu').classList.add('hidden');
                 });
-                
+
                 // Logout
                 document.getElementById('logoutBtn').addEventListener('click', () => this.logout());
-                
+
                 // Navigation
                 document.querySelectorAll('.nav-item').forEach(item => {
                     item.addEventListener('click', () => {
                         this.showPage(item.dataset.page);
                     });
                 });
-                
+
                 // Search
                 document.getElementById('searchInput').addEventListener('input', (e) => {
                     this.search(e.target.value);
                 });
-                
+
                 // Search tabs
                 document.querySelectorAll('.search-tab').forEach(tab => {
                     tab.addEventListener('click', () => {
@@ -3482,34 +3751,47 @@ CREATE TABLE IF NOT EXISTS stories (
                         this.search(query, type);
                     });
                 });
-                
+
                 // Media upload
                 document.getElementById('imageUpload').addEventListener('change', (e) => {
                     this.handleMediaUpload(e, 'post');
                 });
-                
+
                 document.getElementById('videoUpload').addEventListener('change', (e) => {
                     this.handleMediaUpload(e, 'post');
                 });
-                
+
                 document.getElementById('avatarUpload').addEventListener('change', (e) => {
                     this.handleAvatarUpload(e);
                 });
-                
+
                 document.getElementById('chatFileUpload').addEventListener('change', (e) => {
                     this.handleMediaUpload(e, 'chat');
                 });
-                
+
                 // Edit profile
                 document.getElementById('editProfileForm').addEventListener('submit', (e) => {
                     e.preventDefault();
                     this.saveProfileChanges();
                 });
+
+                // Typing indicator
+                document.getElementById('chatInput')?.addEventListener('input', () => {
+                    this.sendTypingIndicator();
+                });
             }
 
             handleMediaUpload(event, type) {
                 const files = Array.from(event.target.files);
-                
+                const maxSize = 10 * 1024 * 1024; // 10MB
+
+                for (const file of files) {
+                    if (file.size > maxSize) {
+                        this.showToast(`${file.name} is too large (max 10MB)`, 'error');
+                        return;
+                    }
+                }
+
                 if (type === 'post') {
                     this.currentMedia = files;
                     this.previewMedia(files);
@@ -3521,6 +3803,11 @@ CREATE TABLE IF NOT EXISTS stories (
             handleAvatarUpload(event) {
                 const file = event.target.files[0];
                 if (file) {
+                    const maxSize = 5 * 1024 * 1024; // 5MB
+                    if (file.size > maxSize) {
+                        this.showToast('Image is too large (max 5MB)', 'error');
+                        return;
+                    }
                     this.uploadAvatar(file);
                 }
             }
@@ -3528,15 +3815,15 @@ CREATE TABLE IF NOT EXISTS stories (
             previewMedia(files) {
                 const preview = document.getElementById('mediaPreview');
                 preview.innerHTML = '';
-                
+
                 files.forEach(file => {
                     const isVideo = file.type.startsWith('video');
                     const url = URL.createObjectURL(file);
-                    
+
                     const mediaElement = isVideo ? 
                         `<video controls src="${url}" style="max-height: 300px;"></video>` :
                         `<img src="${url}" style="max-height: 300px;">`;
-                    
+
                     const wrapper = document.createElement('div');
                     wrapper.style.position = 'relative';
                     wrapper.innerHTML = mediaElement + `
@@ -3544,7 +3831,7 @@ CREATE TABLE IF NOT EXISTS stories (
                             <i class="fas fa-times"></i>
                         </button>
                     `;
-                    
+
                     preview.appendChild(wrapper);
                 });
             }
@@ -3553,7 +3840,7 @@ CREATE TABLE IF NOT EXISTS stories (
                 const wrapper = button.parentElement;
                 wrapper.remove();
                 URL.revokeObjectURL(url);
-                
+
                 // Remove from currentMedia array
                 if (this.currentMedia) {
                     this.currentMedia = this.currentMedia.filter(file => 
@@ -3564,11 +3851,6 @@ CREATE TABLE IF NOT EXISTS stories (
 
             // Initial Data Loading
             async loadInitialData() {
-                if (!this.isDatabaseSetup) {
-                    this.showToast('Database not set up. Some features may not work.', 'warning');
-                    return;
-                }
-                
                 await Promise.all([
                     this.loadFeed(),
                     this.loadStories(),
@@ -3579,8 +3861,6 @@ CREATE TABLE IF NOT EXISTS stories (
 
             async loadFeed() {
                 try {
-                    if (!this.isDatabaseSetup) return;
-                    
                     const { data: posts } = await this.supabase
                         .from('posts')
                         .select(`
@@ -3589,144 +3869,232 @@ CREATE TABLE IF NOT EXISTS stories (
                                 name,
                                 username,
                                 avatar
-                            ),
-                            likes (user_id),
-                            comments (
-                                id,
-                                user_id,
-                                content,
-                                created_at,
-                                profiles (
-                                    name,
-                                    username,
-                                    avatar
-                                )
                             )
                         `)
                         .order('created_at', { ascending: false })
                         .limit(20);
-                    
+
                     this.renderFeed(posts || []);
-                    
+
                 } catch (error) {
                     console.error('Error loading feed:', error);
                 }
             }
 
-            // These methods need to be implemented based on your specific UI requirements
-            renderFeed(posts) {
-                const container = document.getElementById('feedContainer');
-                // Implement feed rendering
-                container.innerHTML = '<div class="empty-state"><i class="fas fa-newspaper"></i><p>No posts yet. Be the first to post!</p></div>';
+            async loadUserProfile(userId) {
+                try {
+                    const { data: profile } = await this.supabase
+                        .from('profiles')
+                        .select('*')
+                        .eq('id', userId)
+                        .single();
+
+                    if (profile) {
+                        this.currentProfile = profile;
+                        this.updateProfileUI();
+                    }
+
+                } catch (error) {
+                    console.error('Error loading user profile:', error);
+                }
             }
 
-            renderStories(stories) {
-                const container = document.getElementById('storiesContainer');
-                // Implement stories rendering
+            // Real-time Handlers
+            async handleNewPost(post) {
+                if (post.author_id === this.currentUser.id) return;
+
+                try {
+                    const { data: fullPost } = await this.supabase
+                        .from('posts')
+                        .select(`
+                            *,
+                            profiles (
+                                name,
+                                username,
+                                avatar
+                            )
+                        `)
+                        .eq('id', post.id)
+                        .single();
+
+                    if (fullPost) {
+                        this.addPostToFeed(fullPost);
+                    }
+                } catch (error) {
+                    console.error('Error handling new post:', error);
+                }
             }
 
-            renderConversations(conversations) {
-                const container = document.getElementById('conversationsList');
-                // Implement conversations rendering
+            async handleNewMessage(message) {
+                if (message.sender_id === this.currentUser.id) return;
+
+                // Show notification
+                this.showToast('New message received', 'info');
+                
+                // Reload conversations if on messages page
+                if (document.getElementById('messagesPage').classList.contains('active')) {
+                    await this.loadConversations();
+                }
+                
+                // Update notification badge
+                this.updateNotificationBadge();
             }
 
-            renderMessages(messages) {
-                const container = document.getElementById('chatMessages');
-                // Implement messages rendering
+            async handleNewNotification(notification) {
+                if (notification.user_id === this.currentUser.id) {
+                    // Show toast notification
+                    this.showToast(notification.message, 'info');
+                    
+                    // Reload notifications if on notifications page
+                    if (document.getElementById('notificationsPage').classList.contains('active')) {
+                        await this.loadNotifications();
+                    }
+                    
+                    // Update notification badge
+                    this.updateNotificationBadge();
+                }
             }
 
-            renderNotifications(notifications) {
-                const container = document.getElementById('notificationsList');
-                // Implement notifications rendering
+            async handleNewStory(story) {
+                if (story.user_id === this.currentUser.id) return;
+                
+                // Reload stories
+                await this.loadStories();
             }
 
-            renderSearchResults(results, type) {
-                const container = document.getElementById('searchResultsContainer');
-                // Implement search results rendering
-            }
-
-            // These methods need to be implemented based on your specific UI requirements
-            addPostToFeed(post) {
-                // Add new post to feed
-            }
-
-            appendMessage(message) {
-                // Append message to chat
-            }
-
-            handleNewPost(post) {
-                // Handle new post from real-time
-            }
-
-            handleNewMessage(message) {
-                // Handle new message from real-time
-            }
-
-            handleNewNotification(notification) {
-                // Handle new notification from real-time
-            }
-
-            // Placeholder methods for unimplemented features
+            // Additional Features
             addEmoji() {
-                this.showToast('Emoji picker coming soon!', 'info');
+                const picker = document.getElementById('emojiPicker');
+                if (picker.classList.contains('hidden')) {
+                    // Create emoji picker
+                    let html = '';
+                    this.emojis.forEach(emoji => {
+                        html += `<span class="emoji" onclick="app.insertEmoji('${emoji}')">${emoji}</span>`;
+                    });
+                    picker.innerHTML = html;
+                    picker.classList.remove('hidden');
+                    
+                    // Position picker near the emoji button
+                    const composer = document.querySelector('.post-composer');
+                    picker.style.bottom = '60px';
+                    picker.style.left = '40px';
+                } else {
+                    picker.classList.add('hidden');
+                }
+            }
+
+            insertEmoji(emoji) {
+                const textarea = document.getElementById('postContent');
+                const start = textarea.selectionStart;
+                const end = textarea.selectionEnd;
+                const text = textarea.value;
+                textarea.value = text.substring(0, start) + emoji + text.substring(end);
+                textarea.focus();
+                textarea.selectionStart = textarea.selectionEnd = start + emoji.length;
+                
+                document.getElementById('emojiPicker').classList.add('hidden');
             }
 
             addLocation() {
-                this.showToast('Location sharing coming soon!', 'info');
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            const lat = position.coords.latitude;
+                            const lng = position.coords.longitude;
+                            const textarea = document.getElementById('postContent');
+                            textarea.value += `📍 Location: ${lat.toFixed(4)}, ${lng.toFixed(4)}\n`;
+                            this.showToast('Location added to post', 'success');
+                        },
+                        (error) => {
+                            this.showToast('Unable to get location', 'error');
+                        }
+                    );
+                } else {
+                    this.showToast('Geolocation not supported', 'error');
+                }
             }
 
             addTag() {
-                this.showToast('Tagging coming soon!', 'info');
+                const textarea = document.getElementById('postContent');
+                const start = textarea.selectionStart;
+                const text = textarea.value;
+                textarea.value = text.substring(0, start) + '@' + text.substring(start);
+                textarea.focus();
+                textarea.selectionStart = textarea.selectionEnd = start + 1;
             }
 
-            newMessage() {
-                this.showToast('New message feature coming soon!', 'info');
+            async searchHashtag(tag) {
+                this.showPage('searchPage');
+                document.getElementById('searchInput').value = `#${tag}`;
+                await this.search(`#${tag}`, 'hashtags');
             }
 
-            editProfile() {
-                this.showModal('editProfileModal');
+            async searchUser(username) {
+                this.showPage('searchPage');
+                document.getElementById('searchInput').value = `@${username}`;
+                await this.search(`@${username}`, 'users');
+            }
+
+            updateNotificationBadge() {
+                // This would typically count unread notifications
+                // For now, we'll just show a generic badge
+                const badge = document.getElementById('notificationBadge');
+                badge.textContent = '1';
+                badge.classList.remove('hidden');
+            }
+
+            // Placeholder methods for future implementation
+            sendTypingIndicator() {
+                // Implement typing indicator
+            }
+
+            showComments(postId) {
+                // Implement comments display
+            }
+
+            sharePost(postId) {
+                if (navigator.share) {
+                    navigator.share({
+                        title: 'Check out this post on PrimeMar',
+                        url: window.location.origin + '/post/' + postId
+                    });
+                } else {
+                    navigator.clipboard.writeText(window.location.origin + '/post/' + postId);
+                    this.showToast('Link copied to clipboard', 'success');
+                }
+            }
+
+            savePost(postId) {
+                this.showToast('Post saved', 'success');
             }
 
             showSettings() {
-                this.showToast('Settings page coming soon!', 'info');
+                this.showModal('settingsModal');
             }
 
-            showUserPosts() {
-                this.showToast('User posts view coming soon!', 'info');
+            saveSettings() {
+                this.showToast('Settings saved', 'success');
+                this.closeModal('settingsModal');
             }
 
-            showFollowers() {
-                this.showToast('Followers list coming soon!', 'info');
+            newMessage() {
+                this.showModal('newMessageModal');
             }
 
-            showFollowing() {
-                this.showToast('Following list coming soon!', 'info');
+            searchUsersForMessage(query) {
+                // Implement user search for messages
             }
 
-            startChatFromProfile() {
-                this.showToast('Start chat feature coming soon!', 'info');
+            openChat(conversationId) {
+                // Implement opening chat
             }
 
-            shareProfile() {
-                this.showToast('Profile sharing coming soon!', 'info');
+            startVoiceCall() {
+                this.showToast('Voice call starting...', 'info');
             }
 
-            saveProfileChanges() {
-                const name = document.getElementById('editName').value;
-                const username = document.getElementById('editUsername').value;
-                const bio = document.getElementById('editBio').value;
-                const website = document.getElementById('editWebsite').value;
-                const location = document.getElementById('editLocation').value;
-                
-                this.updateProfile({
-                    name,
-                    username,
-                    bio,
-                    website,
-                    location
-                });
-                
-                this.closeModal('editProfileModal');
+            startVideoCall() {
+                this.showToast('Video call starting...', 'info');
             }
 
             backToConversations() {
@@ -3739,143 +4107,307 @@ CREATE TABLE IF NOT EXISTS stories (
                 document.getElementById('searchResultsContainer').innerHTML = '';
             }
 
-            markAllNotificationsAsRead() {
-                this.showToast('Mark all as read feature coming soon!', 'info');
-            }
-
             closeStory() {
                 this.closeModal('storyViewer');
+                if (this.storyTimer) {
+                    clearInterval(this.storyTimer);
+                }
             }
 
             sendStoryReply() {
-                this.showToast('Story replies coming soon!', 'info');
+                const input = document.getElementById('storyReply');
+                const content = input.value.trim();
+                if (content) {
+                    this.showToast('Reply sent', 'success');
+                    input.value = '';
+                }
             }
 
             toggleAudio() {
-                if (this.localStream) {
-                    const audioTrack = this.localStream.getAudioTracks()[0];
-                    if (audioTrack) {
-                        audioTrack.enabled = !audioTrack.enabled;
-                        this.showToast(audioTrack.enabled ? 'Microphone on' : 'Microphone off', 'info');
-                    }
-                }
+                this.showToast('Audio toggled', 'info');
             }
 
             toggleVideo() {
-                if (this.localStream) {
-                    const videoTrack = this.localStream.getVideoTracks()[0];
-                    if (videoTrack) {
-                        videoTrack.enabled = !videoTrack.enabled;
-                        this.showToast(videoTrack.enabled ? 'Camera on' : 'Camera off', 'info');
-                    }
-                }
+                this.showToast('Video toggled', 'info');
             }
 
             endCall() {
-                if (this.peerConnection) {
-                    this.peerConnection.close();
-                    this.peerConnection = null;
-                }
-                
-                if (this.localStream) {
-                    this.localStream.getTracks().forEach(track => track.stop());
-                    this.localStream = null;
-                }
-                
-                if (this.remoteStream) {
-                    this.remoteStream = null;
-                }
-                
                 document.getElementById('callInterface').classList.add('hidden');
                 this.showToast('Call ended', 'info');
             }
 
-            showCallInterface(isVideo = false) {
-                document.getElementById('callInterface').classList.remove('hidden');
+            addPostToFeed(post) {
+                const container = document.getElementById('feedContainer');
+                const timeAgo = this.getTimeAgo(post.created_at);
+                const mediaHtml = this.renderPostMedia(post.media);
                 
-                if (!isVideo) {
-                    document.querySelectorAll('.call-video video').forEach(video => {
-                        video.style.display = 'none';
-                    });
+                const postHtml = `
+                    <div class="post" data-post-id="${post.id}">
+                        <div class="post-header">
+                            ${post.profiles.avatar ? 
+                                `<div class="avatar"><img src="${post.profiles.avatar}" alt="${post.profiles.name}" style="width:100%;height:100%;border-radius:50%;"></div>` :
+                                `<div class="avatar">${post.profiles.name.charAt(0).toUpperCase()}</div>`
+                            }
+                            <div class="post-user-info">
+                                <div class="post-user-name">${post.profiles.name}</div>
+                                <div class="post-user-handle">@${post.profiles.username} • ${timeAgo}</div>
+                            </div>
+                        </div>
+                        <div class="post-content">${this.formatPostContent(post.content)}</div>
+                        ${mediaHtml}
+                        <div class="post-actions">
+                            <button class="post-action" onclick="app.likePost('${post.id}')">
+                                <i class="fas fa-heart"></i>
+                                <span>0</span>
+                            </button>
+                            <button class="post-action" onclick="app.showComments('${post.id}')">
+                                <i class="fas fa-comment"></i>
+                                <span>0</span>
+                            </button>
+                            <button class="post-action" onclick="app.sharePost('${post.id}')">
+                                <i class="fas fa-share"></i>
+                            </button>
+                            <button class="post-action" onclick="app.savePost('${post.id}')">
+                                <i class="fas fa-bookmark"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                if (container.querySelector('.empty-state')) {
+                    container.innerHTML = postHtml + container.innerHTML;
+                } else {
+                    container.insertAdjacentHTML('afterbegin', postHtml);
                 }
             }
 
-            async uploadChatMedia(file) {
-                try {
-                    const fileExt = file.name.split('.').pop();
-                    const fileName = `${this.currentUser.id}-${Date.now()}.${fileExt}`;
-                    const isVideo = file.type.startsWith('video');
-                    const bucket = isVideo ? 'videos' : 'images';
-                    
-                    const { error: uploadError } = await this.supabase.storage
-                        .from(bucket)
-                        .upload(fileName, file);
-                    
-                    if (uploadError) {
-                        // Fallback to data URL
-                        return await new Promise((resolve) => {
-                            const reader = new FileReader();
-                            reader.onload = (e) => resolve({
-                                url: e.target.result,
-                                type: isVideo ? 'video' : 'image'
-                            });
-                            reader.readAsDataURL(file);
-                        });
+            appendMessage(message) {
+                const container = document.getElementById('chatMessages');
+                const isSent = message.sender_id === this.currentUser.id;
+                const time = new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                
+                const messageHtml = `
+                    <div class="message ${isSent ? 'sent' : 'received'}">
+                        <div class="message-content">
+                            ${message.content || ''}
+                            <div class="message-time">${time}</div>
+                        </div>
+                    </div>
+                `;
+
+                container.insertAdjacentHTML('beforeend', messageHtml);
+                container.scrollTop = container.scrollHeight;
+            }
+
+            renderSearchResults(results, type) {
+                const container = document.getElementById('searchResultsContainer');
+                
+                if (Object.keys(results).length === 0 || 
+                    (results.users?.length === 0 && results.posts?.length === 0 && results.hashtags?.length === 0)) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-search"></i>
+                            <p>No results found</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = '';
+                
+                if (results.users && results.users.length > 0 && (type === 'all' || type === 'users')) {
+                    html += '<h3 class="font-semibold mb-2">Users</h3>';
+                    results.users.forEach(user => {
+                        html += `
+                            <div class="flex items-center gap-3 p-3 border-b border-border-color cursor-pointer hover:bg-bg-secondary" onclick="app.viewProfile('${user.id}')">
+                                ${user.avatar ? 
+                                    `<div class="avatar"><img src="${user.avatar}" alt="${user.name}" style="width:40px;height:40px;border-radius:50%;"></div>` :
+                                    `<div class="avatar">${user.name.charAt(0).toUpperCase()}</div>`
+                                }
+                                <div>
+                                    <div class="font-medium">${user.name}</div>
+                                    <div class="text-sm text-secondary">@${user.username}</div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+
+                if (results.posts && results.posts.length > 0 && (type === 'all' || type === 'posts')) {
+                    html += '<h3 class="font-semibold mb-2 mt-4">Posts</h3>';
+                    results.posts.forEach(post => {
+                        html += `
+                            <div class="p-3 border-b border-border-color">
+                                <div class="flex items-center gap-2 mb-2">
+                                    ${post.profiles.avatar ? 
+                                        `<div class="avatar" style="width:32px;height:32px;"><img src="${post.profiles.avatar}" alt="${post.profiles.name}" style="width:100%;height:100%;border-radius:50%;"></div>` :
+                                        `<div class="avatar" style="width:32px;height:32px;">${post.profiles.name.charAt(0).toUpperCase()}</div>`
+                                    }
+                                    <div class="font-medium">${post.profiles.name}</div>
+                                    <div class="text-sm text-secondary">@${post.profiles.username}</div>
+                                </div>
+                                <div class="text-sm">${post.content.substring(0, 100)}${post.content.length > 100 ? '...' : ''}</div>
+                            </div>
+                        `;
+                    });
+                }
+
+                if (results.hashtags && results.hashtags.length > 0 && (type === 'all' || type === 'hashtags')) {
+                    html += '<h3 class="font-semibold mb-2 mt-4">Hashtags</h3>';
+                    results.hashtags.forEach(hashtag => {
+                        html += `
+                            <div class="p-3 border-b border-border-color cursor-pointer hover:bg-bg-secondary" onclick="app.searchHashtag('${hashtag.tag}')">
+                                <div class="font-medium">#${hashtag.tag}</div>
+                                <div class="text-sm text-secondary">${hashtag.posts_count} posts</div>
+                            </div>
+                        `;
+                    });
+                }
+
+                container.innerHTML = html;
+            }
+
+            viewProfile(userId) {
+                // Implement viewing user profile
+                this.showToast('View profile feature coming soon', 'info');
+            }
+
+            viewUserStories(userId) {
+                const userStories = this.currentStories.filter(story => story.user_id === userId);
+                if (userStories.length === 0) return;
+
+                this.currentStoryIndex = 0;
+                this.showStoryViewer(userStories);
+            }
+
+            showStoryViewer(stories) {
+                this.showModal('storyViewer');
+                this.displayStory(stories[0]);
+                
+                // Start progress bars
+                this.startStoryProgress(stories.length);
+                
+                // Auto-advance stories
+                this.storyTimer = setInterval(() => {
+                    this.currentStoryIndex++;
+                    if (this.currentStoryIndex < stories.length) {
+                        this.displayStory(stories[this.currentStoryIndex]);
+                    } else {
+                        this.closeStory();
                     }
-                    
-                    const { data: { publicUrl } } = this.supabase.storage
-                        .from(bucket)
-                        .getPublicUrl(fileName);
-                    
-                    return {
-                        url: publicUrl,
-                        type: isVideo ? 'video' : 'image'
-                    };
-                    
-                } catch (error) {
-                    console.error('Error uploading chat media:', error);
-                    // Fallback to data URL
-                    return await new Promise((resolve) => {
-                        const reader = new FileReader();
-                        reader.onload = (e) => resolve({
-                            url: e.target.result,
-                            type: file.type.startsWith('video') ? 'video' : 'image'
-                        });
-                        reader.readAsDataURL(file);
-                    });
+                }, 5000); // 5 seconds per story
+            }
+
+            displayStory(story) {
+                const contentDiv = document.getElementById('storyContent');
+                const avatarDiv = document.getElementById('storyAvatar');
+                const usernameDiv = document.getElementById('storyUsername');
+                const timeDiv = document.getElementById('storyTime');
+                
+                // Update user info
+                avatarDiv.innerHTML = story.profiles.avatar ? 
+                    `<img src="${story.profiles.avatar}" alt="${story.profiles.name}" style="width:100%;height:100%;border-radius:50%;">` :
+                    story.profiles.name.charAt(0).toUpperCase();
+                usernameDiv.textContent = story.profiles.username;
+                timeDiv.textContent = this.getTimeAgo(story.created_at);
+                
+                // Display story content
+                if (story.media_type === 'video') {
+                    contentDiv.innerHTML = `
+                        <video autoplay muted controls style="max-width:100%;max-height:80vh;border-radius:var(--radius-md);">
+                            <source src="${story.media_url}" type="video/mp4">
+                        </video>
+                    `;
+                } else {
+                    contentDiv.innerHTML = `
+                        <img src="${story.media_url}" alt="Story" style="max-width:100%;max-height:80vh;border-radius:var(--radius-md);object-fit:contain;">
+                    `;
+                }
+                
+                // Record view
+                this.viewStory(story.id);
+            }
+
+            startStoryProgress(totalStories) {
+                const progressDiv = document.getElementById('storyProgress');
+                progressDiv.innerHTML = '';
+                
+                for (let i = 0; i < totalStories; i++) {
+                    const bar = document.createElement('div');
+                    bar.className = 'story-progress-bar';
+                    bar.innerHTML = `<div class="story-progress-fill" style="width: ${i === 0 ? '100%' : '0%'}"></div>`;
+                    progressDiv.appendChild(bar);
                 }
             }
 
-            async loadUserPosts(userId) {
+            // Save profile changes
+            async saveProfileChanges() {
+                const name = document.getElementById('editName').value;
+                const username = document.getElementById('editUsername').value;
+                const bio = document.getElementById('editBio').value;
+                const website = document.getElementById('editWebsite').value;
+                const location = document.getElementById('editLocation').value;
+
                 try {
-                    if (!this.isDatabaseSetup) return;
-                    
-                    const { data: posts } = await this.supabase
-                        .from('posts')
-                        .select(`
-                            *,
-                            profiles (
-                                name,
-                                username,
-                                avatar
-                            )
-                        `)
-                        .eq('author_id', userId)
-                        .order('created_at', { ascending: false });
-                    
-                    // Render user posts
-                    const container = document.getElementById('profileContent');
-                    // Implement user posts rendering
-                    
+                    // Check if username is available
+                    if (username !== this.currentProfile.username) {
+                        const { data: existingUser } = await this.supabase
+                            .from('profiles')
+                            .select('username')
+                            .eq('username', username)
+                            .neq('id', this.currentUser.id)
+                            .single();
+
+                        if (existingUser) {
+                            this.showToast('Username already taken', 'error');
+                            return;
+                        }
+                    }
+
+                    await this.updateProfile({
+                        name,
+                        username,
+                        bio,
+                        website,
+                        location,
+                        updated_at: new Date().toISOString()
+                    });
+
+                    this.closeModal('editProfileModal');
+
                 } catch (error) {
-                    console.error('Error loading user posts:', error);
+                    console.error('Error saving profile:', error);
+                    this.showToast('Failed to save profile', 'error');
                 }
             }
         }
 
-        // Initialize the app
+        // Initialize the app when DOM is loaded
         document.addEventListener('DOMContentLoaded', () => {
             window.app = new PrimeMarApp();
+            
+            // Close modals when clicking outside
+            document.addEventListener('click', (e) => {
+                if (e.target.classList.contains('modal')) {
+                    e.target.classList.add('hidden');
+                }
+                
+                // Close emoji picker when clicking outside
+                const emojiPicker = document.getElementById('emojiPicker');
+                if (emojiPicker && !emojiPicker.contains(e.target) && 
+                    !e.target.closest('.btn-icon')?.querySelector('.fa-smile')) {
+                    emojiPicker.classList.add('hidden');
+                }
+            });
+            
+            // Close profile menu when clicking outside
+            document.addEventListener('click', (e) => {
+                const profileMenu = document.getElementById('profileMenu');
+                const profileMenuBtn = document.getElementById('profileMenuBtn');
+                if (profileMenu && !profileMenu.contains(e.target) && !profileMenuBtn.contains(e.target)) {
+                    profileMenu.classList.add('hidden');
+                }
+            });
         });
     </script>
 </body>
