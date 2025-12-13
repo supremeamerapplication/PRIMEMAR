@@ -3,20 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SocialSphere - Real Social Network</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <title>PrimeMar - Social Media</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
-            --twitter-blue: #1DA1F2;
-            --instagram-pink: #E1306C;
-            --facebook-blue: #1877F2;
-            --whatsapp-green: #25D366;
-            --dark-bg: #000000;
-            --dark-card: #151515;
-            --dark-border: #333333;
-            --text-light: #FFFFFF;
-            --text-gray: #71767B;
+            --primary-color: #ff9800;
+            --secondary-color: #fdc500;
+            --accent-color: #ff3333;
+            --dark-bg: #111;
+            --light-bg: #fffde4;
+            --text-dark: #fff;
+            --text-light: #333;
+            --card-bg-dark: rgba(30, 30, 40, 0.95);
+            --card-bg-light: rgba(255,255,255,0.90);
         }
 
         * {
@@ -26,285 +26,400 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: var(--dark-bg);
+            font-family: 'Montserrat', Arial, sans-serif;
+            background: linear-gradient(135deg, var(--dark-bg) 70%, var(--primary-color) 100%);
+            color: var(--text-dark);
+            min-height: 100vh;
+            padding-bottom: 80px;
+            transition: all 0.3s ease;
+        }
+
+        body.light-mode {
+            background: linear-gradient(135deg, var(--light-bg) 60%, #f7b733 100%);
             color: var(--text-light);
-            height: 100vh;
-            overflow-x: hidden;
         }
 
-        /* Auth Page */
-        .auth-page {
-            display: flex;
-            height: 100vh;
-            background: linear-gradient(135deg, var(--twitter-blue), var(--instagram-pink));
-        }
-
-        .auth-left {
-            flex: 1;
+        /* Auth Modal */
+        .auth-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 2rem;
+            z-index: 1000;
+            padding: 20px;
         }
 
-        .auth-box {
-            background: var(--dark-card);
+        .auth-modal.hidden {
+            display: none;
+        }
+
+        .auth-modal-content {
+            background: var(--card-bg-dark);
+            padding: 0;
             border-radius: 20px;
-            padding: 3rem;
+            max-width: 450px;
             width: 100%;
-            max-width: 400px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-        }
-
-        .auth-title {
-            font-size: 2.5rem;
-            font-weight: 800;
-            margin-bottom: 0.5rem;
-            background: linear-gradient(90deg, var(--twitter-blue), var(--instagram-pink));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .auth-subtitle {
-            color: var(--text-gray);
-            margin-bottom: 2rem;
-        }
-
-        .auth-tabs {
-            display: flex;
-            gap: 0.5rem;
-            margin-bottom: 2rem;
-            border-bottom: 1px solid var(--dark-border);
-            padding-bottom: 1rem;
-        }
-
-        .auth-tab {
-            flex: 1;
-            padding: 0.75rem;
-            background: none;
-            border: none;
-            color: var(--text-gray);
-            font-weight: 600;
-            cursor: pointer;
-            border-bottom: 3px solid transparent;
-            transition: all 0.3s;
-        }
-
-        .auth-tab.active {
-            color: var(--twitter-blue);
-            border-bottom-color: var(--twitter-blue);
-        }
-
-        .auth-form {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-
-        .auth-input {
-            padding: 1rem;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--dark-border);
-            border-radius: 10px;
-            color: var(--text-light);
-            font-size: 1rem;
-            transition: all 0.3s;
-        }
-
-        .auth-input:focus {
-            outline: none;
-            border-color: var(--twitter-blue);
-            box-shadow: 0 0 0 2px rgba(29, 161, 242, 0.2);
-        }
-
-        .auth-btn {
-            padding: 1rem;
-            background: var(--twitter-blue);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-weight: 600;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: background 0.3s;
-            margin-top: 1rem;
-        }
-
-        .auth-btn:hover {
-            background: #1a8cd8;
-        }
-
-        .auth-right {
-            flex: 1;
-            background: linear-gradient(135deg, rgba(0,0,0,0.8), rgba(0,0,0,0.9));
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            padding: 3rem;
-            position: relative;
             overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
         }
 
-        .feature-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 2rem;
-            margin-top: 3rem;
+        body.light-mode .auth-modal-content {
+            background: var(--card-bg-light);
         }
 
-        .feature-item {
-            background: rgba(255, 255, 255, 0.05);
-            padding: 1.5rem;
-            border-radius: 15px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+        .auth-header {
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            padding: 30px;
+            color: #222;
+            text-align: center;
         }
 
-        .feature-icon {
-            font-size: 2rem;
-            margin-bottom: 1rem;
+        .auth-body {
+            padding: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--secondary-color);
+        }
+
+        body.light-mode .form-label {
+            color: var(--primary-color);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 10px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-size: 16px;
+        }
+
+        body.light-mode .form-input {
+            border: 2px solid rgba(0,0,0,0.2);
+            background: rgba(0,0,0,0.05);
+            color: var(--text-light);
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
+            color: #222;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .error-message {
+            color: var(--accent-color);
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(255,51,51,0.1);
+            border-radius: 8px;
+            display: none;
+            font-weight: 600;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .auth-switch {
+            text-align: center;
+            margin-top: 20px;
+            color: var(--secondary-color);
+        }
+
+        body.light-mode .auth-switch {
+            color: var(--text-light);
+        }
+
+        .auth-link {
+            color: var(--primary-color);
+            cursor: pointer;
+            font-weight: 600;
         }
 
         /* App Container */
-        .app-container {
+        #appContainer {
             display: none;
-            height: 100vh;
-            max-width: 1400px;
-            margin: 0 auto;
         }
 
-        .app-container.active {
+        #appContainer.active {
+            display: block;
+        }
+
+        /* Header */
+        .header {
+            background: rgba(0,0,0,0.9);
+            padding: 15px 20px;
             display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--primary-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
 
-        /* Left Sidebar */
-        .sidebar {
-            width: 275px;
-            border-right: 1px solid var(--dark-border);
-            padding: 1rem;
-            height: 100vh;
-            position: fixed;
-            background: var(--dark-bg);
+        body.light-mode .header {
+            background: rgba(255,255,255,0.9);
+            border-bottom: 2px solid var(--secondary-color);
         }
 
         .logo {
-            padding: 0.75rem;
-            margin-bottom: 2rem;
-        }
-
-        .logo h1 {
-            font-size: 1.8rem;
-            font-weight: 800;
-            background: linear-gradient(90deg, var(--twitter-blue), var(--instagram-pink));
+            font-size: 24px;
+            font-weight: bold;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
-        .nav-item {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 0.75rem 1rem;
+        .search-container {
+            flex: 1;
+            max-width: 400px;
+            margin: 0 20px;
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 10px 15px;
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 20px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+
+        body.light-mode .search-input {
+            border: 2px solid rgba(0,0,0,0.2);
+            background: rgba(0,0,0,0.05);
             color: var(--text-light);
-            text-decoration: none;
-            border-radius: 50px;
-            margin: 0.5rem 0;
-            transition: background 0.3s;
         }
 
-        .nav-item:hover {
-            background: rgba(255, 255, 255, 0.05);
+        .header-actions {
+            display: flex;
+            gap: 15px;
+            align-items: center;
         }
 
-        .nav-item.active {
-            font-weight: 700;
-            color: var(--twitter-blue);
-        }
-
-        .nav-icon {
-            width: 24px;
-            height: 24px;
+        .notification-btn, .profile-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: var(--secondary-color);
+            cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
+            position: relative;
         }
 
-        .post-btn {
-            width: 90%;
-            padding: 1rem;
-            background: var(--twitter-blue);
-            color: white;
-            border: none;
-            border-radius: 50px;
-            font-weight: 700;
-            font-size: 1rem;
+        body.light-mode .notification-btn,
+        body.light-mode .profile-btn {
+            background: rgba(0,0,0,0.1);
+            color: var(--primary-color);
+        }
+
+        /* Profile Dropdown */
+        .profile-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: var(--card-bg-dark);
+            border-radius: 15px;
+            padding: 10px 0;
+            min-width: 200px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            display: none;
+            z-index: 1000;
+            margin-top: 10px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        body.light-mode .profile-dropdown {
+            background: var(--card-bg-light);
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .profile-dropdown.active {
+            display: block;
+        }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            color: inherit;
+            text-decoration: none;
             cursor: pointer;
-            margin-top: 2rem;
-            transition: background 0.3s;
+            transition: all 0.3s;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            font-size: 14px;
         }
 
-        .post-btn:hover {
-            background: #1a8cd8;
+        .dropdown-item:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        body.light-mode .dropdown-item:hover {
+            background: rgba(0,0,0,0.05);
+        }
+
+        .dropdown-item i {
+            width: 20px;
+            color: var(--primary-color);
+        }
+
+        .dropdown-divider {
+            height: 1px;
+            background: rgba(255,255,255,0.1);
+            margin: 8px 0;
+        }
+
+        body.light-mode .dropdown-divider {
+            background: rgba(0,0,0,0.1);
         }
 
         /* Main Content */
-        .main-content {
-            flex: 1;
-            margin-left: 275px;
-            height: 100vh;
-            overflow-y: auto;
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
         }
 
-        .header {
-            position: sticky;
-            top: 0;
-            background: rgba(0, 0, 0, 0.9);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid var(--dark-border);
-            padding: 1rem 2rem;
-            z-index: 100;
+        .page {
+            display: none;
         }
 
-        .header-title {
-            font-size: 1.5rem;
-            font-weight: 700;
+        .page.active {
+            display: block;
+        }
+
+        /* Stories */
+        .stories-container {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            overflow-x: auto;
+            padding: 10px 0;
+        }
+
+        .story {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .story-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #ff9800, #fdc500, #ff3333);
+            padding: 3px;
+            margin-bottom: 5px;
+        }
+
+        .story-avatar-inner {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: var(--card-bg-dark);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        body.light-mode .story-avatar-inner {
+            background: var(--card-bg-light);
+        }
+
+        .story-name {
+            font-size: 12px;
+            color: var(--secondary-color);
+        }
+
+        body.light-mode .story-name {
+            color: var(--text-light);
         }
 
         /* Post Composer */
         .post-composer {
-            padding: 1rem 2rem;
-            border-bottom: 1px solid var(--dark-border);
+            background: var(--card-bg-dark);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        body.light-mode .post-composer {
+            background: var(--card-bg-light);
+            border: 1px solid rgba(0,0,0,0.1);
         }
 
         .composer-header {
             display: flex;
-            gap: 1rem;
-            margin-bottom: 1rem;
+            gap: 12px;
+            margin-bottom: 15px;
         }
 
         .avatar {
-            width: 48px;
-            height: 48px;
+            width: 45px;
+            height: 45px;
             border-radius: 50%;
-            background: linear-gradient(135deg, var(--twitter-blue), var(--instagram-pink));
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: 600;
-            color: white;
-            flex-shrink: 0;
+            font-weight: bold;
+            color: #222;
         }
 
         .composer-textarea {
             flex: 1;
             background: transparent;
             border: none;
-            color: var(--text-light);
-            font-size: 1.25rem;
-            font-family: inherit;
+            color: white;
+            font-size: 18px;
             resize: none;
-            min-height: 60px;
+            min-height: 80px;
+            font-family: inherit;
+        }
+
+        body.light-mode .composer-textarea {
+            color: var(--text-light);
         }
 
         .composer-textarea:focus {
@@ -313,1291 +428,1906 @@
 
         .composer-actions {
             display: flex;
-            align-items: center;
             justify-content: space-between;
-            padding-top: 1rem;
-            border-top: 1px solid var(--dark-border);
+            align-items: center;
+            padding-left: 57px;
         }
 
         .action-buttons {
             display: flex;
-            gap: 1rem;
+            gap: 15px;
         }
 
         .action-btn {
             background: none;
             border: none;
-            color: var(--twitter-blue);
-            font-size: 1.25rem;
+            color: var(--primary-color);
+            font-size: 18px;
             cursor: pointer;
-            padding: 0.5rem;
-            border-radius: 50%;
-            transition: background 0.3s;
+            padding: 8px;
+            border-radius: 8px;
         }
 
-        .action-btn:hover {
-            background: rgba(29, 161, 242, 0.1);
+        .post-btn {
+            background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
+            color: #222;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 20px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .post-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
 
         /* Posts */
         .post {
-            padding: 1.5rem 2rem;
-            border-bottom: 1px solid var(--dark-border);
-            transition: background 0.3s;
+            background: var(--card-bg-dark);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(255,255,255,0.1);
         }
 
-        .post:hover {
-            background: rgba(255, 255, 255, 0.02);
+        body.light-mode .post {
+            background: var(--card-bg-light);
+            border: 1px solid rgba(0,0,0,0.1);
         }
 
         .post-header {
             display: flex;
             align-items: center;
-            gap: 1rem;
-            margin-bottom: 1rem;
+            gap: 12px;
+            margin-bottom: 12px;
         }
 
-        .post-user {
+        .post-user-info {
             flex: 1;
         }
 
-        .post-name {
-            font-weight: 700;
-            margin-bottom: 0.25rem;
+        .user-name {
+            font-weight: bold;
+            font-size: 16px;
         }
 
-        .post-handle {
-            color: var(--text-gray);
-            font-size: 0.9rem;
+        .user-handle {
+            color: var(--secondary-color);
+            font-size: 14px;
+        }
+
+        body.light-mode .user-handle {
+            color: var(--text-light);
         }
 
         .post-time {
-            color: var(--text-gray);
-            font-size: 0.9rem;
+            color: var(--secondary-color);
+            font-size: 12px;
+        }
+
+        body.light-mode .post-time {
+            color: var(--text-light);
         }
 
         .post-content {
-            margin-bottom: 1rem;
+            margin-bottom: 15px;
             line-height: 1.5;
-            font-size: 1.1rem;
+            font-size: 16px;
         }
 
-        .post-media {
-            margin-bottom: 1rem;
-            border-radius: 15px;
-            overflow: hidden;
-        }
-
-        .post-media img {
+        .post-image {
             width: 100%;
-            max-height: 500px;
-            object-fit: cover;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            background: rgba(255,255,255,0.1);
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--secondary-color);
+        }
+
+        body.light-mode .post-image {
+            background: rgba(0,0,0,0.1);
         }
 
         .post-actions {
             display: flex;
-            gap: 2rem;
-            margin-top: 1rem;
+            justify-content: space-around;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding-top: 15px;
+        }
+
+        body.light-mode .post-actions {
+            border-top: 1px solid rgba(0,0,0,0.1);
         }
 
         .post-action {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
             background: none;
             border: none;
-            color: var(--text-gray);
+            color: var(--secondary-color);
             cursor: pointer;
-            transition: color 0.3s;
+            padding: 8px 15px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
         }
 
         .post-action:hover {
-            color: var(--twitter-blue);
+            background: rgba(255,255,255,0.1);
+        }
+
+        body.light-mode .post-action:hover {
+            background: rgba(0,0,0,0.05);
         }
 
         .post-action.liked {
-            color: #F91880;
+            color: var(--accent-color);
         }
 
         /* Messages */
         .messages-container {
-            display: flex;
-            height: calc(100vh - 73px);
+            background: var(--card-bg-dark);
+            border-radius: 15px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.1);
         }
 
-        .chat-sidebar {
-            width: 350px;
-            border-right: 1px solid var(--dark-border);
-        }
-
-        .chat-search {
-            padding: 1rem;
-            border-bottom: 1px solid var(--dark-border);
-        }
-
-        .chat-search input {
-            width: 100%;
-            padding: 0.75rem 1rem;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--dark-border);
-            border-radius: 50px;
-            color: var(--text-light);
-        }
-
-        .chat-list {
-            overflow-y: auto;
-            height: calc(100vh - 130px);
-        }
-
-        .chat-item {
-            padding: 1rem;
-            border-bottom: 1px solid var(--dark-border);
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-
-        .chat-item:hover {
-            background: rgba(255, 255, 255, 0.05);
-        }
-
-        .chat-item.active {
-            background: rgba(29, 161, 242, 0.1);
-        }
-
-        .chat-main {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
+        body.light-mode .messages-container {
+            background: var(--card-bg-light);
+            border: 1px solid rgba(0,0,0,0.1);
         }
 
         .chat-header {
-            padding: 1rem 2rem;
-            border-bottom: 1px solid var(--dark-border);
+            padding: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,152,0,0.1);
+        }
+
+        body.light-mode .chat-header {
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .messages-list {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .message-item {
             display: flex;
             align-items: center;
-            gap: 1rem;
+            gap: 15px;
+            padding: 15px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            cursor: pointer;
+        }
+
+        body.light-mode .message-item {
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .message-item:hover {
+            background: rgba(255,255,255,0.05);
+        }
+
+        body.light-mode .message-item:hover {
+            background: rgba(0,0,0,0.05);
+        }
+
+        .message-item-info {
+            flex: 1;
+        }
+
+        .message-preview {
+            color: var(--secondary-color);
+            font-size: 14px;
+            margin-top: 4px;
+        }
+
+        body.light-mode .message-preview {
+            color: var(--text-light);
+        }
+
+        .unread-badge {
+            background: var(--accent-color);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        /* Chat View */
+        .chat-view {
+            display: none;
+            flex-direction: column;
+            height: 500px;
+        }
+
+        .chat-view.active {
+            display: flex;
         }
 
         .chat-messages {
             flex: 1;
+            padding: 20px;
             overflow-y: auto;
-            padding: 2rem;
             display: flex;
             flex-direction: column;
-            gap: 1rem;
+            gap: 15px;
         }
 
         .message {
-            max-width: 70%;
-            padding: 1rem;
-            border-radius: 15px;
-            position: relative;
+            display: flex;
+            gap: 10px;
+            max-width: 80%;
         }
 
-        .message.sent {
+        .message.own {
             align-self: flex-end;
-            background: var(--twitter-blue);
-            color: white;
+            flex-direction: row-reverse;
         }
 
-        .message.received {
-            align-self: flex-start;
-            background: rgba(255, 255, 255, 0.05);
+        .message-content {
+            background: rgba(255,255,255,0.1);
+            padding: 12px 16px;
+            border-radius: 15px;
         }
 
-        .message-time {
-            font-size: 0.8rem;
-            color: var(--text-gray);
-            margin-top: 0.25rem;
+        body.light-mode .message-content {
+            background: rgba(0,0,0,0.1);
+        }
+
+        .message.own .message-content {
+            background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
+            color: #222;
+        }
+
+        .chat-input-container {
+            padding: 15px 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            gap: 10px;
+        }
+
+        body.light-mode .chat-input-container {
+            border-top: 1px solid rgba(0,0,0,0.1);
         }
 
         .chat-input {
-            padding: 1rem 2rem;
-            border-top: 1px solid var(--dark-border);
-            display: flex;
-            gap: 1rem;
+            flex: 1;
+            padding: 12px;
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 20px;
+            background: rgba(255,255,255,0.1);
+            color: white;
         }
 
-        .chat-input input {
-            flex: 1;
-            padding: 0.75rem 1rem;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--dark-border);
-            border-radius: 50px;
+        body.light-mode .chat-input {
+            border: 2px solid rgba(0,0,0,0.2);
+            background: rgba(0,0,0,0.05);
             color: var(--text-light);
         }
 
         .send-btn {
-            padding: 0.75rem 1.5rem;
-            background: var(--twitter-blue);
-            color: white;
+            background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
             border: none;
-            border-radius: 50px;
-            cursor: pointer;
-        }
-
-        /* Notifications */
-        .notification-item {
-            padding: 1.5rem 2rem;
-            border-bottom: 1px solid var(--dark-border);
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .notification-item.unread {
-            background: rgba(29, 161, 242, 0.05);
-        }
-
-        /* Profile */
-        .profile-header {
-            padding: 2rem;
-            border-bottom: 1px solid var(--dark-border);
-        }
-
-        .profile-top {
-            display: flex;
-            gap: 2rem;
-            margin-bottom: 2rem;
-        }
-
-        .profile-avatar {
-            width: 150px;
-            height: 150px;
             border-radius: 50%;
-            background: linear-gradient(135deg, var(--twitter-blue), var(--instagram-pink));
+            width: 44px;
+            height: 44px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 3rem;
-            font-weight: 700;
-            color: white;
+            color: #222;
+            cursor: pointer;
+        }
+
+        /* Profile Page */
+        .profile-header {
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            height: 150px;
+            border-radius: 15px;
+            position: relative;
+            margin-bottom: 60px;
+        }
+
+        .profile-avatar {
+            position: absolute;
+            bottom: -40px;
+            left: 20px;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border: 4px solid var(--card-bg-dark);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #222;
+            font-size: 24px;
+        }
+
+        body.light-mode .profile-avatar {
+            border: 4px solid var(--card-bg-light);
         }
 
         .profile-info {
-            flex: 1;
+            padding: 0 20px 20px;
         }
 
         .profile-name {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
         }
 
         .profile-handle {
-            color: var(--text-gray);
-            margin-bottom: 1rem;
+            color: var(--secondary-color);
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        body.light-mode .profile-handle {
+            color: var(--text-light);
         }
 
         .profile-bio {
-            margin-bottom: 1.5rem;
+            margin-bottom: 20px;
             line-height: 1.5;
         }
 
         .profile-stats {
             display: flex;
-            gap: 2rem;
-            margin-bottom: 1.5rem;
+            justify-content: space-around;
+            margin: 20px 0;
+            padding: 20px 0;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        body.light-mode .profile-stats {
+            border-top: 1px solid rgba(0,0,0,0.1);
+            border-bottom: 1px solid rgba(0,0,0,0.1);
         }
 
         .stat {
             text-align: center;
+            cursor: pointer;
         }
 
-        .stat-value {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--twitter-blue);
+        .stat-number {
+            display: block;
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--secondary-color);
+        }
+
+        body.light-mode .stat-number {
+            color: var(--primary-color);
         }
 
         .stat-label {
-            color: var(--text-gray);
-            font-size: 0.9rem;
+            font-size: 14px;
+            color: var(--text-dark);
+        }
+
+        body.light-mode .stat-label {
+            color: var(--text-light);
         }
 
         .profile-actions {
             display: flex;
-            gap: 1rem;
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .follow-btn, .message-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .follow-btn {
+            background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
+            color: #222;
+        }
+
+        .message-btn {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+
+        body.light-mode .message-btn {
+            background: rgba(0,0,0,0.1);
+            color: var(--text-light);
+            border: 2px solid rgba(0,0,0,0.2);
+        }
+
+        /* Notifications */
+        .notifications-container {
+            background: var(--card-bg-dark);
+            border-radius: 15px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        body.light-mode .notifications-container {
+            background: var(--card-bg-light);
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .notification-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        body.light-mode .notification-item {
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .notification-content {
+            flex: 1;
+        }
+
+        .notification-time {
+            color: var(--secondary-color);
+            font-size: 12px;
+        }
+
+        body.light-mode .notification-time {
+            color: var(--text-light);
+        }
+
+        /* Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            justify-content: space-around;
+            padding: 15px;
+            border-top: 2px solid var(--primary-color);
+            z-index: 100;
+        }
+
+        body.light-mode .bottom-nav {
+            background: rgba(255,255,255,0.9);
+            border-top: 2px solid var(--secondary-color);
+        }
+
+        .nav-item {
+            color: var(--secondary-color);
+            text-align: center;
+            cursor: pointer;
+            padding: 8px 15px;
+            border-radius: 10px;
+        }
+
+        body.light-mode .nav-item {
+            color: var(--text-light);
+        }
+
+        .nav-item.active {
+            color: var(--primary-color);
+            background: rgba(255,152,0,0.1);
+        }
+
+        .nav-icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+
+        .nav-label {
+            font-size: 12px;
+            font-weight: 600;
         }
 
         /* Toast */
         .toast {
             position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            background: var(--dark-card);
-            border: 1px solid var(--dark-border);
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
             border-radius: 10px;
-            padding: 1rem 1.5rem;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            color: white;
+            font-weight: 600;
             z-index: 1000;
-            animation: slideIn 0.3s ease;
+            transform: translateX(200%);
+            transition: transform 0.3s;
         }
 
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
+        .toast.show {
+            transform: translateX(0);
         }
 
-        /* Loading */
+        .toast.success {
+            background: #4CAF50;
+        }
+
+        .toast.error {
+            background: var(--accent-color);
+        }
+
+        .toast.info {
+            background: #2196F3;
+        }
+
+        /* Search Results */
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--card-bg-dark);
+            border-radius: 10px;
+            margin-top: 5px;
+            display: none;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        body.light-mode .search-results {
+            background: var(--card-bg-light);
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .search-results.active {
+            display: block;
+        }
+
+        .search-result-item {
+            padding: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        body.light-mode .search-result-item {
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .search-result-item:hover {
+            background: rgba(255,255,255,0.05);
+        }
+
+        body.light-mode .search-result-item:hover {
+            background: rgba(0,0,0,0.05);
+        }
+
+        /* Loading States */
         .loading {
             display: flex;
             align-items: center;
             justify-content: center;
-            height: 200px;
+            padding: 40px;
+            color: var(--secondary-color);
         }
 
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 3px solid var(--dark-border);
-            border-top-color: var(--twitter-blue);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--secondary-color);
         }
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        /* Utility Classes */
-        .hidden { display: none !important; }
-        .page { display: none; }
-        .page.active { display: block; }
-        .cursor-pointer { cursor: pointer; }
-
-        /* Media Upload */
-        .media-preview {
-            display: flex;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
-            flex-wrap: wrap;
-        }
-
-        .preview-item {
-            position: relative;
-            width: 100px;
-            height: 100px;
-            border-radius: 10px;
-            overflow: hidden;
-        }
-
-        .preview-item img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .remove-media {
-            position: absolute;
-            top: 5px;
-            right: 5px;
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .file-input {
-            display: none;
-        }
-
-        /* Mobile */
-        @media (max-width: 1024px) {
-            .sidebar {
-                width: 88px;
-            }
-            
-            .nav-item span {
-                display: none;
-            }
-            
-            .main-content {
-                margin-left: 88px;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .sidebar {
-                display: none;
-            }
-            
-            .main-content {
-                margin-left: 0;
-            }
-            
-            .bottom-nav {
-                position: fixed;
-                bottom: 0;
-                left: 0;
-                right: 0;
-                background: var(--dark-bg);
-                border-top: 1px solid var(--dark-border);
-                display: flex;
-                justify-content: space-around;
-                padding: 1rem;
-                z-index: 100;
-            }
-            
-            .bottom-nav-item {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                gap: 0.25rem;
-                background: none;
-                border: none;
-                color: var(--text-gray);
-                cursor: pointer;
-            }
-            
-            .bottom-nav-item.active {
-                color: var(--twitter-blue);
-            }
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 16px;
+            opacity: 0.5;
         }
     </style>
 </head>
 <body>
-    <!-- Auth Page -->
-    <div id="authPage" class="auth-page">
-        <div class="auth-left">
-            <div class="auth-box">
-                <h1 class="auth-title">SocialSphere</h1>
-                <p class="auth-subtitle">Connect with friends, share moments, stay updated</p>
-                
-                <div class="auth-tabs">
-                    <button class="auth-tab active" onclick="switchAuthTab('login')">Login</button>
-                    <button class="auth-tab" onclick="switchAuthTab('signup')">Sign Up</button>
-                </div>
-                
-                <div id="loginForm" class="auth-form">
-                    <input type="email" id="loginEmail" class="auth-input" placeholder="Email" value="test@example.com">
-                    <input type="password" id="loginPassword" class="auth-input" placeholder="Password" value="password123">
-                    <button class="auth-btn" onclick="login()">Login</button>
-                    <p style="text-align: center; margin-top: 1rem; color: var(--text-gray);">
-                        Use: test@example.com / password123
-                    </p>
-                </div>
-                
-                <div id="signupForm" class="auth-form hidden">
-                    <input type="text" id="signupName" class="auth-input" placeholder="Full Name">
-                    <input type="text" id="signupUsername" class="auth-input" placeholder="Username">
-                    <input type="email" id="signupEmail" class="auth-input" placeholder="Email">
-                    <input type="password" id="signupPassword" class="auth-input" placeholder="Password (min 6 characters)">
-                    <button class="auth-btn" onclick="signup()">Create Account</button>
-                </div>
+    <!-- Toast Container -->
+    <div id="toastContainer"></div>
+
+    <!-- Auth Modal -->
+    <div class="auth-modal" id="authModal">
+        <div class="auth-modal-content">
+            <div class="auth-header">
+                <h1 style="font-size: 2em; margin-bottom: 10px;"><i class="fas fa-fire"></i> PrimeMar</h1>
+                <p style="font-size: 1.1em; font-weight: 600;">Join the conversation</p>
             </div>
-        </div>
-        
-        <div class="auth-right">
-            <div class="feature-grid">
-                <div class="feature-item">
-                    <div class="feature-icon">
-                        <i class="fab fa-twitter" style="color: var(--twitter-blue);"></i>
+            
+            <div class="auth-body">
+                <!-- Login Form -->
+                <div id="loginForm">
+                    <h2 style="margin-bottom: 8px; text-align: center;">Welcome back</h2>
+                    <p style="color: var(--secondary-color); text-align: center; margin-bottom: 24px; font-weight: 600;">Sign in to your account</p>
+                    
+                    <div class="error-message" id="loginError"></div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-input" id="loginEmail" placeholder="Enter your email">
                     </div>
-                    <h3>Twitter Posts</h3>
-                    <p>Share thoughts, trends, and news instantly</p>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-input" id="loginPassword" placeholder="Enter your password">
+                    </div>
+                    
+                    <button class="btn" id="loginBtn">
+                        <i class="fas fa-sign-in-alt"></i> Sign In
+                    </button>
+                    
+                    <div class="auth-switch">
+                        Don't have an account? 
+                        <span class="auth-link" id="showSignup">Sign up</span>
+                    </div>
                 </div>
-                
-                <div class="feature-item">
-                    <div class="feature-icon">
-                        <i class="fab fa-instagram" style="color: var(--instagram-pink);"></i>
+
+                <!-- Signup Form -->
+                <div id="signupForm" style="display: none;">
+                    <h2 style="margin-bottom: 8px; text-align: center;">Create account</h2>
+                    <p style="color: var(--secondary-color); text-align: center; margin-bottom: 24px; font-weight: 600;">Join PrimeMar today</p>
+                    
+                    <div class="error-message" id="signupError"></div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" class="form-input" id="signupName" placeholder="Enter your full name">
                     </div>
-                    <h3>Instagram Stories</h3>
-                    <p>Share moments with photos and videos</p>
-                </div>
-                
-                <div class="feature-item">
-                    <div class="feature-icon">
-                        <i class="fab fa-facebook" style="color: var(--facebook-blue);"></i>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Username</label>
+                        <input type="text" class="form-input" id="signupUsername" placeholder="Choose a username">
                     </div>
-                    <h3>Facebook Feed</h3>
-                    <p>Connect with friends and family</p>
-                </div>
-                
-                <div class="feature-item">
-                    <div class="feature-icon">
-                        <i class="fab fa-whatsapp" style="color: var(--whatsapp-green);"></i>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-input" id="signupEmail" placeholder="Enter your email">
                     </div>
-                    <h3>WhatsApp Chat</h3>
-                    <p>Real-time messaging with anyone</p>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-input" id="signupPassword" placeholder="Create a password">
+                    </div>
+                    
+                    <button class="btn" id="signupBtn">
+                        <i class="fas fa-user-plus"></i> Create Account
+                    </button>
+                    
+                    <div class="auth-switch">
+                        Already have an account? 
+                        <span class="auth-link" id="showLogin">Sign in</span>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-    
-    <!-- App Container -->
-    <div id="appContainer" class="app-container">
-        <!-- Left Sidebar -->
-        <div class="sidebar">
+
+    <!-- Main App -->
+    <div id="appContainer">
+        <!-- Header -->
+        <header class="header">
             <div class="logo">
-                <h1>SocialSphere</h1>
+                <i class="fas fa-fire"></i> PrimeMar
             </div>
             
-            <nav>
-                <a href="#" class="nav-item active" onclick="showPage('home')">
-                    <div class="nav-icon">
-                        <i class="fas fa-home"></i>
-                    </div>
-                    <span>Home</span>
-                </a>
-                
-                <a href="#" class="nav-item" onclick="showPage('explore')">
-                    <div class="nav-icon">
-                        <i class="fas fa-search"></i>
-                    </div>
-                    <span>Explore</span>
-                </a>
-                
-                <a href="#" class="nav-item" onclick="showPage('notifications')">
-                    <div class="nav-icon">
-                        <i class="fas fa-bell"></i>
-                    </div>
-                    <span>Notifications</span>
-                    <span id="notificationBadge" class="badge hidden"></span>
-                </a>
-                
-                <a href="#" class="nav-item" onclick="showPage('messages')">
-                    <div class="nav-icon">
-                        <i class="fas fa-envelope"></i>
-                    </div>
-                    <span>Messages</span>
-                    <span id="messageBadge" class="badge hidden"></span>
-                </a>
-                
-                <a href="#" class="nav-item" onclick="showPage('profile')">
-                    <div class="nav-icon">
+            <div class="search-container">
+                <input type="text" class="search-input" id="searchInput" placeholder="Search users, posts...">
+                <div class="search-results" id="searchResults"></div>
+            </div>
+            
+            <div class="header-actions">
+                <button class="notification-btn" id="notificationBtn">
+                    <i class="fas fa-bell"></i>
+                </button>
+                <div style="position: relative;">
+                    <button class="profile-btn" id="profileBtn">
                         <i class="fas fa-user"></i>
-                    </div>
-                    <span>Profile</span>
-                </a>
-            </nav>
-            
-            <button class="post-btn" onclick="newPost()">
-                <i class="fas fa-feather-alt"></i>
-                <span>Post</span>
-            </button>
-            
-            <!-- User Mini Profile -->
-            <div class="user-mini mt-4 p-3 rounded" onclick="showPage('profile')" style="cursor: pointer;">
-                <div class="flex items-center gap-3">
-                    <div class="avatar" id="miniAvatar">U</div>
-                    <div>
-                        <div class="font-bold" id="miniName">User</div>
-                        <div class="text-sm text-gray" id="miniHandle">@user</div>
+                    </button>
+                    <div class="profile-dropdown" id="profileDropdown">
+                        <button class="dropdown-item" onclick="primeMarApp.showPage('profilePage')">
+                            <i class="fas fa-user"></i>
+                            <span>Profile</span>
+                        </button>
+                        <button class="dropdown-item" id="themeToggleBtn">
+                            <i class="fas fa-moon"></i>
+                            <span id="themeText">Dark Mode</span>
+                        </button>
+                        <div class="dropdown-divider"></div>
+                        <button class="dropdown-item" id="logoutBtn">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>Logout</span>
+                        </button>
                     </div>
                 </div>
             </div>
-        </div>
-        
+        </header>
+
         <!-- Main Content -->
-        <div class="main-content">
+        <main class="container">
             <!-- Home Page -->
-            <div id="homePage" class="page active">
-                <div class="header">
-                    <div class="header-title">Home</div>
+            <section id="homePage" class="page active">
+                <!-- Stories -->
+                <div class="stories-container" id="storiesContainer">
+                    <div class="loading">
+                        <i class="fas fa-spinner fa-spin"></i> Loading stories...
+                    </div>
                 </div>
-                
+
                 <!-- Post Composer -->
                 <div class="post-composer">
                     <div class="composer-header">
-                        <div class="avatar" id="composerAvatar">U</div>
-                        <textarea class="composer-textarea" id="postText" placeholder="What's happening?" rows="3"></textarea>
+                        <div class="avatar" id="userAvatar">U</div>
+                        <textarea class="composer-textarea" placeholder="What's happening?" id="postTextarea" maxlength="280"></textarea>
                     </div>
-                    
-                    <div id="mediaPreview" class="media-preview"></div>
-                    
                     <div class="composer-actions">
                         <div class="action-buttons">
-                            <button class="action-btn" onclick="addMedia()">
+                            <button class="action-btn" onclick="primeMarApp.addImage()">
                                 <i class="fas fa-image"></i>
                             </button>
-                            <button class="action-btn" onclick="addEmoji()">
+                            <button class="action-btn" onclick="primeMarApp.addEmoji()">
                                 <i class="fas fa-smile"></i>
                             </button>
-                            <button class="action-btn" onclick="addLocation()">
+                            <button class="action-btn" onclick="primeMarApp.addLocation()">
                                 <i class="fas fa-map-marker-alt"></i>
                             </button>
                         </div>
-                        
-                        <button class="send-btn" onclick="createPost()">Post</button>
+                        <button class="post-btn" id="postBtn" disabled>Post</button>
                     </div>
-                    
-                    <input type="file" id="mediaInput" class="file-input" accept="image/*,video/*" multiple>
                 </div>
-                
+
                 <!-- Feed -->
-                <div id="feed">
+                <div id="feedContainer">
                     <div class="loading">
-                        <div class="spinner"></div>
+                        <i class="fas fa-spinner fa-spin"></i> Loading posts...
                     </div>
                 </div>
-            </div>
-            
+            </section>
+
+            <!-- Search Page -->
+            <section id="searchPage" class="page">
+                <div class="search-results-full" id="searchResultsFull">
+                    <div class="empty-state">
+                        <i class="fas fa-search"></i>
+                        <h3>Search for users and posts</h3>
+                        <p>Use the search bar to find content</p>
+                    </div>
+                </div>
+            </section>
+
             <!-- Messages Page -->
-            <div id="messagesPage" class="page">
-                <div class="header">
-                    <div class="header-title">Messages</div>
-                </div>
-                
+            <section id="messagesPage" class="page">
                 <div class="messages-container">
-                    <div class="chat-sidebar">
-                        <div class="chat-search">
-                            <input type="text" placeholder="Search messages..." oninput="searchChats(this.value)">
-                        </div>
-                        
-                        <div class="chat-list" id="chatList">
-                            <!-- Chats will be loaded here -->
+                    <div class="chat-header">
+                        <h3><i class="fas fa-envelope"></i> Messages</h3>
+                    </div>
+                    <div class="messages-list" id="messagesList">
+                        <div class="loading">
+                            <i class="fas fa-spinner fa-spin"></i> Loading conversations...
                         </div>
                     </div>
-                    
-                    <div class="chat-main">
-                        <div class="chat-header">
-                            <div class="avatar" id="currentChatAvatar">U</div>
-                            <div>
-                                <div class="font-bold" id="currentChatName">Select a chat</div>
-                                <div class="text-sm text-gray" id="currentChatStatus">Click on a conversation to start chatting</div>
-                            </div>
-                        </div>
-                        
+                    <div class="chat-view" id="chatView">
                         <div class="chat-messages" id="chatMessages">
-                            <div class="text-center text-gray p-4">
-                                Select a conversation to start messaging
-                            </div>
+                            <!-- Chat messages will be loaded here -->
                         </div>
-                        
-                        <div class="chat-input">
-                            <input type="text" id="messageInput" placeholder="Type a message..." onkeypress="if(event.key === 'Enter') sendMessage()">
-                            <button class="send-btn" onclick="sendMessage()">Send</button>
+                        <div class="chat-input-container">
+                            <input type="text" class="chat-input" id="chatInput" placeholder="Type a message...">
+                            <button class="send-btn" id="sendBtn">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
                         </div>
                     </div>
                 </div>
-            </div>
-            
+            </section>
+
+            <!-- Notifications Page -->
+            <section id="notificationsPage" class="page">
+                <div class="notifications-container">
+                    <div class="chat-header">
+                        <h3><i class="fas fa-bell"></i> Notifications</h3>
+                    </div>
+                    <div id="notificationsList">
+                        <div class="loading">
+                            <i class="fas fa-spinner fa-spin"></i> Loading notifications...
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <!-- Profile Page -->
-            <div id="profilePage" class="page">
+            <section id="profilePage" class="page">
                 <div class="profile-header">
-                    <div class="profile-top">
-                        <div class="profile-avatar" id="profileAvatar">U</div>
-                        <div class="profile-info">
-                            <div class="profile-name" id="profileName">User</div>
-                            <div class="profile-handle" id="profileHandle">@user</div>
-                            <div class="profile-bio" id="profileBio">No bio yet</div>
-                            
-                            <div class="profile-stats">
-                                <div class="stat">
-                                    <div class="stat-value" id="postsCount">0</div>
-                                    <div class="stat-label">Posts</div>
-                                </div>
-                                <div class="stat">
-                                    <div class="stat-value" id="followersCount">0</div>
-                                    <div class="stat-label">Followers</div>
-                                </div>
-                                <div class="stat">
-                                    <div class="stat-value" id="followingCount">0</div>
-                                    <div class="stat-label">Following</div>
-                                </div>
-                            </div>
+                    <div class="profile-avatar" id="profileAvatar">U</div>
+                </div>
+                <div class="profile-info">
+                    <h1 class="profile-name" id="profileName">Loading...</h1>
+                    <p class="profile-handle" id="profileHandle">@username</p>
+                    <p class="profile-bio" id="profileBio">Loading bio...</p>
+                    
+                    <div class="profile-stats">
+                        <div class="stat" onclick="primeMarApp.showUserPosts()">
+                            <span class="stat-number" id="postsCount">0</span>
+                            <span class="stat-label">Posts</span>
+                        </div>
+                        <div class="stat" onclick="primeMarApp.showFollowing()">
+                            <span class="stat-number" id="followingCount">0</span>
+                            <span class="stat-label">Following</span>
+                        </div>
+                        <div class="stat" onclick="primeMarApp.showFollowers()">
+                            <span class="stat-number" id="followersCount">0</span>
+                            <span class="stat-label">Followers</span>
                         </div>
                     </div>
                     
                     <div class="profile-actions">
-                        <button class="send-btn" onclick="editProfile()">Edit Profile</button>
-                        <button class="send-btn" onclick="newPost()" style="background: var(--instagram-pink);">New Post</button>
+                        <button class="follow-btn" id="followBtn" style="display: none;">Follow</button>
+                        <button class="message-btn" onclick="primeMarApp.startChat()">
+                            <i class="fas fa-envelope"></i> Message
+                        </button>
                     </div>
                 </div>
                 
-                <div id="profilePosts">
-                    <!-- User posts will be loaded here -->
+                <div id="profilePostsContainer">
+                    <div class="loading">
+                        <i class="fas fa-spinner fa-spin"></i> Loading user posts...
+                    </div>
                 </div>
+            </section>
+        </main>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav">
+            <div class="nav-item active" data-page="homePage">
+                <div class="nav-icon"><i class="fas fa-home"></i></div>
+                <div class="nav-label">Home</div>
             </div>
-            
-            <!-- Notifications Page -->
-            <div id="notificationsPage" class="page">
-                <div class="header">
-                    <div class="header-title">Notifications</div>
-                    <button class="text-sm text-blue" onclick="markAllRead()">Mark all as read</button>
-                </div>
-                
-                <div id="notificationsList">
-                    <!-- Notifications will be loaded here -->
-                </div>
+            <div class="nav-item" data-page="searchPage">
+                <div class="nav-icon"><i class="fas fa-search"></i></div>
+                <div class="nav-label">Search</div>
             </div>
-        </div>
+            <div class="nav-item" data-page="messagesPage">
+                <div class="nav-icon"><i class="fas fa-envelope"></i></div>
+                <div class="nav-label">Messages</div>
+            </div>
+            <div class="nav-item" data-page="notificationsPage">
+                <div class="nav-icon"><i class="fas fa-bell"></i></div>
+                <div class="nav-label">Alerts</div>
+            </div>
+            <div class="nav-item" data-page="profilePage">
+                <div class="nav-icon"><i class="fas fa-user"></i></div>
+                <div class="nav-label">Profile</div>
+            </div>
+        </nav>
     </div>
-    
-    <!-- Bottom Navigation for Mobile -->
-    <div class="bottom-nav">
-        <button class="bottom-nav-item active" onclick="showPage('home')">
-            <i class="fas fa-home"></i>
-            <span class="text-xs">Home</span>
-        </button>
-        <button class="bottom-nav-item" onclick="showPage('explore')">
-            <i class="fas fa-search"></i>
-            <span class="text-xs">Explore</span>
-        </button>
-        <button class="bottom-nav-item" onclick="showPage('notifications')">
-            <i class="fas fa-bell"></i>
-            <span class="text-xs">Notifications</span>
-        </button>
-        <button class="bottom-nav-item" onclick="showPage('messages')">
-            <i class="fas fa-envelope"></i>
-            <span class="text-xs">Messages</span>
-        </button>
-        <button class="bottom-nav-item" onclick="showPage('profile')">
-            <i class="fas fa-user"></i>
-            <span class="text-xs">Profile</span>
-        </button>
-    </div>
-    
-    <!-- Toast Container -->
-    <div id="toastContainer"></div>
 
     <script>
-        // Configuration
-        const SUPABASE_URL = 'https://mtqvgnkkzrqctapnxikg.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im10cXZnbmtrenJxY3RhcG54aWtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyMzIwMTYsImV4cCI6MjA4MDgwODAxNn0.lJ9wNxHjvWejFI6q6-sh-CQ_3bKFM1S__6J7WZSG8dY';
-        
-        // State
-        let supabase = null;
-        let currentUser = null;
-        let currentProfile = null;
-        let currentChat = null;
-        let realtimeSubscriptions = [];
-        
-        // Initialize the application
-        async function initApp() {
-            try {
-                console.log('Initializing Supabase...');
+        // Complete Real Social Media App with Supabase
+        class PrimeMar {
+            constructor() {
+                this.supabaseUrl = 'https://qsiwjjqxpegfmgkmtjje.supabase.co';
+                this.supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzaXdqanF4cGVnZm1na210amplIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI1NDU2MTYsImV4cCI6MjA3ODEyMTYxNn0.iZ5YLVdeZP0VOm_Qu8XBOfBa9hmyEqHl520q5hZd1z8';
+                this.supabase = null;
+                this.currentUser = null;
+                this.userProfile = null;
+                this.posts = [];
+                this.conversations = [];
+                this.notifications = [];
+                this.stories = [];
+                this.activeChat = null;
+                this.searchResults = [];
+                this.isDarkMode = true;
                 
-                // Initialize Supabase
-                supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                
-                // Check for existing session
-                const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-                
-                if (sessionError) {
-                    console.error('Session error:', sessionError);
-                    showToast('Error checking session', 'error');
-                    return;
-                }
-                
-                console.log('Session check complete:', session ? 'Session found' : 'No session');
-                
-                if (session) {
-                    console.log('User found:', session.user.email);
-                    currentUser = session.user;
-                    await loadProfile();
-                    showApp();
-                    await loadInitialData();
-                    setupRealtimeSubscriptions();
-                }
-                
-                // Listen for auth state changes
-                supabase.auth.onAuthStateChange(async (event, session) => {
-                    console.log('Auth state changed:', event);
+                this.init();
+            }
+
+            async init() {
+                try {
+                    // Initialize Supabase
+                    this.supabase = supabase.createClient(this.supabaseUrl, this.supabaseKey);
                     
-                    if (event === 'SIGNED_IN' && session) {
-                        currentUser = session.user;
-                        console.log('User signed in:', currentUser.email);
-                        await loadProfile();
-                        showApp();
-                        await loadInitialData();
-                        setupRealtimeSubscriptions();
-                        showToast('Welcome to SocialSphere!', 'success');
-                    } else if (event === 'SIGNED_OUT') {
-                        currentUser = null;
-                        currentProfile = null;
-                        console.log('User signed out');
-                        showAuth();
-                    }
-                });
-                
-            } catch (error) {
-                console.error('Initialization error:', error);
-                showToast('Failed to initialize app. Please refresh.', 'error');
-            }
-        }
-        
-        // Authentication Functions
-        async function login() {
-            const email = document.getElementById('loginEmail').value.trim();
-            const password = document.getElementById('loginPassword').value.trim();
-            
-            if (!email || !password) {
-                showToast('Please enter email and password', 'error');
-                return;
-            }
-            
-            console.log('Attempting login with:', email);
-            
-            try {
-                const { data, error } = await supabase.auth.signInWithPassword({
-                    email: email,
-                    password: password
-                });
-                
-                if (error) {
-                    console.error('Login error:', error);
-                    showToast(error.message, 'error');
-                    return;
-                }
-                
-                console.log('Login successful:', data.user.email);
-                currentUser = data.user;
-                await loadProfile();
-                showApp();
-                await loadInitialData();
-                setupRealtimeSubscriptions();
-                showToast('Welcome back!', 'success');
-                
-            } catch (error) {
-                console.error('Login exception:', error);
-                showToast('Login failed. Please try again.', 'error');
-            }
-        }
-        
-        async function signup() {
-            const name = document.getElementById('signupName').value.trim();
-            const username = document.getElementById('signupUsername').value.trim().toLowerCase();
-            const email = document.getElementById('signupEmail').value.trim();
-            const password = document.getElementById('signupPassword').value.trim();
-            
-            if (!name || !username || !email || !password) {
-                showToast('Please fill in all fields', 'error');
-                return;
-            }
-            
-            if (password.length < 6) {
-                showToast('Password must be at least 6 characters', 'error');
-                return;
-            }
-            
-            console.log('Attempting signup with:', email);
-            
-            try {
-                const { data, error } = await supabase.auth.signUp({
-                    email: email,
-                    password: password,
-                    options: {
-                        data: {
-                            name: name,
-                            username: username
-                        }
-                    }
-                });
-                
-                if (error) {
-                    console.error('Signup error:', error);
-                    showToast(error.message, 'error');
-                    return;
-                }
-                
-                console.log('Signup successful:', data.user.email);
-                showToast('Account created successfully! Please check your email to verify.', 'success');
-                switchAuthTab('login');
-                
-            } catch (error) {
-                console.error('Signup exception:', error);
-                showToast('Signup failed. Please try again.', 'error');
-            }
-        }
-        
-        async function logout() {
-            try {
-                const { error } = await supabase.auth.signOut();
-                if (error) throw error;
-                
-                currentUser = null;
-                currentProfile = null;
-                showAuth();
-                showToast('Logged out successfully', 'info');
-                
-            } catch (error) {
-                console.error('Logout error:', error);
-                showToast('Logout failed', 'error');
-            }
-        }
-        
-        // Profile Management
-        async function loadProfile() {
-            if (!currentUser) return;
-            
-            console.log('Loading profile for user:', currentUser.id);
-            
-            try {
-                // Try to get existing profile
-                const { data: profile, error } = await supabase
-                    .from('profiles')
-                    .select('*')
-                    .eq('id', currentUser.id)
-                    .single();
-                
-                if (error) {
-                    console.log('Profile not found, creating new one...');
-                    await createProfile();
-                } else {
-                    console.log('Profile loaded:', profile);
-                    currentProfile = profile;
-                    updateProfileUI();
-                }
-                
-            } catch (error) {
-                console.error('Error loading profile:', error);
-                await createProfile();
-            }
-        }
-        
-        async function createProfile() {
-            try {
-                const metadata = currentUser.user_metadata || {};
-                const name = metadata.name || currentUser.email.split('@')[0];
-                const username = metadata.username || generateUsername(name);
-                
-                const profile = {
-                    id: currentUser.id,
-                    name: name,
-                    username: username,
-                    email: currentUser.email,
-                    avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=3b82f6&color=fff`,
-                    bio: '',
-                    followers_count: 0,
-                    following_count: 0,
-                    posts_count: 0,
-                    created_at: new Date().toISOString()
-                };
-                
-                console.log('Creating profile:', profile);
-                
-                const { data, error } = await supabase
-                    .from('profiles')
-                    .insert([profile])
-                    .select()
-                    .single();
-                
-                if (error) {
-                    console.error('Error creating profile:', error);
-                    throw error;
-                }
-                
-                console.log('Profile created:', data);
-                currentProfile = data;
-                updateProfileUI();
-                
-            } catch (error) {
-                console.error('Failed to create profile:', error);
-                // Create fallback profile object
-                currentProfile = {
-                    id: currentUser.id,
-                    name: currentUser.email.split('@')[0],
-                    username: generateUsername(currentUser.email.split('@')[0]),
-                    email: currentUser.email,
-                    avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.email.split('@')[0])}&background=3b82f6&color=fff`,
-                    bio: '',
-                    followers_count: 0,
-                    following_count: 0,
-                    posts_count: 0
-                };
-                updateProfileUI();
-            }
-        }
-        
-        // Post Functions
-        async function createPost() {
-            if (!currentUser) {
-                showToast('Please login first', 'error');
-                return;
-            }
-            
-            const content = document.getElementById('postText').value.trim();
-            const mediaFiles = Array.from(document.getElementById('mediaInput').files);
-            
-            if (!content && mediaFiles.length === 0) {
-                showToast('Post cannot be empty', 'error');
-                return;
-            }
-            
-            try {
-                const postData = {
-                    author_id: currentUser.id,
-                    content: content,
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString()
-                };
-                
-                // Upload media if any
-                if (mediaFiles.length > 0) {
-                    const mediaUrls = [];
+                    // Load theme preference
+                    this.loadThemePreference();
                     
-                    for (const file of mediaFiles) {
-                        const fileName = `${currentUser.id}-${Date.now()}-${file.name}`;
-                        const isVideo = file.type.startsWith('video');
-                        const bucket = isVideo ? 'videos' : 'images';
-                        
-                        const { error: uploadError } = await supabase.storage
-                            .from(bucket)
-                            .upload(fileName, file);
-                        
-                        if (!uploadError) {
-                            const { data: { publicUrl } } = supabase.storage
-                                .from(bucket)
-                                .getPublicUrl(fileName);
-                            
-                            mediaUrls.push({
-                                url: publicUrl,
-                                type: isVideo ? 'video' : 'image'
+                    // Check for existing session
+                    const { data: { session } } = await this.supabase.auth.getSession();
+                    
+                    if (session) {
+                        this.currentUser = session.user;
+                        await this.loadUserProfile();
+                        this.showApp();
+                        await this.loadAllData();
+                    }
+                    
+                    this.setupEventListeners();
+                    
+                    // Listen for auth state changes
+                    this.supabase.auth.onAuthStateChange((event, session) => {
+                        if (event === 'SIGNED_IN' && session) {
+                            this.currentUser = session.user;
+                            this.loadUserProfile().then(() => {
+                                this.showApp();
+                                this.loadAllData();
                             });
+                        } else if (event === 'SIGNED_OUT') {
+                            this.currentUser = null;
+                            this.showAuth();
                         }
-                    }
+                    });
                     
-                    if (mediaUrls.length > 0) {
-                        postData.media = mediaUrls;
-                    }
+                } catch (error) {
+                    console.error('Initialization error:', error);
+                    this.showToast('Failed to initialize app', 'error');
                 }
+            }
+
+            // Theme Management
+            loadThemePreference() {
+                const savedTheme = localStorage.getItem('primemar-theme');
+                if (savedTheme === 'light') {
+                    this.toggleTheme(false);
+                }
+            }
+
+            toggleTheme(showToast = true) {
+                this.isDarkMode = !this.isDarkMode;
                 
-                const { data: post, error } = await supabase
-                    .from('posts')
-                    .insert([postData])
-                    .select(`
-                        *,
-                        profiles (
-                            name,
-                            username,
-                            avatar
-                        )
-                    `)
-                    .single();
+                if (this.isDarkMode) {
+                    document.body.classList.remove('light-mode');
+                    document.getElementById('themeText').textContent = 'Dark Mode';
+                    localStorage.setItem('primemar-theme', 'dark');
+                    if (showToast) this.showToast('Dark mode enabled', 'info');
+                } else {
+                    document.body.classList.add('light-mode');
+                    document.getElementById('themeText').textContent = 'Light Mode';
+                    localStorage.setItem('primemar-theme', 'light');
+                    if (showToast) this.showToast('Light mode enabled', 'info');
+                }
+            }
+
+            // Logout functionality
+            async logout() {
+                try {
+                    const { error } = await this.supabase.auth.signOut();
+                    if (error) throw error;
+                    
+                    this.currentUser = null;
+                    this.userProfile = null;
+                    this.showAuth();
+                    this.showLoginForm();
+                    this.showToast('Logged out successfully', 'info');
+                    
+                } catch (error) {
+                    console.error('Logout error:', error);
+                    this.showToast('Logout failed', 'error');
+                }
+            }
+
+            // Load user profile from Supabase
+            async loadUserProfile() {
+                if (!this.currentUser) return;
+
+                try {
+                    // First, try to get existing profile
+                    const { data: profile, error } = await this.supabase
+                        .from('profiles')
+                        .select('*')
+                        .eq('id', this.currentUser.id)
+                        .single();
+
+                    if (error && error.code === 'PGRST116') {
+                        // Profile doesn't exist, create one
+                        const newProfile = {
+                            id: this.currentUser.id,
+                            name: this.currentUser.user_metadata?.full_name || 'User',
+                            username: this.currentUser.user_metadata?.username || 'user',
+                            email: this.currentUser.email,
+                            bio: 'Welcome to my PrimeMar profile!',
+                            avatar_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(this.currentUser.user_metadata?.full_name || 'User')}&background=ff9800&color=fff&size=128`,
+                            created_at: new Date().toISOString()
+                        };
+
+                        const { data: createdProfile, error: createError } = await this.supabase
+                            .from('profiles')
+                            .insert([newProfile])
+                            .select()
+                            .single();
+
+                        if (createError) throw createError;
+                        this.userProfile = createdProfile;
+                    } else if (error) {
+                        throw error;
+                    } else {
+                        this.userProfile = profile;
+                    }
+                } catch (error) {
+                    console.error('Error loading profile:', error);
+                    // Fallback profile
+                    this.userProfile = {
+                        id: this.currentUser.id,
+                        name: this.currentUser.user_metadata?.full_name || 'User',
+                        username: this.currentUser.user_metadata?.username || 'user',
+                        email: this.currentUser.email,
+                        bio: 'Welcome to my PrimeMar profile!',
+                        avatar_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(this.currentUser.user_metadata?.full_name || 'User')}&background=ff9800&color=fff&size=128`
+                    };
+                }
+            }
+
+            async loadAllData() {
+                await Promise.all([
+                    this.loadStories(),
+                    this.loadFeed(),
+                    this.loadConversations(),
+                    this.loadNotifications()
+                ]);
+            }
+
+            async loadStories() {
+                try {
+                    // Get stories from users you follow
+                    const { data: stories, error } = await this.supabase
+                        .from('profiles')
+                        .select('id, name, username, avatar_url')
+                        .limit(10);
+
+                    if (error) throw error;
+
+                    this.stories = stories || [];
+                    this.renderStories();
+                } catch (error) {
+                    console.error('Error loading stories:', error);
+                    this.stories = [];
+                    this.renderStories();
+                }
+            }
+
+            renderStories() {
+                const container = document.getElementById('storiesContainer');
                 
-                if (error) {
-                    console.error('Error creating post:', error);
-                    showToast('Failed to create post', 'error');
+                if (this.stories.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-users"></i>
+                            <h3>No stories yet</h3>
+                            <p>Follow users to see their stories</p>
+                        </div>
+                    `;
                     return;
                 }
+
+                container.innerHTML = this.stories.map(story => `
+                    <div class="story" onclick="primeMarApp.viewStory('${story.id}')">
+                        <div class="story-avatar">
+                            <div class="story-avatar-inner">
+                                ${story.name.charAt(0)}
+                            </div>
+                        </div>
+                        <div class="story-name">${story.username}</div>
+                    </div>
+                `).join('');
+            }
+
+            async loadFeed() {
+                try {
+                    const { data: posts, error } = await this.supabase
+                        .from('posts')
+                        .select(`
+                            *,
+                            profiles:author_id (
+                                name,
+                                username,
+                                avatar_url
+                            ),
+                            likes (
+                                user_id
+                            ),
+                            comments (
+                                id
+                            )
+                        `)
+                        .order('created_at', { ascending: false })
+                        .limit(20);
+
+                    if (error) throw error;
+
+                    this.posts = posts || [];
+                    this.renderFeed();
+                } catch (error) {
+                    console.error('Error loading feed:', error);
+                    this.posts = [];
+                    this.renderFeed();
+                }
+            }
+
+            renderFeed() {
+                const container = document.getElementById('feedContainer');
                 
-                // Update post count
-                await supabase
-                    .from('profiles')
-                    .update({ 
-                        posts_count: (currentProfile.posts_count || 0) + 1,
-                        updated_at: new Date().toISOString()
-                    })
-                    .eq('id', currentUser.id);
+                if (this.posts.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-feather"></i>
+                            <h3>No posts yet</h3>
+                            <p>Be the first to share something!</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = this.posts.map(post => {
+                    const isLiked = post.likes?.some(like => like.user_id === this.currentUser?.id);
+                    const likeCount = post.likes?.length || 0;
+                    const commentCount = post.comments?.length || 0;
+                    
+                    return `
+                        <div class="post">
+                            <div class="post-header">
+                                <div class="avatar">${post.profiles.name.charAt(0)}</div>
+                                <div class="post-user-info">
+                                    <div class="user-name">${post.profiles.name}</div>
+                                    <div class="user-handle">@${post.profiles.username}</div>
+                                </div>
+                                <div class="post-time">${this.formatTime(post.created_at)}</div>
+                            </div>
+                            <div class="post-content">${post.content}</div>
+                            ${post.image_url ? `
+                                <div class="post-image">
+                                    <i class="fas fa-image"></i> Image attached
+                                </div>
+                            ` : ''}
+                            <div class="post-actions">
+                                <button class="post-action" onclick="primeMarApp.commentOnPost('${post.id}')">
+                                    <i class="fas fa-comment"></i>
+                                    <span>${commentCount}</span>
+                                </button>
+                                <button class="post-action ${isLiked ? 'liked' : ''}" onclick="primeMarApp.likePost('${post.id}')">
+                                    <i class="fas fa-heart"></i>
+                                    <span>${likeCount}</span>
+                                </button>
+                                <button class="post-action" onclick="primeMarApp.sharePost('${post.id}')">
+                                    <i class="fas fa-share"></i>
+                                    <span>Share</span>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            async loadConversations() {
+                try {
+                    const { data: conversations, error } = await this.supabase
+                        .from('conversations')
+                        .select(`
+                            *,
+                            user1:profiles!conversations_user1_id_fkey (id, name, username, avatar_url),
+                            user2:profiles!conversations_user2_id_fkey (id, name, username, avatar_url)
+                        `)
+                        .or(`user1_id.eq.${this.currentUser.id},user2_id.eq.${this.currentUser.id}`)
+                        .order('updated_at', { ascending: false });
+
+                    if (error) throw error;
+
+                    this.conversations = conversations || [];
+                    this.renderConversations();
+                } catch (error) {
+                    console.error('Error loading conversations:', error);
+                    this.conversations = [];
+                    this.renderConversations();
+                }
+            }
+
+            renderConversations() {
+                const container = document.getElementById('messagesList');
                 
-                currentProfile.posts_count = (currentProfile.posts_count || 0) + 1;
-                updateProfileUI();
+                if (this.conversations.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-comments"></i>
+                            <h3>No conversations</h3>
+                            <p>Start a conversation with someone!</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = this.conversations.map(conv => {
+                    const otherUser = conv.user1_id === this.currentUser.id ? conv.user2 : conv.user1;
+                    return `
+                        <div class="message-item" onclick="primeMarApp.openChat('${conv.id}')">
+                            <div class="avatar">${otherUser.name.charAt(0)}</div>
+                            <div class="message-item-info">
+                                <div class="user-name">${otherUser.name}</div>
+                                <div class="message-preview">${conv.last_message || 'Start a conversation'}</div>
+                            </div>
+                            <div class="post-time">${this.formatTime(conv.updated_at)}</div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            async loadNotifications() {
+                try {
+                    const { data: notifications, error } = await this.supabase
+                        .from('notifications')
+                        .select(`
+                            *,
+                            from_user:profiles!notifications_from_user_id_fkey (name, username, avatar_url)
+                        `)
+                        .eq('to_user_id', this.currentUser.id)
+                        .order('created_at', { ascending: false })
+                        .limit(20);
+
+                    if (error) throw error;
+
+                    this.notifications = notifications || [];
+                    this.renderNotifications();
+                } catch (error) {
+                    console.error('Error loading notifications:', error);
+                    this.notifications = [];
+                    this.renderNotifications();
+                }
+            }
+
+            renderNotifications() {
+                const container = document.getElementById('notificationsList');
                 
-                // Clear composer
-                document.getElementById('postText').value = '';
-                document.getElementById('mediaPreview').innerHTML = '';
-                document.getElementById('mediaInput').value = '';
+                if (this.notifications.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-bell-slash"></i>
+                            <h3>No notifications</h3>
+                            <p>Your notifications will appear here</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = this.notifications.map(notif => {
+                    let content = '';
+                    switch(notif.type) {
+                        case 'like':
+                            content = `${notif.from_user.name} liked your post`;
+                            break;
+                        case 'follow':
+                            content = `${notif.from_user.name} started following you`;
+                            break;
+                        case 'comment':
+                            content = `${notif.from_user.name} commented on your post`;
+                            break;
+                        default:
+                            content = `${notif.from_user.name} ${notif.type}`;
+                    }
+                    
+                    return `
+                        <div class="notification-item ${!notif.read ? 'unread' : ''}">
+                            <div class="avatar">${notif.from_user.name.charAt(0)}</div>
+                            <div class="notification-content">
+                                <div>${content}</div>
+                                <div class="notification-time">${this.formatTime(notif.created_at)}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            // Authentication
+            async handleLogin() {
+                const email = document.getElementById('loginEmail').value;
+                const password = document.getElementById('loginPassword').value;
+                const errorDiv = document.getElementById('loginError');
+
+                try {
+                    this.clearError(errorDiv);
+
+                    if (!email || !password) {
+                        throw new Error('Please fill in all fields');
+                    }
+
+                    const { data, error } = await this.supabase.auth.signInWithPassword({
+                        email: email,
+                        password: password
+                    });
+
+                    if (error) throw error;
+
+                    this.currentUser = data.user;
+                    this.showToast('Welcome back!', 'success');
+                    
+                } catch (error) {
+                    this.showError(error.message, errorDiv);
+                    this.showToast('Login failed', 'error');
+                }
+            }
+
+            async handleSignup() {
+                const name = document.getElementById('signupName').value;
+                const username = document.getElementById('signupUsername').value;
+                const email = document.getElementById('signupEmail').value;
+                const password = document.getElementById('signupPassword').value;
+                const errorDiv = document.getElementById('signupError');
+
+                try {
+                    this.clearError(errorDiv);
+
+                    if (!name || !username || !email || !password) {
+                        throw new Error('Please fill in all fields');
+                    }
+
+                    if (password.length < 6) {
+                        throw new Error('Password must be at least 6 characters');
+                    }
+
+                    // Check if username exists
+                    const { data: existingUser } = await this.supabase
+                        .from('profiles')
+                        .select('username')
+                        .eq('username', username)
+                        .single();
+
+                    if (existingUser) {
+                        throw new Error('Username already exists');
+                    }
+
+                    const { data, error } = await this.supabase.auth.signUp({
+                        email: email,
+                        password: password,
+                        options: {
+                            data: {
+                                full_name: name,
+                                username: username
+                            }
+                        }
+                    });
+
+                    if (error) throw error;
+
+                    this.showLoginForm();
+                    this.showError('Account created! Please check your email for verification.', errorDiv);
+                    this.showToast('Account created successfully!', 'success');
+                    
+                } catch (error) {
+                    this.showError(error.message, errorDiv);
+                    this.showToast('Signup failed', 'error');
+                }
+            }
+
+            // Post Features
+            async createPost(content) {
+                if (!content.trim()) return;
+
+                try {
+                    const { data: post, error } = await this.supabase
+                        .from('posts')
+                        .insert([{
+                            content: content,
+                            author_id: this.currentUser.id,
+                            created_at: new Date().toISOString()
+                        }])
+                        .select(`
+                            *,
+                            profiles:author_id (
+                                name,
+                                username,
+                                avatar_url
+                            ),
+                            likes (
+                                user_id
+                            ),
+                            comments (
+                                id
+                            )
+                        `)
+                        .single();
+
+                    if (error) throw error;
+
+                    this.posts.unshift(post);
+                    this.renderFeed();
+                    this.showToast('Post published!', 'success');
+                    
+                    // Clear composer
+                    document.getElementById('postTextarea').value = '';
+                    document.getElementById('postBtn').disabled = true;
+                } catch (error) {
+                    console.error('Error creating post:', error);
+                    this.showToast('Error creating post', 'error');
+                }
+            }
+
+            async likePost(postId) {
+                try {
+                    const { data: existingLike, error: checkError } = await this.supabase
+                        .from('likes')
+                        .select('*')
+                        .eq('post_id', postId)
+                        .eq('user_id', this.currentUser.id)
+                        .single();
+
+                    if (checkError && checkError.code !== 'PGRST116') throw checkError;
+
+                    if (existingLike) {
+                        // Unlike
+                        const { error } = await this.supabase
+                            .from('likes')
+                            .delete()
+                            .eq('post_id', postId)
+                            .eq('user_id', this.currentUser.id);
+
+                        if (error) throw error;
+                        this.showToast('Post unliked', 'info');
+                    } else {
+                        // Like
+                        const { error } = await this.supabase
+                            .from('likes')
+                            .insert([{
+                                post_id: postId,
+                                user_id: this.currentUser.id,
+                                created_at: new Date().toISOString()
+                            }]);
+
+                        if (error) throw error;
+                        this.showToast('Post liked!', 'success');
+                    }
+
+                    // Reload feed to update counts
+                    await this.loadFeed();
+                } catch (error) {
+                    console.error('Error liking post:', error);
+                    this.showToast('Error updating like', 'error');
+                }
+            }
+
+            async commentOnPost(postId) {
+                const comment = prompt('Enter your comment:');
+                if (comment) {
+                    try {
+                        const { error } = await this.supabase
+                            .from('comments')
+                            .insert([{
+                                post_id: postId,
+                                user_id: this.currentUser.id,
+                                content: comment,
+                                created_at: new Date().toISOString()
+                            }]);
+
+                        if (error) throw error;
+
+                        // Create notification
+                        const post = this.posts.find(p => p.id === postId);
+                        if (post && post.author_id !== this.currentUser.id) {
+                            await this.supabase
+                                .from('notifications')
+                                .insert([{
+                                    from_user_id: this.currentUser.id,
+                                    to_user_id: post.author_id,
+                                    type: 'comment',
+                                    post_id: postId,
+                                    created_at: new Date().toISOString()
+                                }]);
+                        }
+
+                        await this.loadFeed();
+                        this.showToast('Comment added!', 'success');
+                    } catch (error) {
+                        console.error('Error adding comment:', error);
+                        this.showToast('Error adding comment', 'error');
+                    }
+                }
+            }
+
+            sharePost(postId) {
+                this.showToast('Share feature coming soon!', 'info');
+            }
+
+            // Message Features
+            async openChat(conversationId) {
+                const conversation = this.conversations.find(c => c.id === conversationId);
+                if (!conversation) return;
+
+                this.activeChat = conversation;
+                document.getElementById('messagesList').style.display = 'none';
+                document.getElementById('chatView').classList.add('active');
                 
-                // Add to feed
-                addPostToFeed(post);
-                showToast('Post created successfully!', 'success');
+                await this.loadChatMessages(conversationId);
+            }
+
+            async loadChatMessages(conversationId) {
+                try {
+                    const { data: messages, error } = await this.supabase
+                        .from('messages')
+                        .select(`
+                            *,
+                            profiles:sender_id (
+                                name,
+                                username,
+                                avatar_url
+                            )
+                        `)
+                        .eq('conversation_id', conversationId)
+                        .order('created_at', { ascending: true });
+
+                    if (error) throw error;
+
+                    this.renderChatMessages(messages || []);
+                } catch (error) {
+                    console.error('Error loading messages:', error);
+                    this.renderChatMessages([]);
+                }
+            }
+
+            renderChatMessages(messages) {
+                const container = document.getElementById('chatMessages');
+                container.innerHTML = messages.map(msg => `
+                    <div class="message ${msg.sender_id === this.currentUser.id ? 'own' : ''}">
+                        <div class="avatar">${msg.profiles.name.charAt(0)}</div>
+                        <div class="message-content">${msg.content}</div>
+                    </div>
+                `).join('');
+                container.scrollTop = container.scrollHeight;
+            }
+
+            async sendMessage() {
+                const input = document.getElementById('chatInput');
+                const content = input.value.trim();
                 
-            } catch (error) {
-                console.error('Post creation error:', error);
-                showToast('Failed to create post', 'error');
+                if (!content || !this.activeChat) return;
+
+                try {
+                    const { error } = await this.supabase
+                        .from('messages')
+                        .insert([{
+                            conversation_id: this.activeChat.id,
+                            sender_id: this.currentUser.id,
+                            content: content,
+                            created_at: new Date().toISOString()
+                        }]);
+
+                    if (error) throw error;
+
+                    // Update conversation last message
+                    await this.supabase
+                        .from('conversations')
+                        .update({
+                            last_message: content,
+                            updated_at: new Date().toISOString()
+                        })
+                        .eq('id', this.activeChat.id);
+
+                    // Reload messages
+                    await this.loadChatMessages(this.activeChat.id);
+                    
+                    // Clear input
+                    input.value = '';
+
+                } catch (error) {
+                    console.error('Error sending message:', error);
+                    this.showToast('Error sending message', 'error');
+                }
+            }
+
+            // Search Features
+            async performSearch(query) {
+                if (!query.trim()) {
+                    this.hideSearchResults();
+                    return;
+                }
+
+                try {
+                    const { data: users, error } = await this.supabase
+                        .from('profiles')
+                        .select('id, name, username, avatar_url')
+                        .ilike('username', `%${query}%`)
+                        .limit(5);
+
+                    if (error) throw error;
+
+                    this.searchResults = users || [];
+                    this.renderSearchResults();
+                } catch (error) {
+                    console.error('Error searching:', error);
+                    this.searchResults = [];
+                    this.renderSearchResults();
+                }
+            }
+
+            renderSearchResults() {
+                const container = document.getElementById('searchResults');
+                container.innerHTML = this.searchResults.map(user => `
+                    <div class="search-result-item" onclick="primeMarApp.viewProfile('${user.id}')">
+                        <div class="avatar">${user.name.charAt(0)}</div>
+                        <div>
+                            <div class="user-name">${user.name}</div>
+                            <div class="user-handle">@${user.username}</div>
+                        </div>
+                    </div>
+                `).join('');
+
+                container.classList.add('active');
+            }
+
+            hideSearchResults() {
+                document.getElementById('searchResults').classList.remove('active');
+            }
+
+            // Additional Features
+            viewStory(userId) {
+                this.showToast(`Viewing ${userId}'s story`, 'info');
+            }
+
+            viewProfile(userId) {
+                this.showToast(`Viewing profile ${userId}`, 'info');
+                this.hideSearchResults();
+            }
+
+            addImage() {
+                this.showToast('Image upload coming soon!', 'info');
+            }
+
+            addEmoji() {
+                this.showToast('Emoji picker coming soon!', 'info');
+            }
+
+            addLocation() {
+                this.showToast('Location sharing coming soon!', 'info');
+            }
+
+            startChat() {
+                this.showPage('messagesPage');
+                this.showToast('Start a new conversation', 'info');
+            }
+
+            showUserPosts() {
+                // Show user's posts in profile
+                const userPosts = this.posts.filter(post => post.author_id === this.currentUser.id);
+                const container = document.getElementById('profilePostsContainer');
+                
+                if (userPosts.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-feather"></i>
+                            <h3>No posts yet</h3>
+                            <p>Share your first post!</p>
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = userPosts.map(post => `
+                        <div class="post">
+                            <div class="post-content">${post.content}</div>
+                            <div class="post-time">${this.formatTime(post.created_at)}</div>
+                        </div>
+                    `).join('');
+                }
+            }
+
+            showFollowing() {
+                this.showToast('Following list coming soon!', 'info');
+            }
+
+            showFollowers() {
+                this.showToast('Followers list coming soon!', 'info');
+            }
+
+            // UI Methods
+            showAuth() {
+                document.getElementById('authModal').classList.remove('hidden');
+                document.getElementById('appContainer').classList.remove('active');
+            }
+
+            showApp() {
+                document.getElementById('authModal').classList.add('hidden');
+                document.getElementById('appContainer').classList.add('active');
+                this.updateProfileUI();
+            }
+
+            showLoginForm() {
+                document.getElementById('loginForm').style.display = 'block';
+                document.getElementById('signupForm').style.display = 'none';
+                this.clearErrors();
+            }
+
+            showSignupForm() {
+                document.getElementById('loginForm').style.display = 'none';
+                document.getElementById('signupForm').style.display = 'block';
+                this.clearErrors();
+            }
+
+            updateProfileUI() {
+                if (!this.userProfile) return;
+
+                document.getElementById('userAvatar').textContent = this.userProfile.name.charAt(0);
+                document.getElementById('profileAvatar').textContent = this.userProfile.name.charAt(0);
+                document.getElementById('profileName').textContent = this.userProfile.name;
+                document.getElementById('profileHandle').textContent = `@${this.userProfile.username}`;
+                document.getElementById('profileBio').textContent = this.userProfile.bio;
+                
+                // Update stats
+                const userPosts = this.posts.filter(post => post.author_id === this.currentUser.id);
+                document.getElementById('postsCount').textContent = userPosts.length;
+                // Note: Following and followers counts would need additional database queries
+            }
+
+            showPage(pageId) {
+                document.querySelectorAll('.page').forEach(page => {
+                    page.classList.remove('active');
+                });
+                
+                document.getElementById(pageId).classList.add('active');
+                
+                document.querySelectorAll('.nav-item').forEach(nav => {
+                    nav.classList.remove('active');
+                    if (nav.dataset.page === pageId) {
+                        nav.classList.add('active');
+                    }
+                });
+
+                if (pageId !== 'searchPage') {
+                    this.hideSearchResults();
+                }
+
+                this.hideProfileDropdown();
+            }
+
+            toggleProfileDropdown() {
+                const dropdown = document.getElementById('profileDropdown');
+                dropdown.classList.toggle('active');
+            }
+
+            hideProfileDropdown() {
+                document.getElementById('profileDropdown').classList.remove('active');
+            }
+
+            // Utility Methods
+            formatTime(timestamp) {
+                const now = new Date();
+                const time = new Date(timestamp);
+                const diff = now - time;
+                const minutes = Math.floor(diff / 60000);
+                const hours = Math.floor(diff / 3600000);
+                const days = Math.floor(diff / 86400000);
+
+                if (minutes < 1) return 'now';
+                if (minutes < 60) return `${minutes}m`;
+                if (hours < 24) return `${hours}h`;
+                return `${days}d`;
+            }
+
+            showToast(message, type = 'success') {
+                const toast = document.createElement('div');
+                toast.className = `toast ${type}`;
+                toast.textContent = message;
+                document.getElementById('toastContainer').appendChild(toast);
+                
+                setTimeout(() => toast.classList.add('show'), 10);
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    setTimeout(() => toast.remove(), 300);
+                }, 3000);
+            }
+
+            clearErrors() {
+                document.getElementById('loginError').classList.remove('show');
+                document.getElementById('signupError').classList.remove('show');
+            }
+
+            clearError(errorDiv) {
+                errorDiv.classList.remove('show');
+            }
+
+            showError(message, errorDiv) {
+                errorDiv.textContent = message;
+                errorDiv.classList.add('show');
+            }
+
+            setupEventListeners() {
+                // Auth events
+                document.getElementById('loginBtn').addEventListener('click', () => this.handleLogin());
+                document.getElementById('signupBtn').addEventListener('click', () => this.handleSignup());
+                document.getElementById('showSignup').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    this.showSignupForm();
+                });
+                document.getElementById('showLogin').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    this.showLoginForm();
+                });
+
+                // Enter key for forms
+                document.getElementById('loginPassword').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.handleLogin();
+                });
+                document.getElementById('signupPassword').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.handleSignup();
+                });
+
+                // Navigation
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        this.showPage(item.dataset.page);
+                    });
+                });
+
+                // Header buttons
+                document.getElementById('notificationBtn').addEventListener('click', () => {
+                    this.showPage('notificationsPage');
+                });
+
+                // Profile dropdown
+                document.getElementById('profileBtn').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.toggleProfileDropdown();
+                });
+
+                // Close dropdown when clicking outside
+                document.addEventListener('click', () => {
+                    this.hideProfileDropdown();
+                });
+
+                // Theme toggle
+                document.getElementById('themeToggleBtn').addEventListener('click', () => {
+                    this.toggleTheme();
+                    this.hideProfileDropdown();
+                });
+
+                // Logout
+                document.getElementById('logoutBtn').addEventListener('click', () => {
+                    this.logout();
+                    this.hideProfileDropdown();
+                });
+
+                // Post composer
+                const postTextarea = document.getElementById('postTextarea');
+                const postBtn = document.getElementById('postBtn');
+
+                postTextarea.addEventListener('input', () => {
+                    const hasContent = postTextarea.value.trim().length > 0;
+                    postBtn.disabled = !hasContent;
+                });
+
+                postBtn.addEventListener('click', () => {
+                    this.createPost(postTextarea.value);
+                });
+
+                // Search
+                document.getElementById('searchInput').addEventListener('input', (e) => {
+                    this.performSearch(e.target.value);
+                });
+
+                document.addEventListener('click', (e) => {
+                    if (!e.target.closest('.search-container')) {
+                        this.hideSearchResults();
+                    }
+                });
+
+                // Messages
+                document.getElementById('sendBtn').addEventListener('click', () => {
+                    this.sendMessage();
+                });
+
+                document.getElementById('chatInput').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        this.sendMessage();
+                    }
+                });
             }
         }
-        
-        // Message Functions
-        async function loadChats() {
-            try {
-                const { data: conversations } = await supabase
-                    .from('conversations')
-                    .select(`
-                        *,
-                        user1:profiles!conversations_user1_id_fkey (
-                            name,
-                            username,
-                            avatar
-                        ),
-                        user2:profiles!conversations_user2_id_fkey (
-                            name,
-                            username,
-                            avatar
-                        )
-                    `)
-                    .or(`user1_id.eq.${currentUser.id},user2_id.eq.${currentUser.id}`)
-                    .order('updated_at', { ascending: false });
-                
-                renderChats(conversations || []);
-                
-            } catch (error) {
-                console.error('Error loading chats:', error);
-            }
-        }
-        
-        async function sendMessage() {
-            if (!currentChat) {
-                showToast('Please select a chat first', 'error');
-                return;
-            }
-            
-            const input = document.getElementById('messageInput');
-            const content = input.value.trim();
-            
-            if (!content) {
-                showToast('Message cannot be empty', 'error');
-                return;
-            }
-            
-            try {
-                const receiverId = currentChat.user1_id === currentUser.id ? 
-                    currentChat.user2_id : currentChat.user1_id;
-                
-                const { data: message } = await supabase
-                    .from('messages')
-                    .insert([{
-                        conversation_id: currentChat.id,
-                        sender_id: currentUser.id,
-                        receiver_id: receiverId,
-                        content: content,
-                        created_at: new Date().toISOString()
-                    }])
-                    .select()
-                    .single();
-                
-                // Update conversation
-                await supabase
-                    .from('conversations')
-                    .update({
-                        last_message: content,
-                        updated_at: new Date().toISOString()
-                    })
-                    .eq('id', currentChat.id);
-                
-                appendMessage(message);
-                input.value = '';
-                
-            } catch (error) {
-                console.error('Error sending message:', error);
-                showToast('Failed to send message', 'error');
-            }
-        }
-        
-        // UI Functions
-        function showAuth() {
-            document.getElementById('authPage').style.display = 'flex';
-            document.getElementById('appContainer').classList.remove('active');
-        }
-        
-        function showApp() {
-            document.getElementById('authPage').style.display = 'none';
-            document.getElementById('appContainer').classList.add('active');
-            showPage('home');
-        }
-        
-        function switchAuthTab(tab) {
-            document.getElementById('loginForm').classList.add('hidden');
-            document.getElementById('signupForm').classList.add('hidden');
-            
-            document.querySelectorAll('.auth-tab').forEach(t => {
-                t.classList.remove('active');
-            });
-            
-            document.getElementById(`${tab}Form`).classList.remove('hidden');
-            document.querySelector(`.auth-tab[onclick*="${tab}"]`).classList.add('active');
-        }
-        
-        function showPage(page) {
-            // Hide all pages
-            document.querySelectorAll('.page').forEach(p => {
-                p.classList.remove('active');
-            });
-            
-            // Remove active class from nav items
-            document.querySelectorAll('.nav-item, .bottom-nav-item').forEach(item => {
-                item.classList.remove('active');
-            });
-            
-            // Show selected page
-            document.getElementById(`${page}Page`).classList.add('active');
-            
-            // Update active nav item
-            const activeNav = document.querySelector(`.nav-item[onclick*="${page}"], .bottom-nav-item[onclick*="${page}"]`);
-            if (activeNav) activeNav.classList.add('active');
-            
-            // Load data for the page
-            if (page === 'home') {
-                loadFeed();
-            } else if (page === 'messages') {
-                loadChats();
-            } else if (page === 'profile') {
-                loadUserPosts(currentUser.id);
-            }
-        }
-        
-        function updateProfileUI() {
-            if (!currentProfile) return;
-            
-            const elements = [
-                { id: 'miniAvatar', text: currentProfile.name?.charAt(0)?.toUpperCase() || 'U' },
-                { id: 'miniName', text: currentProfile.name || 'User' },
-                { id: 'miniHandle', text: `@${currentProfile.username || 'user'}` },
-                { id: 'composerAvatar', text: currentProfile.name?.charAt(0)?.toUpperCase() || 'U' },
-                { id: 'profileAvatar', text: currentProfile.name?.charAt(0)?.toUpperCase() || 'U' },
-                { id: 'profileName', text: currentProfile.name || 'User' },
-                { id: 'profileHandle', text: `@${currentProfile.username || 'user'}` },
-                { id: 'profileBio', text: currentProfile.bio || 'No bio yet' },
-                { id: 'postsCount', text: currentProfile.posts_count || 0 },
-                { id: 'followersCount', text: currentProfile.followers_count || 0 },
-                { id: 'followingCount', text: currentProfile.following_count || 0 }
-            ];
-            
-            elements.forEach(({ id, text }) => {
-                const element = document.getElementById(id);
-                if (element) element.textContent = text;
-            });
-        }
-        
-        // Helper Functions
-        function generateUsername(name) {
-            const base = name ? name.toLowerCase().replace(/[^a-z0-9]/g, '') : 'user';
-            const random = Math.floor(Math.random() * 10000);
-            return `${base}${random}`;
-        }
-        
-        function showToast(message, type = 'success') {
-            const toast = document.createElement('div');
-            toast.className = 'toast';
-            toast.textContent = message;
-            toast.style.background = type === 'error' ? '#E0245E' : '#17BF63';
-            
-            const container = document.getElementById('toastContainer');
-            container.appendChild(toast);
-            
-            setTimeout(() => {
-                toast.remove();
-            }, 3000);
-        }
-        
+
         // Initialize the app
-        document.addEventListener('DOMContentLoaded', initApp);
-        
-        // Make functions available globally
-        window.switchAuthTab = switchAuthTab;
-        window.login = login;
-        window.signup = signup;
-        window.showPage = showPage;
-        window.newPost = newPost;
-        window.createPost = createPost;
-        window.sendMessage = sendMessage;
+        document.addEventListener('DOMContentLoaded', () => {
+            window.primeMarApp = new PrimeMar();
+        });
     </script>
 </body>
 </html>
