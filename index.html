@@ -445,7 +445,7 @@
 
         .nav-item.active {
             color: var(--primary-color);
-            background: var(--primary-light);
+            background: rgba(59, 130, 246, 0.1);
         }
 
         .nav-item:hover:not(.active) {
@@ -477,6 +477,11 @@
             padding: 1rem 0;
             overflow-x: auto;
             margin-bottom: 1rem;
+            scrollbar-width: none;
+        }
+
+        .stories-container::-webkit-scrollbar {
+            display: none;
         }
 
         .story {
@@ -979,7 +984,7 @@
         }
 
         .notification-item.unread {
-            background: var(--primary-light);
+            background: rgba(59, 130, 246, 0.1);
         }
 
         .notification-content {
@@ -1320,6 +1325,65 @@
             border-radius: var(--radius-full);
             transition: width 0.3s ease;
         }
+
+        /* Badge */
+        .badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: var(--accent-color);
+            color: white;
+            border-radius: var(--radius-full);
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+        }
+
+        /* Post Loading Skeleton */
+        .skeleton {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            animation: pulse 1.5s infinite;
+        }
+
+        .skeleton-post {
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .skeleton-header {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .skeleton-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-full);
+        }
+
+        .skeleton-user {
+            flex: 1;
+        }
+
+        .skeleton-line {
+            height: 12px;
+            margin-bottom: 0.5rem;
+            border-radius: var(--radius-sm);
+        }
+
+        .skeleton-line.short {
+            width: 60%;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
     </style>
 </head>
 <body>
@@ -1370,7 +1434,7 @@
                 </div>
                 <div class="form-group">
                     <label for="signupPassword" class="form-label">Password</label>
-                    <input type="password" id="signupPassword" class="form-input" placeholder="Create a password (min. 6 characters)" required>
+                    <input type="password" id="signupPassword" class="form-input" placeholder="Create a password (min. 6 characters)" required minlength="6">
                 </div>
                 <div class="form-group">
                     <button type="submit" class="btn btn-primary w-full">
@@ -1418,13 +1482,13 @@
                     <button id="themeToggleBtn" class="btn-icon">
                         <i class="fas fa-moon"></i>
                     </button>
-                    <button id="notificationBtn" class="btn-icon">
+                    <button id="notificationBtn" class="btn-icon" style="position: relative;">
                         <i class="fas fa-bell"></i>
-                        <span id="notificationBadge" class="hidden"></span>
+                        <span id="notificationBadge" class="badge hidden">0</span>
                     </button>
                     <div style="position: relative;">
                         <button id="profileMenuBtn" class="btn-icon">
-                            <div class="avatar" id="headerAvatar"></div>
+                            <div class="avatar" id="headerAvatar">U</div>
                         </button>
                         <div id="profileMenu" class="profile-menu hidden">
                             <button class="menu-item" onclick="app.showPage('profilePage')">
@@ -1466,7 +1530,7 @@
                     <!-- Post Composer -->
                     <div class="post-composer">
                         <div class="composer-header">
-                            <div class="avatar" id="composerAvatar"></div>
+                            <div class="avatar" id="composerAvatar">U</div>
                             <textarea id="postContent" class="form-textarea" placeholder="What's on your mind?" rows="3"></textarea>
                         </div>
                         <div id="mediaPreview" class="media-preview"></div>
@@ -1496,7 +1560,12 @@
                     </div>
 
                     <!-- Feed -->
-                    <div id="feedContainer"></div>
+                    <div id="feedContainer">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            <p>Loading posts...</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -1509,7 +1578,13 @@
                         <button class="search-tab" data-type="posts">Posts</button>
                         <button class="search-tab" data-type="tags">Tags</button>
                     </div>
-                    <div id="searchResultsContainer"></div>
+                    <div id="searchResultsContainer">
+                        <div class="empty-state">
+                            <i class="fas fa-search"></i>
+                            <h3>Search for users, posts, or tags</h3>
+                            <p>Type in the search box above to get started</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -1523,7 +1598,12 @@
                                 <i class="fas fa-edit"></i>
                             </button>
                         </div>
-                        <div id="conversationsList" class="conversations-list"></div>
+                        <div id="conversationsList" class="conversations-list">
+                            <div class="loading">
+                                <div class="spinner"></div>
+                                <p>Loading conversations...</p>
+                            </div>
+                        </div>
                     </div>
                     <div id="chatView" class="hidden">
                         <div class="chat-container">
@@ -1532,10 +1612,10 @@
                                     <i class="fas fa-arrow-left"></i>
                                 </button>
                                 <div class="flex items-center gap-3">
-                                    <div id="chatAvatar" class="avatar"></div>
+                                    <div id="chatAvatar" class="avatar">U</div>
                                     <div>
-                                        <div id="chatName" class="font-semibold"></div>
-                                        <div id="chatStatus" class="text-sm text-secondary"></div>
+                                        <div id="chatName" class="font-semibold">User</div>
+                                        <div id="chatStatus" class="text-sm text-secondary">Online</div>
                                     </div>
                                 </div>
                                 <div style="flex: 1;"></div>
@@ -1546,7 +1626,11 @@
                                     <i class="fas fa-video"></i>
                                 </button>
                             </div>
-                            <div id="chatMessages" class="chat-messages"></div>
+                            <div id="chatMessages" class="chat-messages">
+                                <div class="empty-state">
+                                    <p>Start a conversation</p>
+                                </div>
+                            </div>
                             <div class="chat-input-container">
                                 <button class="btn-icon" onclick="document.getElementById('chatFileUpload').click()">
                                     <i class="fas fa-paperclip"></i>
@@ -1571,7 +1655,12 @@
                             <i class="fas fa-check-double"></i>
                         </button>
                     </div>
-                    <div id="notificationsList" class="notifications-list"></div>
+                    <div id="notificationsList" class="notifications-list">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            <p>Loading notifications...</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -1579,11 +1668,11 @@
             <div id="profilePage" class="page">
                 <div class="profile-page">
                     <div class="profile-header">
-                        <div class="profile-avatar-large" id="profileLargeAvatar"></div>
+                        <div class="profile-avatar-large" id="profileLargeAvatar">U</div>
                         <div class="profile-info">
-                            <h1 class="profile-name" id="profileDisplayName"></h1>
-                            <div class="profile-handle" id="profileDisplayHandle"></div>
-                            <div class="profile-bio" id="profileDisplayBio"></div>
+                            <h1 class="profile-name" id="profileDisplayName">Loading...</h1>
+                            <div class="profile-handle" id="profileDisplayHandle">@user</div>
+                            <div class="profile-bio" id="profileDisplayBio">No bio yet</div>
                             <div class="profile-stats">
                                 <div class="stat" onclick="app.showUserPosts()">
                                     <div class="stat-number" id="postsCount">0</div>
@@ -1611,7 +1700,12 @@
                             </div>
                         </div>
                     </div>
-                    <div id="profileContent"></div>
+                    <div id="profileContent">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            <p>Loading profile...</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </main>
@@ -1659,7 +1753,7 @@
                 <div class="form-group">
                     <label class="form-label">Profile Picture</label>
                     <div class="flex items-center gap-4">
-                        <div id="editProfileAvatar" class="avatar" style="width: 80px; height: 80px;"></div>
+                        <div id="editProfileAvatar" class="avatar" style="width: 80px; height: 80px;">U</div>
                         <button type="button" class="btn btn-secondary" onclick="document.getElementById('avatarUpload').click()">
                             <i class="fas fa-camera"></i> Change
                         </button>
@@ -1704,17 +1798,19 @@
             <div class="flex flex-col h-full">
                 <div class="flex items-center justify-between p-4">
                     <div class="flex items-center gap-3">
-                        <div id="storyAvatar" class="avatar"></div>
+                        <div id="storyAvatar" class="avatar">U</div>
                         <div>
-                            <div id="storyUsername" class="font-semibold text-white"></div>
-                            <div id="storyTime" class="text-sm text-gray-400"></div>
+                            <div id="storyUsername" class="font-semibold text-white">User</div>
+                            <div id="storyTime" class="text-sm text-gray-400">Just now</div>
                         </div>
                     </div>
                     <button class="btn-icon text-white" onclick="app.closeStory()">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
-                <div id="storyContent" class="flex-1 flex items-center justify-center"></div>
+                <div id="storyContent" class="flex-1 flex items-center justify-center">
+                    <div class="text-white">Story content will appear here</div>
+                </div>
                 <div class="p-4">
                     <div class="flex items-center gap-2">
                         <input type="text" id="storyReply" class="form-input flex-1" placeholder="Send a reply..." onkeypress="if(event.key === 'Enter') app.sendStoryReply()">
@@ -1763,6 +1859,7 @@
                 this.remoteStream = null;
                 this.dataChannel = null;
                 this.currentMedia = [];
+                this.unreadNotifications = 0;
                 
                 // Real-time subscriptions
                 this.subscriptions = {
@@ -1777,6 +1874,8 @@
 
             async init() {
                 try {
+                    console.log('Initializing PrimeMar App...');
+                    
                     // Initialize Supabase
                     this.supabase = supabase.createClient(this.supabaseUrl, this.supabaseKey);
                     
@@ -1784,9 +1883,16 @@
                     this.loadTheme();
                     
                     // Check for existing session
-                    const { data: { session } } = await this.supabase.auth.getSession();
+                    const { data: { session }, error } = await this.supabase.auth.getSession();
+                    
+                    if (error) {
+                        console.error('Session error:', error);
+                        this.showAuth();
+                        return;
+                    }
                     
                     if (session) {
+                        console.log('User found:', session.user.email);
                         this.currentUser = session.user;
                         await this.loadProfile();
                         this.showApp();
@@ -1800,6 +1906,8 @@
                     
                     // Listen for auth state changes
                     this.supabase.auth.onAuthStateChange(async (event, session) => {
+                        console.log('Auth state changed:', event);
+                        
                         if (event === 'SIGNED_IN' && session) {
                             this.currentUser = session.user;
                             await this.loadProfile();
@@ -1874,7 +1982,7 @@
                     
                 } catch (error) {
                     console.error('Login error:', error);
-                    this.showToast(error.message, 'error');
+                    this.showToast(error.message || 'Invalid credentials', 'error');
                 }
             }
 
@@ -1882,7 +1990,7 @@
                 event.preventDefault();
                 
                 const name = document.getElementById('signupName').value.trim();
-                const username = document.getElementById('signupUsername').value.trim();
+                const username = document.getElementById('signupUsername').value.trim().toLowerCase();
                 const email = document.getElementById('signupEmail').value.trim();
                 const password = document.getElementById('signupPassword').value.trim();
                 
@@ -1927,7 +2035,7 @@
                     
                 } catch (error) {
                     console.error('Signup error:', error);
-                    this.showToast(error.message, 'error');
+                    this.showToast(error.message || 'Failed to create account', 'error');
                 }
             }
 
@@ -1949,7 +2057,7 @@
                     
                 } catch (error) {
                     console.error('Reset password error:', error);
-                    this.showToast(error.message, 'error');
+                    this.showToast(error.message || 'Failed to send reset link', 'error');
                 }
             }
 
@@ -1975,69 +2083,94 @@
                 if (!this.currentUser) return;
                 
                 try {
+                    // Try to get existing profile
                     const { data: profile, error } = await this.supabase
                         .from('profiles')
                         .select('*')
                         .eq('id', this.currentUser.id)
                         .single();
                     
-                    if (error) throw error;
-                    
-                    this.currentProfile = profile;
-                    this.updateProfileUI();
+                    if (error) {
+                        // Profile doesn't exist, create one
+                        console.log('Profile not found, creating new one...');
+                        await this.createProfile();
+                    } else {
+                        this.currentProfile = profile;
+                        this.updateProfileUI();
+                    }
                     
                 } catch (error) {
                     console.error('Error loading profile:', error);
-                    // Create profile if it doesn't exist
                     await this.createProfile();
                 }
             }
 
             async createProfile() {
-                const metadata = this.currentUser.user_metadata || {};
-                
-                const profile = {
-                    id: this.currentUser.id,
-                    name: metadata.name || this.currentUser.email.split('@')[0],
-                    username: metadata.username || this.generateUsername(metadata.name),
-                    email: this.currentUser.email,
-                    avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(metadata.name || this.currentUser.email.split('@')[0])}&background=3b82f6&color=fff`,
-                    bio: '',
-                    location: '',
-                    website: '',
-                    followers_count: 0,
-                    following_count: 0,
-                    posts_count: 0,
-                    created_at: new Date().toISOString()
-                };
-                
                 try {
+                    const metadata = this.currentUser.user_metadata || {};
+                    const name = metadata.name || this.currentUser.email.split('@')[0];
+                    const username = metadata.username || this.generateUsername(name);
+                    
+                    const profile = {
+                        id: this.currentUser.id,
+                        name: name,
+                        username: username,
+                        email: this.currentUser.email,
+                        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=3b82f6&color=fff`,
+                        bio: '',
+                        location: '',
+                        website: '',
+                        followers_count: 0,
+                        following_count: 0,
+                        posts_count: 0,
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString()
+                    };
+                    
+                    console.log('Creating profile:', profile);
+                    
                     const { data, error } = await this.supabase
                         .from('profiles')
                         .insert([profile])
                         .select()
                         .single();
                     
-                    if (error) throw error;
+                    if (error) {
+                        console.error('Supabase error:', error);
+                        throw error;
+                    }
                     
                     this.currentProfile = data;
                     this.updateProfileUI();
                     
                 } catch (error) {
                     console.error('Error creating profile:', error);
-                    this.currentProfile = profile;
+                    // Create a fallback profile
+                    this.currentProfile = {
+                        id: this.currentUser.id,
+                        name: this.currentUser.email.split('@')[0],
+                        username: this.generateUsername(this.currentUser.email.split('@')[0]),
+                        email: this.currentUser.email,
+                        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(this.currentUser.email.split('@')[0])}&background=3b82f6&color=fff`,
+                        bio: '',
+                        followers_count: 0,
+                        following_count: 0,
+                        posts_count: 0
+                    };
                     this.updateProfileUI();
                 }
             }
 
             generateUsername(name) {
-                const base = name ? name.toLowerCase().replace(/\s+/g, '') : 'user';
+                const base = name ? name.toLowerCase().replace(/[^a-z0-9]/g, '') : 'user';
                 const random = Math.floor(Math.random() * 10000);
                 return `${base}${random}`;
             }
 
             async updateProfile(data) {
                 try {
+                    data.updated_at = new Date().toISOString();
+                    
                     const { error } = await this.supabase
                         .from('profiles')
                         .update(data)
@@ -2092,12 +2225,13 @@
                     const postData = {
                         author_id: this.currentUser.id,
                         content: content,
-                        created_at: new Date().toISOString()
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString()
                     };
                     
                     // Upload media if any
                     if (mediaFiles.length > 0) {
-                        const mediaUrls = await this.uploadMedia(mediaFiles);
+                        const mediaUrls = await this.uploadMedia(mediaFiles, 'post');
                         postData.media = mediaUrls;
                     }
                     
@@ -2119,8 +2253,14 @@
                     // Update post count
                     await this.supabase
                         .from('profiles')
-                        .update({ posts_count: this.currentProfile.posts_count + 1 })
+                        .update({ 
+                            posts_count: (this.currentProfile.posts_count || 0) + 1,
+                            updated_at: new Date().toISOString()
+                        })
                         .eq('id', this.currentUser.id);
+                    
+                    // Update current profile
+                    this.currentProfile.posts_count = (this.currentProfile.posts_count || 0) + 1;
                     
                     // Clear composer
                     document.getElementById('postContent').value = '';
@@ -2138,20 +2278,33 @@
                 }
             }
 
-            async uploadMedia(files) {
+            async uploadMedia(files, type = 'post') {
                 const urls = [];
                 
                 for (const file of files) {
                     try {
                         const fileExt = file.name.split('.').pop();
                         const fileName = `${this.currentUser.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
-                        const bucket = file.type.startsWith('video') ? 'videos' : 'images';
+                        let bucket = 'images';
+                        
+                        if (file.type.startsWith('video')) {
+                            bucket = 'videos';
+                        } else if (type === 'story' && file.type.startsWith('image')) {
+                            bucket = 'story-images';
+                        } else if (type === 'story' && file.type.startsWith('video')) {
+                            bucket = 'story-videos';
+                        }
+                        
+                        console.log(`Uploading to ${bucket}: ${fileName}`);
                         
                         const { error: uploadError } = await this.supabase.storage
                             .from(bucket)
                             .upload(fileName, file);
                         
-                        if (uploadError) throw uploadError;
+                        if (uploadError) {
+                            console.error('Upload error:', uploadError);
+                            continue;
+                        }
                         
                         const { data: { publicUrl } } = this.supabase.storage
                             .from(bucket)
@@ -2171,6 +2324,8 @@
             }
 
             async likePost(postId) {
+                if (!this.currentUser) return;
+                
                 try {
                     // Check if already liked
                     const { data: existingLike } = await this.supabase
@@ -2186,6 +2341,10 @@
                             .from('likes')
                             .delete()
                             .eq('id', existingLike.id);
+                        
+                        // Update likes count
+                        await this.supabase.rpc('decrement_likes', { post_id: postId });
+                        
                     } else {
                         // Like
                         await this.supabase
@@ -2195,6 +2354,9 @@
                                 user_id: this.currentUser.id,
                                 created_at: new Date().toISOString()
                             }]);
+                        
+                        // Update likes count
+                        await this.supabase.rpc('increment_likes', { post_id: postId });
                         
                         // Create notification if not own post
                         const { data: post } = await this.supabase
@@ -2228,7 +2390,7 @@
                 if (!content.trim()) return;
                 
                 try {
-                    const { data: comment } = await this.supabase
+                    const { data: comment, error } = await this.supabase
                         .from('comments')
                         .insert([{
                             post_id: postId,
@@ -2245,6 +2407,11 @@
                             )
                         `)
                         .single();
+                    
+                    if (error) throw error;
+                    
+                    // Update comments count
+                    await this.supabase.rpc('increment_comments', { post_id: postId });
                     
                     // Create notification
                     const { data: post } = await this.supabase
@@ -2281,11 +2448,11 @@
                 if (!content) return;
                 
                 try {
-                    await this.commentOnPost(postId, content);
+                    const comment = await this.commentOnPost(postId, content);
                     input.value = '';
                     
-                    // Reload comments section
-                    await this.loadFeed();
+                    // Add comment to UI
+                    this.appendComment(postId, comment);
                     
                 } catch (error) {
                     this.showToast('Failed to add comment', 'error');
@@ -2294,11 +2461,18 @@
 
             toggleComments(postId) {
                 const commentsSection = document.getElementById(`comments-${postId}`);
-                commentsSection.classList.toggle('hidden');
+                if (commentsSection) {
+                    commentsSection.classList.toggle('hidden');
+                }
             }
 
             // Stories
             async createStory() {
+                if (!this.currentUser) {
+                    this.showToast('Please login to create stories', 'error');
+                    return;
+                }
+                
                 const input = document.createElement('input');
                 input.type = 'file';
                 input.accept = 'image/*,video/*';
@@ -2308,29 +2482,22 @@
                     if (!file) return;
                     
                     try {
-                        const fileExt = file.name.split('.').pop();
-                        const fileName = `${this.currentUser.id}-${Date.now()}.${fileExt}`;
-                        const isVideo = file.type.startsWith('video');
-                        const bucket = isVideo ? 'story-videos' : 'story-images';
+                        const mediaUrls = await this.uploadMedia([file], 'story');
+                        if (mediaUrls.length === 0) {
+                            throw new Error('Failed to upload media');
+                        }
                         
-                        const { error: uploadError } = await this.supabase.storage
-                            .from(bucket)
-                            .upload(fileName, file);
-                        
-                        if (uploadError) throw uploadError;
-                        
-                        const { data: { publicUrl } } = this.supabase.storage
-                            .from(bucket)
-                            .getPublicUrl(fileName);
+                        const storyData = {
+                            user_id: this.currentUser.id,
+                            media_url: mediaUrls[0].url,
+                            media_type: mediaUrls[0].type,
+                            expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+                            created_at: new Date().toISOString()
+                        };
                         
                         await this.supabase
                             .from('stories')
-                            .insert([{
-                                user_id: this.currentUser.id,
-                                media_url: publicUrl,
-                                media_type: isVideo ? 'video' : 'image',
-                                expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-                            }]);
+                            .insert([storyData]);
                         
                         this.showToast('Story added!', 'success');
                         await this.loadStories();
@@ -2346,7 +2513,7 @@
 
             async loadStories() {
                 try {
-                    const { data: stories } = await this.supabase
+                    const { data: stories, error } = await this.supabase
                         .from('stories')
                         .select(`
                             *,
@@ -2359,6 +2526,8 @@
                         .gt('expires_at', new Date().toISOString())
                         .order('created_at', { ascending: false });
                     
+                    if (error) throw error;
+                    
                     this.renderStories(stories || []);
                     
                 } catch (error) {
@@ -2368,6 +2537,13 @@
 
             // Follow System
             async toggleFollow(userId) {
+                if (!this.currentUser) return;
+                
+                if (userId === this.currentUser.id) {
+                    this.showToast('You cannot follow yourself', 'error');
+                    return;
+                }
+                
                 try {
                     // Check if already following
                     const { data: existingFollow } = await this.supabase
@@ -2384,6 +2560,9 @@
                             .delete()
                             .eq('id', existingFollow.id);
                         
+                        // Update counts
+                        await this.updateFollowCounts(userId, -1);
+                        
                         this.showToast('Unfollowed', 'info');
                     } else {
                         // Follow
@@ -2394,6 +2573,9 @@
                                 following_id: userId,
                                 created_at: new Date().toISOString()
                             }]);
+                        
+                        // Update counts
+                        await this.updateFollowCounts(userId, 1);
                         
                         // Create notification
                         await this.createNotification({
@@ -2414,10 +2596,29 @@
                 }
             }
 
+            async updateFollowCounts(userId, change) {
+                try {
+                    // Update follower count for the user being followed
+                    await this.supabase.rpc('increment_followers', { 
+                        user_id: userId,
+                        increment: change 
+                    });
+                    
+                    // Update following count for the current user
+                    await this.supabase.rpc('increment_following', { 
+                        user_id: this.currentUser.id,
+                        increment: change 
+                    });
+                    
+                } catch (error) {
+                    console.error('Error updating follow counts:', error);
+                }
+            }
+
             // Messages
             async loadConversations() {
                 try {
-                    const { data: conversations } = await this.supabase
+                    const { data: conversations, error } = await this.supabase
                         .from('conversations')
                         .select(`
                             *,
@@ -2437,6 +2638,8 @@
                         .or(`user1_id.eq.${this.currentUser.id},user2_id.eq.${this.currentUser.id}`)
                         .order('updated_at', { ascending: false });
                     
+                    if (error) throw error;
+                    
                     this.renderConversations(conversations || []);
                     
                 } catch (error) {
@@ -2446,7 +2649,7 @@
 
             async loadMessages(conversationId) {
                 try {
-                    const { data: messages } = await this.supabase
+                    const { data: messages, error } = await this.supabase
                         .from('messages')
                         .select(`
                             *,
@@ -2458,6 +2661,8 @@
                         `)
                         .eq('conversation_id', conversationId)
                         .order('created_at', { ascending: true });
+                    
+                    if (error) throw error;
                     
                     this.renderMessages(messages || []);
                     
@@ -2475,7 +2680,10 @@
             }
 
             async sendMessage() {
-                if (!this.activeChat) return;
+                if (!this.activeChat) {
+                    this.showToast('No active chat', 'error');
+                    return;
+                }
                 
                 const input = document.getElementById('chatInput');
                 const content = input.value.trim();
@@ -2486,20 +2694,24 @@
                 }
                 
                 try {
+                    const receiverId = this.activeChat.user1_id === this.currentUser.id ? 
+                        this.activeChat.user2_id : this.activeChat.user1_id;
+                    
                     const messageData = {
                         conversation_id: this.activeChat.id,
                         sender_id: this.currentUser.id,
-                        receiver_id: this.activeChat.user1_id === this.currentUser.id ? 
-                            this.activeChat.user2_id : this.activeChat.user1_id,
+                        receiver_id: receiverId,
                         content: content,
                         created_at: new Date().toISOString()
                     };
                     
-                    const { data: message } = await this.supabase
+                    const { data: message, error } = await this.supabase
                         .from('messages')
                         .insert([messageData])
                         .select()
                         .single();
+                    
+                    if (error) throw error;
                     
                     // Update conversation
                     await this.supabase
@@ -2521,7 +2733,7 @@
 
             async openChat(conversationId) {
                 try {
-                    const { data: conversation } = await this.supabase
+                    const { data: conversation, error } = await this.supabase
                         .from('conversations')
                         .select(`
                             *,
@@ -2541,6 +2753,8 @@
                         .eq('id', conversationId)
                         .single();
                     
+                    if (error) throw error;
+                    
                     if (!conversation) return;
                     
                     this.activeChat = conversation;
@@ -2549,8 +2763,8 @@
                     const otherUser = conversation.user1_id === this.currentUser.id ? 
                         conversation.user2 : conversation.user1;
                     
-                    document.getElementById('chatName').textContent = otherUser.name;
-                    document.getElementById('chatAvatar').textContent = otherUser.name.charAt(0).toUpperCase();
+                    document.getElementById('chatName').textContent = otherUser?.name || 'Unknown User';
+                    document.getElementById('chatAvatar').textContent = otherUser?.name?.charAt(0)?.toUpperCase() || 'U';
                     
                     // Switch views
                     document.getElementById('conversationsView').classList.add('hidden');
@@ -2567,7 +2781,7 @@
             // Notifications
             async loadNotifications() {
                 try {
-                    const { data: notifications } = await this.supabase
+                    const { data: notifications, error } = await this.supabase
                         .from('notifications')
                         .select(`
                             *,
@@ -2581,7 +2795,13 @@
                         .order('created_at', { ascending: false })
                         .limit(50);
                     
+                    if (error) throw error;
+                    
                     this.renderNotifications(notifications || []);
+                    
+                    // Update badge
+                    this.unreadNotifications = notifications?.filter(n => !n.read).length || 0;
+                    this.updateNotificationBadge();
                     
                 } catch (error) {
                     console.error('Error loading notifications:', error);
@@ -2618,17 +2838,17 @@
                     let results = {};
                     
                     if (type === 'all' || type === 'users') {
-                        const { data: users } = await this.supabase
+                        const { data: users, error } = await this.supabase
                             .from('profiles')
                             .select('*')
                             .or(`name.ilike.%${query}%,username.ilike.%${query}%`)
                             .limit(10);
                         
-                        results.users = users || [];
+                        if (!error) results.users = users || [];
                     }
                     
                     if (type === 'all' || type === 'posts') {
-                        const { data: posts } = await this.supabase
+                        const { data: posts, error } = await this.supabase
                             .from('posts')
                             .select(`
                                 *,
@@ -2641,7 +2861,24 @@
                             .ilike('content', `%${query}%`)
                             .limit(10);
                         
-                        results.posts = posts || [];
+                        if (!error) results.posts = posts || [];
+                    }
+                    
+                    if (type === 'all' || type === 'tags') {
+                        const { data: posts, error } = await this.supabase
+                            .from('posts')
+                            .select(`
+                                *,
+                                profiles (
+                                    name,
+                                    username,
+                                    avatar
+                                )
+                            `)
+                            .ilike('content', `%#${query}%`)
+                            .limit(10);
+                        
+                        if (!error) results.taggedPosts = posts || [];
                     }
                     
                     this.renderSearchResults(results, type);
@@ -2649,90 +2886,6 @@
                 } catch (error) {
                     console.error('Error searching:', error);
                 }
-            }
-
-            // WebRTC Calls
-            async startVoiceCall(userId) {
-                try {
-                    this.setupPeerConnection();
-                    
-                    // Get local audio stream
-                    this.localStream = await navigator.mediaDevices.getUserMedia({
-                        audio: true,
-                        video: false
-                    });
-                    
-                    // Add local stream to connection
-                    this.localStream.getTracks().forEach(track => {
-                        this.peerConnection.addTrack(track, this.localStream);
-                    });
-                    
-                    // Show call interface
-                    this.showCallInterface();
-                    
-                    // In real app, you would send offer through signaling server
-                    this.showToast('Starting voice call...', 'info');
-                    
-                } catch (error) {
-                    console.error('Error starting call:', error);
-                    this.showToast('Failed to start call', 'error');
-                }
-            }
-
-            async startVideoCall(userId) {
-                try {
-                    this.setupPeerConnection();
-                    
-                    // Get local media stream
-                    this.localStream = await navigator.mediaDevices.getUserMedia({
-                        audio: true,
-                        video: true
-                    });
-                    
-                    // Add local stream to connection
-                    this.localStream.getTracks().forEach(track => {
-                        this.peerConnection.addTrack(track, this.localStream);
-                    });
-                    
-                    // Show call interface with video
-                    this.showCallInterface(true);
-                    
-                    // Show local video
-                    const localVideo = document.getElementById('localVideo');
-                    localVideo.srcObject = this.localStream;
-                    
-                    // In real app, you would send offer through signaling server
-                    this.showToast('Starting video call...', 'info');
-                    
-                } catch (error) {
-                    console.error('Error starting video call:', error);
-                    this.showToast('Failed to start video call', 'error');
-                }
-            }
-
-            setupPeerConnection() {
-                const configuration = {
-                    iceServers: [
-                        { urls: 'stun:stun.l.google.com:19302' },
-                        { urls: 'stun:stun1.l.google.com:19302' }
-                    ]
-                };
-                
-                this.peerConnection = new RTCPeerConnection(configuration);
-                
-                // Handle incoming tracks
-                this.peerConnection.ontrack = (event) => {
-                    this.remoteStream = event.streams[0];
-                    const remoteVideo = document.getElementById('remoteVideo');
-                    remoteVideo.srcObject = this.remoteStream;
-                };
-                
-                // Handle ICE candidates
-                this.peerConnection.onicecandidate = (event) => {
-                    if (event.candidate) {
-                        // Send candidate through signaling server
-                    }
-                };
             }
 
             // Real-time Subscriptions
@@ -2779,6 +2932,17 @@
                         }
                     )
                     .subscribe();
+                
+                // Subscribe to stories
+                this.subscriptions.stories = this.supabase
+                    .channel('public:stories')
+                    .on('postgres_changes', 
+                        { event: 'INSERT', schema: 'public', table: 'stories' },
+                        () => {
+                            this.loadStories();
+                        }
+                    )
+                    .subscribe();
             }
 
             cleanupRealtimeSubscriptions() {
@@ -2787,6 +2951,7 @@
                         this.supabase.removeChannel(subscription);
                     }
                 });
+                
                 this.subscriptions = {
                     posts: null,
                     messages: null,
@@ -2802,28 +2967,42 @@
                 const { name, username, avatar, bio, followers_count, following_count, posts_count } = this.currentProfile;
                 
                 // Update header
-                document.getElementById('headerAvatar').textContent = name.charAt(0).toUpperCase();
-                document.getElementById('composerAvatar').textContent = name.charAt(0).toUpperCase();
-                document.getElementById('profileLargeAvatar').textContent = name.charAt(0).toUpperCase();
-                document.getElementById('profileDisplayName').textContent = name;
-                document.getElementById('profileDisplayHandle').textContent = `@${username}`;
+                document.getElementById('headerAvatar').textContent = name?.charAt(0)?.toUpperCase() || 'U';
+                document.getElementById('composerAvatar').textContent = name?.charAt(0)?.toUpperCase() || 'U';
+                document.getElementById('profileLargeAvatar').textContent = name?.charAt(0)?.toUpperCase() || 'U';
+                document.getElementById('profileDisplayName').textContent = name || 'User';
+                document.getElementById('profileDisplayHandle').textContent = `@${username || 'user'}`;
                 document.getElementById('profileDisplayBio').textContent = bio || 'No bio yet';
                 
                 // Update stats
                 document.getElementById('postsCount').textContent = posts_count || 0;
                 document.getElementById('followersCount').textContent = followers_count || 0;
                 document.getElementById('followingCount').textContent = following_count || 0;
+                
+                // Update edit modal
+                document.getElementById('editProfileAvatar').textContent = name?.charAt(0)?.toUpperCase() || 'U';
+            }
+
+            updateNotificationBadge() {
+                const badge = document.getElementById('notificationBadge');
+                if (this.unreadNotifications > 0) {
+                    badge.textContent = this.unreadNotifications > 99 ? '99+' : this.unreadNotifications;
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
             }
 
             showToast(message, type = 'info') {
                 const toast = document.createElement('div');
                 toast.className = `toast ${type}`;
                 toast.innerHTML = `
-                    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'}"></i>
                     <div>${message}</div>
                 `;
                 
-                document.getElementById('toastContainer').appendChild(toast);
+                const container = document.getElementById('toastContainer');
+                container.appendChild(toast);
                 
                 setTimeout(() => toast.classList.add('show'), 10);
                 setTimeout(() => {
@@ -2865,7 +3044,7 @@
                         this.loadNotifications();
                         break;
                     case 'profilePage':
-                        this.loadUserPosts(this.currentUser.id);
+                        this.loadUserPosts(this.currentUser?.id);
                         break;
                 }
             }
@@ -2935,7 +3114,8 @@
                 // Profile menu
                 document.getElementById('profileMenuBtn').addEventListener('click', (e) => {
                     e.stopPropagation();
-                    document.getElementById('profileMenu').classList.toggle('hidden');
+                    const menu = document.getElementById('profileMenu');
+                    menu.classList.toggle('hidden');
                 });
                 
                 // Close menu on outside click
@@ -2957,7 +3137,10 @@
                 const searchInput = document.getElementById('searchInput');
                 if (searchInput) {
                     searchInput.addEventListener('input', (e) => {
-                        this.search(e.target.value);
+                        const query = e.target.value;
+                        const activeTab = document.querySelector('.search-tab.active');
+                        const type = activeTab ? activeTab.dataset.type : 'all';
+                        this.search(query, type);
                     });
                 }
                 
@@ -2993,7 +3176,7 @@
                 const chatFileUpload = document.getElementById('chatFileUpload');
                 if (chatFileUpload) {
                     chatFileUpload.addEventListener('change', (e) => {
-                        this.handleMediaUpload(e, 'chat');
+                        this.handleChatMediaUpload(e);
                     });
                 }
                 
@@ -3001,6 +3184,11 @@
                 document.getElementById('editProfileForm').addEventListener('submit', (e) => {
                     e.preventDefault();
                     this.saveProfileChanges();
+                });
+                
+                // Notification button
+                document.getElementById('notificationBtn').addEventListener('click', () => {
+                    this.showPage('notificationsPage');
                 });
             }
 
@@ -3010,9 +3198,13 @@
                 if (type === 'post') {
                     this.currentMedia = files;
                     this.previewMedia(files);
-                } else if (type === 'chat') {
-                    // For chat media upload
-                    this.sendMessage('', files[0]);
+                }
+            }
+
+            handleChatMediaUpload(event) {
+                const file = event.target.files[0];
+                if (file) {
+                    this.showToast('Chat media upload coming soon!', 'info');
                 }
             }
 
@@ -3054,9 +3246,11 @@
                 
                 // Remove from currentMedia array
                 if (this.currentMedia) {
-                    this.currentMedia = this.currentMedia.filter(file => 
-                        URL.createObjectURL(file) !== url
-                    );
+                    this.currentMedia = this.currentMedia.filter(file => {
+                        const objectUrl = URL.createObjectURL(file);
+                        URL.revokeObjectURL(objectUrl);
+                        return objectUrl !== url;
+                    });
                 }
             }
 
@@ -3072,7 +3266,15 @@
 
             async loadFeed() {
                 try {
-                    const { data: posts } = await this.supabase
+                    const container = document.getElementById('feedContainer');
+                    container.innerHTML = `
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            <p>Loading posts...</p>
+                        </div>
+                    `;
+                    
+                    const { data: posts, error } = await this.supabase
                         .from('posts')
                         .select(`
                             *,
@@ -3097,16 +3299,25 @@
                         .order('created_at', { ascending: false })
                         .limit(20);
                     
+                    if (error) throw error;
+                    
                     this.renderFeed(posts || []);
                     
                 } catch (error) {
                     console.error('Error loading feed:', error);
+                    document.getElementById('feedContainer').innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <h3>Failed to load posts</h3>
+                            <p>Please try again later</p>
+                        </div>
+                    `;
                 }
             }
 
             async loadUserPosts(userId) {
                 try {
-                    const { data: posts } = await this.supabase
+                    const { data: posts, error } = await this.supabase
                         .from('posts')
                         .select(`
                             *,
@@ -3131,10 +3342,19 @@
                         .eq('author_id', userId)
                         .order('created_at', { ascending: false });
                     
+                    if (error) throw error;
+                    
                     this.renderUserPosts(posts || []);
                     
                 } catch (error) {
                     console.error('Error loading user posts:', error);
+                    document.getElementById('profileContent').innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <h3>Failed to load posts</h3>
+                            <p>Please try again later</p>
+                        </div>
+                    `;
                 }
             }
 
@@ -3156,7 +3376,7 @@
                 
                 container.innerHTML = posts.map(post => {
                     const user = post.profiles || {};
-                    const mediaHtml = post.media && post.media.length > 0 ? post.media.map(media => 
+                    const mediaHtml = post.media && Array.isArray(post.media) ? post.media.map(media => 
                         media.type === 'video' ? 
                             `<video controls class="w-full rounded-md mb-2" src="${media.url}"></video>` :
                             `<img class="w-full rounded-md mb-2" src="${media.url}" alt="Post image">`
@@ -3176,7 +3396,7 @@
                                 </div>
                                 <div class="post-time">${this.formatTime(post.created_at)}</div>
                             </div>
-                            <div class="post-content">${this.formatPostContent(post.content)}</div>
+                            <div class="post-content">${this.formatPostContent(post.content || '')}</div>
                             ${mediaHtml ? `<div class="post-media">${mediaHtml}</div>` : ''}
                             <div class="post-actions">
                                 <button class="post-action ${isLiked ? 'active' : ''}" 
@@ -3218,7 +3438,16 @@
                 
                 if (!stories || stories.length === 0) return;
                 
+                // Filter stories to only show one per user (latest)
+                const userStories = new Map();
                 stories.forEach(story => {
+                    if (!userStories.has(story.user_id) || 
+                        new Date(story.created_at) > new Date(userStories.get(story.user_id).created_at)) {
+                        userStories.set(story.user_id, story);
+                    }
+                });
+                
+                Array.from(userStories.values()).forEach(story => {
                     const user = story.profiles || {};
                     const storyEl = document.createElement('div');
                     storyEl.className = 'story';
@@ -3269,7 +3498,16 @@
                 const container = document.getElementById('chatMessages');
                 if (!container) return;
                 
-                container.innerHTML = (messages || []).map(msg => {
+                if (!messages || messages.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <p>No messages yet. Start the conversation!</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                container.innerHTML = messages.map(msg => {
                     const isSent = msg.sender_id === this.currentUser.id;
                     const user = msg.profiles || {};
                     return `
@@ -3285,7 +3523,9 @@
                 }).join('');
                 
                 // Scroll to bottom
-                container.scrollTop = container.scrollHeight;
+                setTimeout(() => {
+                    container.scrollTop = container.scrollHeight;
+                }, 100);
             }
 
             renderNotifications(notifications) {
@@ -3331,7 +3571,7 @@
                 }
                 
                 container.innerHTML = posts.map(post => {
-                    const mediaHtml = post.media && post.media.length > 0 ? post.media.map(media => 
+                    const mediaHtml = post.media && Array.isArray(post.media) ? post.media.map(media => 
                         media.type === 'video' ? 
                             `<video controls class="w-full rounded-md mb-2" src="${media.url}"></video>` :
                             `<img class="w-full rounded-md mb-2" src="${media.url}" alt="Post image">`
@@ -3339,7 +3579,7 @@
                     
                     return `
                         <div class="post" data-post-id="${post.id}">
-                            <div class="post-content">${this.formatPostContent(post.content)}</div>
+                            <div class="post-content">${this.formatPostContent(post.content || '')}</div>
                             ${mediaHtml ? `<div class="post-media">${mediaHtml}</div>` : ''}
                             <div class="post-time">${this.formatTime(post.created_at)}</div>
                         </div>
@@ -3353,40 +3593,50 @@
                 
                 let html = '';
                 
-                if (type === 'all' || type === 'users') {
-                    const users = results.users || [];
-                    if (users.length > 0) {
-                        html += `<h3 class="font-semibold mb-2">Users (${users.length})</h3>`;
-                        html += users.map(user => `
-                            <div class="flex items-center gap-3 p-3 border-b border-border-color cursor-pointer hover:bg-bg-secondary" 
-                                 onclick="app.viewProfile('${user.id}')">
-                                <div class="avatar">${user.name?.charAt(0)?.toUpperCase() || 'U'}</div>
-                                <div>
-                                    <div class="font-semibold">${user.name}</div>
-                                    <div class="text-sm text-text-secondary">@${user.username}</div>
-                                </div>
+                if ((type === 'all' || type === 'users') && results.users && results.users.length > 0) {
+                    html += `<h3 class="font-semibold mb-2">Users (${results.users.length})</h3>`;
+                    html += results.users.map(user => `
+                        <div class="flex items-center gap-3 p-3 border-b border-border-color cursor-pointer hover:bg-bg-secondary" 
+                             onclick="app.viewProfile('${user.id}')">
+                            <div class="avatar">${user.name?.charAt(0)?.toUpperCase() || 'U'}</div>
+                            <div>
+                                <div class="font-semibold">${user.name}</div>
+                                <div class="text-sm text-text-secondary">@${user.username}</div>
                             </div>
-                        `).join('');
-                    }
+                        </div>
+                    `).join('');
                 }
                 
-                if (type === 'all' || type === 'posts') {
-                    const posts = results.posts || [];
-                    if (posts.length > 0) {
-                        html += `<h3 class="font-semibold mb-2 mt-4">Posts (${posts.length})</h3>`;
-                        html += posts.map(post => `
-                            <div class="p-3 border-b border-border-color">
-                                <div class="flex items-center gap-2 mb-2">
-                                    <div class="avatar small">${post.profiles?.name?.charAt(0)?.toUpperCase() || 'U'}</div>
-                                    <div>
-                                        <div class="font-semibold">${post.profiles?.name}</div>
-                                        <div class="text-xs text-text-secondary">${this.formatTime(post.created_at)}</div>
-                                    </div>
+                if ((type === 'all' || type === 'posts') && results.posts && results.posts.length > 0) {
+                    html += `<h3 class="font-semibold mb-2 mt-4">Posts (${results.posts.length})</h3>`;
+                    html += results.posts.map(post => `
+                        <div class="p-3 border-b border-border-color">
+                            <div class="flex items-center gap-2 mb-2">
+                                <div class="avatar small">${post.profiles?.name?.charAt(0)?.toUpperCase() || 'U'}</div>
+                                <div>
+                                    <div class="font-semibold">${post.profiles?.name}</div>
+                                    <div class="text-xs text-text-secondary">${this.formatTime(post.created_at)}</div>
                                 </div>
-                                <div class="post-content-preview">${post.content?.substring(0, 100)}${post.content?.length > 100 ? '...' : ''}</div>
                             </div>
-                        `).join('');
-                    }
+                            <div class="post-content-preview">${(post.content || '').substring(0, 100)}${(post.content || '').length > 100 ? '...' : ''}</div>
+                        </div>
+                    `).join('');
+                }
+                
+                if ((type === 'all' || type === 'tags') && results.taggedPosts && results.taggedPosts.length > 0) {
+                    html += `<h3 class="font-semibold mb-2 mt-4">Tagged Posts (${results.taggedPosts.length})</h3>`;
+                    html += results.taggedPosts.map(post => `
+                        <div class="p-3 border-b border-border-color">
+                            <div class="flex items-center gap-2 mb-2">
+                                <div class="avatar small">${post.profiles?.name?.charAt(0)?.toUpperCase() || 'U'}</div>
+                                <div>
+                                    <div class="font-semibold">${post.profiles?.name}</div>
+                                    <div class="text-xs text-text-secondary">${this.formatTime(post.created_at)}</div>
+                                </div>
+                            </div>
+                            <div class="post-content-preview">${(post.content || '').substring(0, 100)}${(post.content || '').length > 100 ? '...' : ''}</div>
+                        </div>
+                    `).join('');
                 }
                 
                 container.innerHTML = html || '<div class="empty-state"><p>No results found</p></div>';
@@ -3417,6 +3667,7 @@
                 const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
                 const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
                 
+                if (diffMins < 1) return 'Just now';
                 if (diffMins < 60) return `${diffMins}m ago`;
                 if (diffHours < 24) return `${diffHours}h ago`;
                 if (diffDays < 7) return `${diffDays}d ago`;
@@ -3480,9 +3731,38 @@
                 container.insertAdjacentHTML('afterbegin', postHtml);
             }
 
+            appendComment(postId, comment) {
+                const commentsSection = document.getElementById(`comments-${postId}`);
+                if (!commentsSection) return;
+                
+                const commentHtml = `
+                    <div class="comment">
+                        <div class="avatar small">${comment.profiles?.name?.charAt(0)?.toUpperCase() || 'U'}</div>
+                        <div class="comment-content">
+                            <div class="comment-header">
+                                <div class="comment-user">${comment.profiles?.name || 'Unknown'}</div>
+                                <div class="text-xs text-text-secondary">Just now</div>
+                            </div>
+                            <div class="comment-text">${comment.content}</div>
+                        </div>
+                    </div>
+                `;
+                
+                // Find add-comment div and insert before it
+                const addCommentDiv = commentsSection.querySelector('.add-comment');
+                if (addCommentDiv) {
+                    addCommentDiv.insertAdjacentHTML('beforebegin', commentHtml);
+                }
+            }
+
             appendMessage(message) {
                 const container = document.getElementById('chatMessages');
                 if (!container) return;
+                
+                // Remove empty state if present
+                if (container.querySelector('.empty-state')) {
+                    container.innerHTML = '';
+                }
                 
                 const isSent = message.sender_id === this.currentUser.id;
                 const user = this.currentProfile;
@@ -3520,10 +3800,26 @@
             }
 
             handleNewNotification(notification) {
+                this.unreadNotifications++;
+                this.updateNotificationBadge();
                 this.showToast(notification.message, 'info');
+                
                 // Reload notifications if on notifications page
                 if (document.getElementById('notificationsPage').classList.contains('active')) {
                     this.loadNotifications();
+                }
+            }
+
+            clearSearchResults() {
+                const container = document.getElementById('searchResultsContainer');
+                if (container) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-search"></i>
+                            <h3>Search for users, posts, or tags</h3>
+                            <p>Type in the search box above to get started</p>
+                        </div>
+                    `;
                 }
             }
 
@@ -3547,12 +3843,12 @@
             editProfile() {
                 this.showModal('editProfileModal');
                 // Fill form with current data
-                document.getElementById('editName').value = this.currentProfile.name;
-                document.getElementById('editUsername').value = this.currentProfile.username;
+                document.getElementById('editName').value = this.currentProfile.name || '';
+                document.getElementById('editUsername').value = this.currentProfile.username || '';
                 document.getElementById('editBio').value = this.currentProfile.bio || '';
                 document.getElementById('editWebsite').value = this.currentProfile.website || '';
                 document.getElementById('editLocation').value = this.currentProfile.location || '';
-                document.getElementById('editProfileAvatar').textContent = this.currentProfile.name.charAt(0).toUpperCase();
+                document.getElementById('editProfileAvatar').textContent = this.currentProfile.name?.charAt(0)?.toUpperCase() || 'U';
             }
 
             showSettings() {
@@ -3576,7 +3872,16 @@
             }
 
             shareProfile() {
-                this.showToast('Profile sharing coming soon!', 'info');
+                if (navigator.share) {
+                    navigator.share({
+                        title: `${this.currentProfile.name}'s Profile`,
+                        text: `Check out ${this.currentProfile.name}'s profile on PrimeMar!`,
+                        url: window.location.href
+                    });
+                } else {
+                    this.showToast('Profile link copied to clipboard!', 'success');
+                    navigator.clipboard.writeText(window.location.href);
+                }
             }
 
             sharePost(postId) {
@@ -3590,7 +3895,7 @@
             searchHashtag(tag) {
                 document.getElementById('searchInput').value = `#${tag}`;
                 this.showPage('searchPage');
-                this.search(`#${tag}`, 'posts');
+                this.search(`#${tag}`, 'tags');
             }
 
             searchUser(username) {
@@ -3604,32 +3909,49 @@
                 // In real app, navigate to relevant content
             }
 
-            saveProfileChanges() {
+            async saveProfileChanges() {
                 const name = document.getElementById('editName').value;
                 const username = document.getElementById('editUsername').value;
                 const bio = document.getElementById('editBio').value;
                 const website = document.getElementById('editWebsite').value;
                 const location = document.getElementById('editLocation').value;
                 
-                this.updateProfile({
-                    name,
-                    username,
-                    bio,
-                    website,
-                    location
-                });
-                
-                this.closeModal('editProfileModal');
+                try {
+                    // Check if username is taken by another user
+                    if (username !== this.currentProfile.username) {
+                        const { data: existingUser } = await this.supabase
+                            .from('profiles')
+                            .select('username')
+                            .eq('username', username)
+                            .neq('id', this.currentUser.id)
+                            .single();
+                        
+                        if (existingUser) {
+                            this.showToast('Username already taken', 'error');
+                            return;
+                        }
+                    }
+                    
+                    await this.updateProfile({
+                        name,
+                        username,
+                        bio,
+                        website,
+                        location
+                    });
+                    
+                    this.closeModal('editProfileModal');
+                    
+                } catch (error) {
+                    console.error('Error saving profile:', error);
+                    this.showToast('Failed to save changes', 'error');
+                }
             }
 
             backToConversations() {
                 document.getElementById('conversationsView').classList.remove('hidden');
                 document.getElementById('chatView').classList.add('hidden');
                 this.activeChat = null;
-            }
-
-            clearSearchResults() {
-                document.getElementById('searchResultsContainer').innerHTML = '';
             }
 
             markAllNotificationsAsRead() {
@@ -3696,10 +4018,19 @@
                     });
                 }
             }
+
+            startVoiceCall() {
+                this.showToast('Voice calls coming soon!', 'info');
+            }
+
+            startVideoCall() {
+                this.showToast('Video calls coming soon!', 'info');
+            }
         }
 
         // Initialize the app
         document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM loaded, initializing app...');
             window.app = new PrimeMarApp();
         });
     </script>
