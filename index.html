@@ -1313,7 +1313,1348 @@
         </nav>
     </div>
 
-  
+  <script>
+    // Complete Real Social Media App with Supabase (UPDATED FOR COMPLETE DATABASE)
+    class PrimeMar {
+        constructor() {
+            this.supabaseUrl = 'https://mtqvgnkkzrqctapnxikg.supabase.co';
+            this.supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im10cXZnbmtrenJxY3RhcG54aWtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyMzIwMTYsImV4cCI6MjA4MDgwODAxNn0.lJ9wNxHjvWejFI6q6-sh-CQ_3bKFM1S__6J7WZSG8dY';
+            this.supabase = null;
+            this.currentUser = null;
+            this.userProfile = null;
+            this.posts = [];
+            this.conversations = [];
+            this.notifications = [];
+            this.stories = [];
+            this.activeChat = null;
+            this.searchResults = [];
+            this.isDarkMode = true;
+            
+            this.init();
+        }
+
+        async init() {
+            try {
+                // Initialize Supabase
+                this.supabase = supabase.createClient(this.supabaseUrl, this.supabaseKey);
+                
+                // Load theme preference
+                this.loadThemePreference();
+                
+                // Check for existing session
+                const { data: { session } } = await this.supabase.auth.getSession();
+                
+                if (session) {
+                    this.currentUser = session.user;
+                    await this.loadUserProfile();
+                    this.showApp();
+                    await this.loadAllData();
+                }
+                
+                this.setupEventListeners();
+                
+                // Listen for auth state changes
+                this.supabase.auth.onAuthStateChange((event, session) => {
+                    if (event === 'SIGNED_IN' && session) {
+                        this.currentUser = session.user;
+                        this.loadUserProfile().then(() => {
+                            this.showApp();
+                            this.loadAllData();
+                        });
+                    } else if (event === 'SIGNED_OUT') {
+                        this.currentUser = null;
+                        this.showAuth();
+                    }
+                });
+                
+            } catch (error) {
+                console.error('Initialization error:', error);
+                this.showToast('Failed to initialize app', 'error');
+            }
+        }
+
+        // Theme Management
+        loadThemePreference() {
+            const savedTheme = localStorage.getItem('primemar-theme');
+            if (savedTheme === 'light') {
+                this.toggleTheme(false);
+            }
+        }
+
+        toggleTheme(showToast = true) {
+            this.isDarkMode = !this.isDarkMode;
+            
+            if (this.isDarkMode) {
+                document.body.classList.remove('light-mode');
+                document.getElementById('themeText').textContent = 'Dark Mode';
+                localStorage.setItem('primemar-theme', 'dark');
+                if (showToast) this.showToast('Dark mode enabled', 'info');
+            } else {
+                document.body.classList.add('light-mode');
+                document.getElementById('themeText').textContent = 'Light Mode';
+                localStorage.setItem('primemar-theme', 'light');
+                if (showToast) this.showToast('Light mode enabled', 'info');
+            }
+        }
+
+        // Logout functionality
+        async logout() {
+            try {
+                const { error } = await this.supabase.auth.signOut();
+                if (error) throw error;
+                
+                this.currentUser = null;
+                this.userProfile = null;
+                this.showAuth();
+                this.showLoginForm();
+                this.showToast('Logged out successfully', 'info');
+                
+            } catch (error) {
+                console.error('Logout error:', error);
+                this.showToast('Logout failed', 'error');
+            }
+        }
+
+        // Load user profile from Supabase (UPDATED)
+        async loadUserProfile() {
+            if (!this.currentUser) return;
+
+            try {
+                // First, try to get existing profile
+                const { data: profile, error } = await this.supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', this.currentUser.id)
+                    .single();
+
+                if (error && error.code === 'PGRST116') {
+                    // Profile doesn't exist, wait for trigger to create it
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    const { data: newProfile, error: retryError } = await this.supabase
+                        .from('profiles')
+                        .select('*')
+                        .eq('id', this.currentUser.id)
+                        .single();
+                    
+                    if (retryError) throw retryError;
+                    this.userProfile = newProfile;
+                } else if (error) {
+                    throw error;
+                } else {
+                    this.userProfile = profile;
+                }
+                
+                // Load stats
+                await this.loadProfileStats();
+                
+            } catch (error) {
+                console.error('Error loading profile:', error);
+                // Fallback profile
+                this.userProfile = {
+                    id: this.currentUser.id,
+                    name: this.currentUser.user_metadata?.full_name || 'User',
+                    username: this.currentUser.user_metadata?.username || 'user',
+                    email: this.currentUser.email,
+                    bio: 'Welcome to my PrimeMar profile!',
+                    avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(this.currentUser.user_metadata?.full_name || 'User')}&background=ff9800&color=fff&size=128`
+                };
+            }
+        }
+
+        async loadProfileStats() {
+            if (!this.currentUser) return;
+            
+            try {
+                // Get followers count
+                const { count: followersCount } = await this.supabase
+                    .from('follows')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('following_id', this.currentUser.id)
+                    .eq('is_accepted', true);
+                
+                // Get following count
+                const { count: followingCount } = await this.supabase
+                    .from('follows')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('follower_id', this.currentUser.id)
+                    .eq('is_accepted', true);
+                
+                // Get posts count
+                const { count: postsCount } = await this.supabase
+                    .from('posts')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('author_id', this.currentUser.id);
+                
+                // Update UI
+                document.getElementById('followersCount').textContent = followersCount || 0;
+                document.getElementById('followingCount').textContent = followingCount || 0;
+                document.getElementById('postsCount').textContent = postsCount || 0;
+                
+            } catch (error) {
+                console.error('Error loading profile stats:', error);
+            }
+        }
+
+        async loadAllData() {
+            await Promise.all([
+                this.loadStories(),
+                this.loadFeed(),
+                this.loadConversations(),
+                this.loadNotifications()
+            ]);
+            this.updateProfileUI();
+        }
+
+        async loadStories() {
+            try {
+                // Get active stories from users
+                const { data: stories, error } = await this.supabase
+                    .from('stories')
+                    .select(`
+                        *,
+                        profiles:user_id (
+                            id,
+                            name,
+                            username,
+                            avatar
+                        )
+                    `)
+                    .eq('is_archived', false)
+                    .gt('expires_at', new Date().toISOString())
+                    .order('created_at', { ascending: false })
+                    .limit(10);
+
+                if (error) throw error;
+
+                this.stories = stories || [];
+                this.renderStories();
+            } catch (error) {
+                console.error('Error loading stories:', error);
+                this.stories = [];
+                this.renderStories();
+            }
+        }
+
+        renderStories() {
+            const container = document.getElementById('storiesContainer');
+            
+            if (this.stories.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-users"></i>
+                        <h3>No stories yet</h3>
+                        <p>Be the first to share a story!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = this.stories.map(story => `
+                <div class="story" onclick="primeMarApp.viewStory('${story.id}')">
+                    <div class="story-avatar">
+                        <div class="story-avatar-inner">
+                            ${story.profiles.name.charAt(0)}
+                        </div>
+                    </div>
+                    <div class="story-name">${story.profiles.username}</div>
+                </div>
+            `).join('');
+        }
+
+        async loadFeed() {
+            try {
+                const { data: posts, error } = await this.supabase
+                    .from('posts')
+                    .select(`
+                        *,
+                        profiles:author_id (
+                            name,
+                            username,
+                            avatar,
+                            is_verified
+                        ),
+                        post_likes!left (
+                            user_id,
+                            reaction
+                        ),
+                        comments!left (
+                            id
+                        )
+                    `)
+                    .order('created_at', { ascending: false })
+                    .limit(20);
+
+                if (error) throw error;
+
+                this.posts = posts || [];
+                this.renderFeed();
+            } catch (error) {
+                console.error('Error loading feed:', error);
+                this.posts = [];
+                this.renderFeed();
+            }
+        }
+
+        renderFeed() {
+            const container = document.getElementById('feedContainer');
+            
+            if (this.posts.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-feather"></i>
+                        <h3>No posts yet</h3>
+                        <p>Be the first to share something!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = this.posts.map(post => {
+                const isLiked = post.post_likes?.some(like => like.user_id === this.currentUser?.id);
+                const likeCount = post.likes_count || 0;
+                const commentCount = post.comments_count || 0;
+                
+                return `
+                    <div class="post">
+                        <div class="post-header">
+                            <div class="avatar">${post.profiles.name.charAt(0)}</div>
+                            <div class="post-user-info">
+                                <div class="user-name">
+                                    ${post.profiles.name}
+                                    ${post.profiles.is_verified ? '<i class="fas fa-check-circle" style="color: var(--primary-color); margin-left: 5px;"></i>' : ''}
+                                </div>
+                                <div class="user-handle">@${post.profiles.username}</div>
+                            </div>
+                            <div class="post-time">${this.formatTime(post.created_at)}</div>
+                        </div>
+                        <div class="post-content">${this.parseContent(post.content)}</div>
+                        ${post.media && post.media.length > 0 ? `
+                            <div class="post-image">
+                                <i class="fas fa-image"></i> ${post.media.length} media file(s)
+                            </div>
+                        ` : ''}
+                        ${post.tags && post.tags.length > 0 ? `
+                            <div style="margin-top: 10px;">
+                                ${post.tags.map(tag => `<span style="color: var(--primary-color); margin-right: 5px;">#${tag}</span>`).join('')}
+                            </div>
+                        ` : ''}
+                        <div class="post-actions">
+                            <button class="post-action" onclick="primeMarApp.commentOnPost('${post.id}')">
+                                <i class="fas fa-comment"></i>
+                                <span>${commentCount}</span>
+                            </button>
+                            <button class="post-action ${isLiked ? 'liked' : ''}" onclick="primeMarApp.likePost('${post.id}')">
+                                <i class="fas fa-heart"></i>
+                                <span>${likeCount}</span>
+                            </button>
+                            <button class="post-action" onclick="primeMarApp.sharePost('${post.id}')">
+                                <i class="fas fa-share"></i>
+                                <span>${post.shares_count || 0}</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        parseContent(content) {
+            // Parse hashtags
+            return content.replace(/#(\w+)/g, '<span style="color: var(--primary-color);">#$1</span>');
+        }
+
+        async loadConversations() {
+            try {
+                const { data: conversations, error } = await this.supabase
+                    .from('conversations')
+                    .select(`
+                        *,
+                        user1:profiles!conversations_user1_id_fkey (id, name, username, avatar),
+                        user2:profiles!conversations_user2_id_fkey (id, name, username, avatar)
+                    `)
+                    .or(`user1_id.eq.${this.currentUser.id},user2_id.eq.${this.currentUser.id}`)
+                    .order('updated_at', { ascending: false });
+
+                if (error) throw error;
+
+                this.conversations = conversations || [];
+                this.renderConversations();
+            } catch (error) {
+                console.error('Error loading conversations:', error);
+                this.conversations = [];
+                this.renderConversations();
+            }
+        }
+
+        renderConversations() {
+            const container = document.getElementById('messagesList');
+            
+            if (this.conversations.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-comments"></i>
+                        <h3>No conversations</h3>
+                        <p>Start a conversation with someone!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = this.conversations.map(conv => {
+                const otherUser = conv.user1_id === this.currentUser.id ? conv.user2 : conv.user1;
+                const unreadCount = conv.user1_id === this.currentUser.id ? conv.unread_count_user1 : conv.unread_count_user2;
+                
+                return `
+                    <div class="message-item" onclick="primeMarApp.openChat('${conv.id}')">
+                        <div class="avatar">${otherUser.name.charAt(0)}</div>
+                        <div class="message-item-info">
+                            <div class="user-name">${otherUser.name}</div>
+                            <div class="message-preview">${conv.last_message?.substring(0, 50) || 'Start a conversation'}</div>
+                        </div>
+                        <div class="post-time">${this.formatTime(conv.updated_at)}</div>
+                        ${unreadCount > 0 ? `<div class="unread-badge">${unreadCount}</div>` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async loadNotifications() {
+            try {
+                const { data: notifications, error } = await this.supabase
+                    .from('notifications')
+                    .select(`
+                        *,
+                        from_user:profiles!notifications_from_user_id_fkey (name, username, avatar)
+                    `)
+                    .eq('user_id', this.currentUser.id)
+                    .order('created_at', { ascending: false })
+                    .limit(20);
+
+                if (error) throw error;
+
+                this.notifications = notifications || [];
+                this.renderNotifications();
+            } catch (error) {
+                console.error('Error loading notifications:', error);
+                this.notifications = [];
+                this.renderNotifications();
+            }
+        }
+
+        renderNotifications() {
+            const container = document.getElementById('notificationsList');
+            
+            if (this.notifications.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-bell-slash"></i>
+                        <h3>No notifications</h3>
+                        <p>Your notifications will appear here</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = this.notifications.map(notif => {
+                let icon = 'fa-bell';
+                let color = 'var(--primary-color)';
+                
+                switch(notif.type) {
+                    case 'like_post':
+                    case 'like_comment':
+                    case 'like_story':
+                        icon = 'fa-heart';
+                        color = 'var(--accent-color)';
+                        break;
+                    case 'comment_post':
+                    case 'comment_comment':
+                    case 'reply_comment':
+                        icon = 'fa-comment';
+                        break;
+                    case 'follow':
+                    case 'follow_request':
+                        icon = 'fa-user-plus';
+                        break;
+                    case 'message':
+                        icon = 'fa-envelope';
+                        break;
+                }
+                
+                return `
+                    <div class="notification-item ${!notif.is_read ? 'unread' : ''}">
+                        <div class="avatar" style="background: ${color};">
+                            <i class="fas ${icon}" style="color: white; font-size: 14px;"></i>
+                        </div>
+                        <div class="notification-content">
+                            <div><strong>${notif.title}</strong> - ${notif.message}</div>
+                            <div class="notification-time">${this.formatTime(notif.created_at)}</div>
+                        </div>
+                        ${!notif.is_read ? '<div class="unread-badge" style="width: 10px; height: 10px;"></div>' : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Authentication (UPDATED)
+        async handleLogin() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const errorDiv = document.getElementById('loginError');
+
+            try {
+                this.clearError(errorDiv);
+
+                if (!email || !password) {
+                    throw new Error('Please fill in all fields');
+                }
+
+                const { data, error } = await this.supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+
+                if (error) throw error;
+
+                this.currentUser = data.user;
+                await this.loadUserProfile();
+                this.showToast('Welcome back!', 'success');
+                
+            } catch (error) {
+                this.showError(error.message, errorDiv);
+                this.showToast('Login failed', 'error');
+            }
+        }
+
+        async handleSignup() {
+            const name = document.getElementById('signupName').value;
+            const username = document.getElementById('signupUsername').value;
+            const email = document.getElementById('signupEmail').value;
+            const password = document.getElementById('signupPassword').value;
+            const errorDiv = document.getElementById('signupError');
+
+            try {
+                this.clearError(errorDiv);
+
+                if (!name || !username || !email || !password) {
+                    throw new Error('Please fill in all fields');
+                }
+
+                if (password.length < 6) {
+                    throw new Error('Password must be at least 6 characters');
+                }
+
+                // Check if username exists
+                const { data: existingUser } = await this.supabase
+                    .from('profiles')
+                    .select('username')
+                    .eq('username', username)
+                    .single();
+
+                if (existingUser) {
+                    throw new Error('Username already exists');
+                }
+
+                const { data, error } = await this.supabase.auth.signUp({
+                    email: email,
+                    password: password,
+                    options: {
+                        data: {
+                            full_name: name,
+                            username: username
+                        }
+                    }
+                });
+
+                if (error) throw error;
+
+                this.showLoginForm();
+                this.showError('Account created! Please check your email for verification.', errorDiv);
+                this.showToast('Account created successfully!', 'success');
+                
+            } catch (error) {
+                this.showError(error.message, errorDiv);
+                this.showToast('Signup failed', 'error');
+            }
+        }
+
+        // Post Features (UPDATED)
+        async createPost(content) {
+            if (!content.trim()) return;
+
+            try {
+                const { data: post, error } = await this.supabase
+                    .from('posts')
+                    .insert([{
+                        content: content,
+                        author_id: this.currentUser.id,
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString()
+                    }])
+                    .select(`
+                        *,
+                        profiles:author_id (
+                            name,
+                            username,
+                            avatar,
+                            is_verified
+                        )
+                    `)
+                    .single();
+
+                if (error) throw error;
+
+                this.posts.unshift(post);
+                this.renderFeed();
+                this.showToast('Post published!', 'success');
+                
+                // Clear composer
+                document.getElementById('postTextarea').value = '';
+                document.getElementById('postBtn').disabled = true;
+                
+                // Update posts count
+                await this.loadProfileStats();
+                
+            } catch (error) {
+                console.error('Error creating post:', error);
+                this.showToast('Error creating post', 'error');
+            }
+        }
+
+        async likePost(postId) {
+            try {
+                // Check if already liked
+                const { data: existingLike, error: checkError } = await this.supabase
+                    .from('post_likes')
+                    .select('*')
+                    .eq('post_id', postId)
+                    .eq('user_id', this.currentUser.id)
+                    .single();
+
+                if (existingLike) {
+                    // Unlike
+                    const { error } = await this.supabase
+                        .from('post_likes')
+                        .delete()
+                        .eq('post_id', postId)
+                        .eq('user_id', this.currentUser.id);
+
+                    if (error) throw error;
+                    this.showToast('Post unliked', 'info');
+                } else {
+                    // Like
+                    const { error } = await this.supabase
+                        .from('post_likes')
+                        .insert([{
+                            post_id: postId,
+                            user_id: this.currentUser.id,
+                            reaction: 'like',
+                            created_at: new Date().toISOString()
+                        }]);
+
+                    if (error) throw error;
+                    this.showToast('Post liked!', 'success');
+                }
+
+                // Reload feed to update counts
+                await this.loadFeed();
+                
+            } catch (error) {
+                console.error('Error liking post:', error);
+                this.showToast('Error updating like', 'error');
+            }
+        }
+
+        async commentOnPost(postId) {
+            const comment = prompt('Enter your comment:');
+            if (comment) {
+                try {
+                    const { error } = await this.supabase
+                        .from('comments')
+                        .insert([{
+                            post_id: postId,
+                            user_id: this.currentUser.id,
+                            content: comment,
+                            created_at: new Date().toISOString(),
+                            updated_at: new Date().toISOString()
+                        }]);
+
+                    if (error) throw error;
+
+                    await this.loadFeed();
+                    this.showToast('Comment added!', 'success');
+                } catch (error) {
+                    console.error('Error adding comment:', error);
+                    this.showToast('Error adding comment', 'error');
+                }
+            }
+        }
+
+        sharePost(postId) {
+            this.showToast('Share feature coming soon!', 'info');
+        }
+
+        // Message Features (UPDATED)
+        async openChat(conversationId) {
+            const conversation = this.conversations.find(c => c.id === conversationId);
+            if (!conversation) return;
+
+            this.activeChat = conversation;
+            document.getElementById('messagesList').style.display = 'none';
+            document.getElementById('chatView').classList.add('active');
+            
+            await this.loadChatMessages(conversationId);
+        }
+
+        async loadChatMessages(conversationId) {
+            try {
+                const { data: messages, error } = await this.supabase
+                    .from('messages')
+                    .select(`
+                        *,
+                        profiles:sender_id (
+                            name,
+                            username,
+                            avatar
+                        )
+                    `)
+                    .eq('conversation_id', conversationId)
+                    .order('created_at', { ascending: true });
+
+                if (error) throw error;
+
+                this.renderChatMessages(messages || []);
+            } catch (error) {
+                console.error('Error loading messages:', error);
+                this.renderChatMessages([]);
+            }
+        }
+
+        renderChatMessages(messages) {
+            const container = document.getElementById('chatMessages');
+            container.innerHTML = messages.map(msg => `
+                <div class="message ${msg.sender_id === this.currentUser.id ? 'own' : ''}">
+                    <div class="avatar">${msg.profiles.name.charAt(0)}</div>
+                    <div class="message-content">${msg.content}</div>
+                </div>
+            `).join('');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        async sendMessage() {
+            const input = document.getElementById('chatInput');
+            const content = input.value.trim();
+            
+            if (!content || !this.activeChat) return;
+
+            try {
+                const receiverId = this.activeChat.user1_id === this.currentUser.id 
+                    ? this.activeChat.user2_id 
+                    : this.activeChat.user1_id;
+
+                const { error } = await this.supabase
+                    .from('messages')
+                    .insert([{
+                        conversation_id: this.activeChat.id,
+                        sender_id: this.currentUser.id,
+                        receiver_id: receiverId,
+                        content: content,
+                        created_at: new Date().toISOString()
+                    }]);
+
+                if (error) throw error;
+
+                // Reload messages and conversations
+                await this.loadChatMessages(this.activeChat.id);
+                await this.loadConversations();
+                
+                // Clear input
+                input.value = '';
+
+            } catch (error) {
+                console.error('Error sending message:', error);
+                this.showToast('Error sending message', 'error');
+            }
+        }
+
+        // Search Features (UPDATED)
+        async performSearch(query) {
+            if (!query.trim()) {
+                this.hideSearchResults();
+                return;
+            }
+
+            try {
+                const { data: users, error } = await this.supabase
+                    .from('profiles')
+                    .select('id, name, username, avatar')
+                    .ilike('username', `%${query}%`)
+                    .limit(5);
+
+                if (error) throw error;
+
+                this.searchResults = users || [];
+                this.renderSearchResults();
+            } catch (error) {
+                console.error('Error searching:', error);
+                this.searchResults = [];
+                this.renderSearchResults();
+            }
+        }
+
+        renderSearchResults() {
+            const container = document.getElementById('searchResults');
+            container.innerHTML = this.searchResults.map(user => `
+                <div class="search-result-item" onclick="primeMarApp.viewUserProfile('${user.id}')">
+                    <div class="avatar">${user.name.charAt(0)}</div>
+                    <div>
+                        <div class="user-name">${user.name}</div>
+                        <div class="user-handle">@${user.username}</div>
+                    </div>
+                </div>
+            `).join('');
+
+            container.classList.add('active');
+        }
+
+        hideSearchResults() {
+            document.getElementById('searchResults').classList.remove('active');
+        }
+
+        // Additional Features (UPDATED)
+        async viewStory(storyId) {
+            try {
+                const { data: story, error } = await this.supabase
+                    .from('stories')
+                    .select(`
+                        *,
+                        profiles:user_id (
+                            name,
+                            username,
+                            avatar
+                        )
+                    `)
+                    .eq('id', storyId)
+                    .single();
+
+                if (error) throw error;
+
+                // Record view
+                await this.supabase
+                    .from('story_views')
+                    .insert([{
+                        story_id: storyId,
+                        user_id: this.currentUser.id,
+                        viewed_at: new Date().toISOString()
+                    }])
+                    .onConflict(['story_id', 'user_id'])
+                    .ignore();
+
+                this.showToast(`Viewing ${story.profiles.username}'s story`, 'info');
+            } catch (error) {
+                console.error('Error viewing story:', error);
+                this.showToast('Error loading story', 'error');
+            }
+        }
+
+        async viewUserProfile(userId) {
+            try {
+                const { data: profile, error } = await this.supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', userId)
+                    .single();
+
+                if (error) throw error;
+
+                // Show profile in a modal or redirect to profile page
+                this.showToast(`Viewing ${profile.username}'s profile`, 'info');
+                this.hideSearchResults();
+                
+                // Update profile view count
+                await this.supabase
+                    .from('profile_views')
+                    .insert([{
+                        viewer_id: this.currentUser.id,
+                        viewed_id: userId,
+                        viewed_at: new Date().toISOString()
+                    }]);
+                
+            } catch (error) {
+                console.error('Error viewing profile:', error);
+                this.showToast('Error loading profile', 'error');
+            }
+        }
+
+        addImage() {
+            this.showToast('Image upload coming soon!', 'info');
+        }
+
+        addEmoji() {
+            this.showToast('Emoji picker coming soon!', 'info');
+        }
+
+        addLocation() {
+            this.showToast('Location sharing coming soon!', 'info');
+        }
+
+        async startChat() {
+            const username = prompt("Enter username to start chat:");
+            if (username) {
+                try {
+                    const { data: user, error } = await this.supabase
+                        .from('profiles')
+                        .select('id')
+                        .eq('username', username)
+                        .single();
+
+                    if (error) throw error;
+
+                    // Create or get conversation
+                    const sortedUsers = [this.currentUser.id, user.id].sort();
+                    const { data: conversation, error: convError } = await this.supabase
+                        .from('conversations')
+                        .upsert({
+                            user1_id: sortedUsers[0],
+                            user2_id: sortedUsers[1],
+                            updated_at: new Date().toISOString()
+                        }, {
+                            onConflict: 'user1_id,user2_id'
+                        })
+                        .select()
+                        .single();
+
+                    if (convError) throw convError;
+
+                    this.showPage('messagesPage');
+                    await this.openChat(conversation.id);
+                    
+                } catch (error) {
+                    console.error('Error starting chat:', error);
+                    this.showToast('User not found', 'error');
+                }
+            }
+        }
+
+        async showUserPosts() {
+            try {
+                const { data: userPosts, error } = await this.supabase
+                    .from('posts')
+                    .select('*')
+                    .eq('author_id', this.currentUser.id)
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                const container = document.getElementById('profilePostsContainer');
+                
+                if (userPosts.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-feather"></i>
+                            <h3>No posts yet</h3>
+                            <p>Share your first post!</p>
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = userPosts.map(post => `
+                        <div class="post">
+                            <div class="post-content">${this.parseContent(post.content)}</div>
+                            <div class="post-time">${this.formatTime(post.created_at)}</div>
+                            <div class="post-actions">
+                                <button class="post-action">
+                                    <i class="fas fa-heart"></i>
+                                    <span>${post.likes_count || 0}</span>
+                                </button>
+                                <button class="post-action">
+                                    <i class="fas fa-comment"></i>
+                                    <span>${post.comments_count || 0}</span>
+                                </button>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Error loading user posts:', error);
+                const container = document.getElementById('profilePostsContainer');
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <h3>Error loading posts</h3>
+                        <p>Please try again later</p>
+                    </div>
+                `;
+            }
+        }
+
+        async showFollowing() {
+            try {
+                const { data: following, error } = await this.supabase
+                    .from('follows')
+                    .select(`
+                        following_id,
+                        profiles:following_id (
+                            name,
+                            username,
+                            avatar
+                        )
+                    `)
+                    .eq('follower_id', this.currentUser.id)
+                    .eq('is_accepted', true);
+
+                if (error) throw error;
+
+                const userList = following.map(f => `
+                    <div class="search-result-item" onclick="primeMarApp.viewUserProfile('${f.following_id}')">
+                        <div class="avatar">${f.profiles.name.charAt(0)}</div>
+                        <div>
+                            <div class="user-name">${f.profiles.name}</div>
+                            <div class="user-handle">@${f.profiles.username}</div>
+                        </div>
+                    </div>
+                `).join('');
+
+                this.showToast(`Showing ${following.length} following`, 'info');
+                // You could show this in a modal or dedicated page
+            } catch (error) {
+                console.error('Error loading following:', error);
+                this.showToast('Error loading following list', 'error');
+            }
+        }
+
+        async showFollowers() {
+            try {
+                const { data: followers, error } = await this.supabase
+                    .from('follows')
+                    .select(`
+                        follower_id,
+                        profiles:follower_id (
+                            name,
+                            username,
+                            avatar
+                        )
+                    `)
+                    .eq('following_id', this.currentUser.id)
+                    .eq('is_accepted', true);
+
+                if (error) throw error;
+
+                this.showToast(`Showing ${followers.length} followers`, 'info');
+                // You could show this in a modal or dedicated page
+            } catch (error) {
+                console.error('Error loading followers:', error);
+                this.showToast('Error loading followers list', 'error');
+            }
+        }
+
+        // UI Methods (UPDATED)
+        showAuth() {
+            document.getElementById('authModal').classList.remove('hidden');
+            document.getElementById('appContainer').classList.remove('active');
+        }
+
+        showApp() {
+            document.getElementById('authModal').classList.add('hidden');
+            document.getElementById('appContainer').classList.add('active');
+            this.updateProfileUI();
+        }
+
+        showLoginForm() {
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('signupForm').style.display = 'none';
+            this.clearErrors();
+            document.getElementById('loginEmail').value = '';
+            document.getElementById('loginPassword').value = '';
+        }
+
+        showSignupForm() {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('signupForm').style.display = 'block';
+            this.clearErrors();
+            document.getElementById('signupName').value = '';
+            document.getElementById('signupUsername').value = '';
+            document.getElementById('signupEmail').value = '';
+            document.getElementById('signupPassword').value = '';
+        }
+
+        updateProfileUI() {
+            if (!this.userProfile) return;
+
+            const firstLetter = this.userProfile.name.charAt(0);
+            document.getElementById('userAvatar').textContent = firstLetter;
+            document.getElementById('profileAvatar').textContent = firstLetter;
+            document.getElementById('profileName').textContent = this.userProfile.name;
+            document.getElementById('profileHandle').textContent = `@${this.userProfile.username}`;
+            document.getElementById('profileBio').textContent = this.userProfile.bio || 'No bio yet';
+            
+            // Check if follow button should be shown
+            this.checkFollowStatus();
+        }
+
+        async checkFollowStatus() {
+            if (!this.currentUser || !this.userProfile || this.currentUser.id === this.userProfile.id) {
+                document.getElementById('followBtn').style.display = 'none';
+                return;
+            }
+
+            try {
+                const { data: follow, error } = await this.supabase
+                    .from('follows')
+                    .select('*')
+                    .eq('follower_id', this.currentUser.id)
+                    .eq('following_id', this.userProfile.id)
+                    .single();
+
+                const followBtn = document.getElementById('followBtn');
+                if (follow) {
+                    followBtn.textContent = 'Following';
+                    followBtn.style.background = 'var(--accent-color)';
+                } else {
+                    followBtn.textContent = 'Follow';
+                    followBtn.style.background = 'linear-gradient(90deg, var(--secondary-color), var(--primary-color))';
+                }
+                followBtn.style.display = 'block';
+                followBtn.onclick = () => this.toggleFollow();
+                
+            } catch (error) {
+                document.getElementById('followBtn').style.display = 'none';
+            }
+        }
+
+        async toggleFollow() {
+            if (!this.userProfile || this.currentUser.id === this.userProfile.id) return;
+
+            try {
+                const followBtn = document.getElementById('followBtn');
+                
+                if (followBtn.textContent === 'Follow') {
+                    // Follow user
+                    const { error } = await this.supabase
+                        .from('follows')
+                        .insert([{
+                            follower_id: this.currentUser.id,
+                            following_id: this.userProfile.id,
+                            is_accepted: true,
+                            created_at: new Date().toISOString()
+                        }]);
+
+                    if (error) throw error;
+                    
+                    followBtn.textContent = 'Following';
+                    followBtn.style.background = 'var(--accent-color)';
+                    this.showToast(`You are now following ${this.userProfile.username}`, 'success');
+                    
+                } else {
+                    // Unfollow user
+                    const { error } = await this.supabase
+                        .from('follows')
+                        .delete()
+                        .eq('follower_id', this.currentUser.id)
+                        .eq('following_id', this.userProfile.id);
+
+                    if (error) throw error;
+                    
+                    followBtn.textContent = 'Follow';
+                    followBtn.style.background = 'linear-gradient(90deg, var(--secondary-color), var(--primary-color))';
+                    this.showToast(`You unfollowed ${this.userProfile.username}`, 'info');
+                }
+                
+                // Update stats
+                await this.loadProfileStats();
+                
+            } catch (error) {
+                console.error('Error toggling follow:', error);
+                this.showToast('Error updating follow status', 'error');
+            }
+        }
+
+        showPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            
+            document.getElementById(pageId).classList.add('active');
+            
+            document.querySelectorAll('.nav-item').forEach(nav => {
+                nav.classList.remove('active');
+                if (nav.dataset.page === pageId) {
+                    nav.classList.add('active');
+                }
+            });
+
+            if (pageId !== 'searchPage') {
+                this.hideSearchResults();
+            }
+
+            this.hideProfileDropdown();
+            
+            // Load page-specific data
+            if (pageId === 'notificationsPage') {
+                this.loadNotifications();
+            } else if (pageId === 'profilePage') {
+                this.showUserPosts();
+            }
+        }
+
+        toggleProfileDropdown() {
+            const dropdown = document.getElementById('profileDropdown');
+            dropdown.classList.toggle('active');
+        }
+
+        hideProfileDropdown() {
+            document.getElementById('profileDropdown').classList.remove('active');
+        }
+
+        // Utility Methods
+        formatTime(timestamp) {
+            if (!timestamp) return 'just now';
+            
+            const now = new Date();
+            const time = new Date(timestamp);
+            const diff = now - time;
+            const seconds = Math.floor(diff / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const hours = Math.floor(minutes / 60);
+            const days = Math.floor(hours / 24);
+
+            if (seconds < 60) return 'just now';
+            if (minutes < 60) return `${minutes}m`;
+            if (hours < 24) return `${hours}h`;
+            if (days < 7) return `${days}d`;
+            return time.toLocaleDateString();
+        }
+
+        showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            document.getElementById('toastContainer').appendChild(toast);
+            
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        clearErrors() {
+            document.getElementById('loginError').classList.remove('show');
+            document.getElementById('signupError').classList.remove('show');
+        }
+
+        clearError(errorDiv) {
+            errorDiv.classList.remove('show');
+        }
+
+        showError(message, errorDiv) {
+            errorDiv.textContent = message;
+            errorDiv.classList.add('show');
+        }
+
+        setupEventListeners() {
+            // Auth events
+            document.getElementById('loginBtn').addEventListener('click', () => this.handleLogin());
+            document.getElementById('signupBtn').addEventListener('click', () => this.handleSignup());
+            document.getElementById('showSignup').addEventListener('click', (e) => {
+                e.preventDefault();
+                this.showSignupForm();
+            });
+            document.getElementById('showLogin').addEventListener('click', (e) => {
+                e.preventDefault();
+                this.showLoginForm();
+            });
+
+            // Enter key for forms
+            document.getElementById('loginPassword').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') this.handleLogin();
+            });
+            document.getElementById('signupPassword').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') this.handleSignup();
+            });
+
+            // Navigation
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    this.showPage(item.dataset.page);
+                });
+            });
+
+            // Header buttons
+            document.getElementById('notificationBtn').addEventListener('click', () => {
+                this.showPage('notificationsPage');
+            });
+
+            // Profile dropdown
+            document.getElementById('profileBtn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.toggleProfileDropdown();
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', () => {
+                this.hideProfileDropdown();
+            });
+
+            // Theme toggle
+            document.getElementById('themeToggleBtn').addEventListener('click', () => {
+                this.toggleTheme();
+                this.hideProfileDropdown();
+            });
+
+            // Logout
+            document.getElementById('logoutBtn').addEventListener('click', () => {
+                this.logout();
+                this.hideProfileDropdown();
+            });
+
+            // Post composer
+            const postTextarea = document.getElementById('postTextarea');
+            const postBtn = document.getElementById('postBtn');
+
+            postTextarea.addEventListener('input', () => {
+                const hasContent = postTextarea.value.trim().length > 0;
+                postBtn.disabled = !hasContent;
+            });
+
+            postBtn.addEventListener('click', () => {
+                this.createPost(postTextarea.value);
+            });
+
+            // Search
+            document.getElementById('searchInput').addEventListener('input', (e) => {
+                this.performSearch(e.target.value);
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.search-container')) {
+                    this.hideSearchResults();
+                }
+            });
+
+            // Messages
+            document.getElementById('sendBtn').addEventListener('click', () => {
+                this.sendMessage();
+            });
+
+            document.getElementById('chatInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    this.sendMessage();
+                }
+            });
+
+            // Back button for chat
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && document.getElementById('chatView').classList.contains('active')) {
+                    document.getElementById('messagesList').style.display = 'block';
+                    document.getElementById('chatView').classList.remove('active');
+                }
+            });
+        }
+    }
+
+    // Initialize the app
+    document.addEventListener('DOMContentLoaded', () => {
+        window.primeMarApp = new PrimeMar();
+    });
+</script>
        
                
 </body>
