@@ -1313,7 +1313,1420 @@
         </nav>
     </div>
 
-  
+  <script>
+    // Complete Real Social Media App with Supabase (UPDATED WITH SEARCH, GROUPS, CHANNELS)
+    class PrimeMar {
+        constructor() {
+            this.supabaseUrl = 'https://mtqvgnkkzrqctapnxikg.supabase.co';
+            this.supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im10cXZnbmtrenJxY3RhcG54aWtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyMzIwMTYsImV4cCI6MjA4MDgwODAxNn0.lJ9wNxHjvWejFI6q6-sh-CQ_3bKFM1S__6J7WZSG8dY';
+            this.supabase = null;
+            this.currentUser = null;
+            this.userProfile = null;
+            this.posts = [];
+            this.conversations = [];
+            this.notifications = [];
+            this.stories = [];
+            this.activeChat = null;
+            this.searchResults = [];
+            this.isDarkMode = true;
+            this.groups = [];
+            this.communities = [];
+            this.currentGroup = null;
+            this.currentCommunity = null;
+            
+            this.init();
+        }
+
+        async init() {
+            try {
+                // Initialize Supabase
+                this.supabase = supabase.createClient(this.supabaseUrl, this.supabaseKey);
+                
+                // Load theme preference
+                this.loadThemePreference();
+                
+                // Check for existing session
+                const { data: { session } } = await this.supabase.auth.getSession();
+                
+                if (session) {
+                    this.currentUser = session.user;
+                    await this.loadUserProfile();
+                    this.showApp();
+                    await this.loadAllData();
+                }
+                
+                this.setupEventListeners();
+                
+                // Listen for auth state changes
+                this.supabase.auth.onAuthStateChange((event, session) => {
+                    if (event === 'SIGNED_IN' && session) {
+                        this.currentUser = session.user;
+                        this.loadUserProfile().then(() => {
+                            this.showApp();
+                            this.loadAllData();
+                        });
+                    } else if (event === 'SIGNED_OUT') {
+                        this.currentUser = null;
+                        this.showAuth();
+                    }
+                });
+                
+            } catch (error) {
+                console.error('Initialization error:', error);
+                this.showToast('Failed to initialize app', 'error');
+            }
+        }
+
+        // Theme Management
+        loadThemePreference() {
+            const savedTheme = localStorage.getItem('primemar-theme');
+            if (savedTheme === 'light') {
+                this.toggleTheme(false);
+            }
+        }
+
+        toggleTheme(showToast = true) {
+            this.isDarkMode = !this.isDarkMode;
+            
+            if (this.isDarkMode) {
+                document.body.classList.remove('light-mode');
+                document.getElementById('themeText').textContent = 'Dark Mode';
+                localStorage.setItem('primemar-theme', 'dark');
+                if (showToast) this.showToast('Dark mode enabled', 'info');
+            } else {
+                document.body.classList.add('light-mode');
+                document.getElementById('themeText').textContent = 'Light Mode';
+                localStorage.setItem('primemar-theme', 'light');
+                if (showToast) this.showToast('Light mode enabled', 'info');
+            }
+        }
+
+        // Logout functionality
+        async logout() {
+            try {
+                const { error } = await this.supabase.auth.signOut();
+                if (error) throw error;
+                
+                this.currentUser = null;
+                this.userProfile = null;
+                this.showAuth();
+                this.showLoginForm();
+                this.showToast('Logged out successfully', 'info');
+                
+            } catch (error) {
+                console.error('Logout error:', error);
+                this.showToast('Logout failed', 'error');
+            }
+        }
+
+        // Load user profile from Supabase
+        async loadUserProfile() {
+            if (!this.currentUser) return;
+
+            try {
+                const { data: profile, error } = await this.supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', this.currentUser.id)
+                    .single();
+
+                if (error) throw error;
+                this.userProfile = profile;
+                
+                // Load stats
+                await this.loadProfileStats();
+                
+            } catch (error) {
+                console.error('Error loading profile:', error);
+                this.userProfile = {
+                    id: this.currentUser.id,
+                    name: this.currentUser.user_metadata?.full_name || 'User',
+                    username: this.currentUser.user_metadata?.username || 'user',
+                    email: this.currentUser.email,
+                    bio: 'Welcome to my PrimeMar profile!',
+                    avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(this.currentUser.user_metadata?.full_name || 'User')}&background=ff9800&color=fff&size=128`
+                };
+            }
+        }
+
+        async loadProfileStats() {
+            if (!this.currentUser) return;
+            
+            try {
+                // Get followers count
+                const { count: followersCount } = await this.supabase
+                    .from('follows')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('following_id', this.currentUser.id)
+                    .eq('is_accepted', true);
+                
+                // Get following count
+                const { count: followingCount } = await this.supabase
+                    .from('follows')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('follower_id', this.currentUser.id)
+                    .eq('is_accepted', true);
+                
+                // Get posts count
+                const { count: postsCount } = await this.supabase
+                    .from('posts')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('author_id', this.currentUser.id);
+                
+                // Update UI
+                document.getElementById('followersCount').textContent = followersCount || 0;
+                document.getElementById('followingCount').textContent = followingCount || 0;
+                document.getElementById('postsCount').textContent = postsCount || 0;
+                
+            } catch (error) {
+                console.error('Error loading profile stats:', error);
+            }
+        }
+
+        async loadAllData() {
+            await Promise.all([
+                this.loadStories(),
+                this.loadFeed(),
+                this.loadConversations(),
+                this.loadNotifications(),
+                this.loadGroups(),
+                this.loadCommunities()
+            ]);
+            this.updateProfileUI();
+        }
+
+        async loadStories() {
+            try {
+                const { data: stories, error } = await this.supabase
+                    .from('stories')
+                    .select(`
+                        *,
+                        profiles:user_id (
+                            id,
+                            name,
+                            username,
+                            avatar
+                        )
+                    `)
+                    .eq('is_archived', false)
+                    .gt('expires_at', new Date().toISOString())
+                    .order('created_at', { ascending: false })
+                    .limit(10);
+
+                if (error) throw error;
+                this.stories = stories || [];
+                this.renderStories();
+            } catch (error) {
+                console.error('Error loading stories:', error);
+                this.stories = [];
+                this.renderStories();
+            }
+        }
+
+        renderStories() {
+            const container = document.getElementById('storiesContainer');
+            
+            if (this.stories.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-users"></i>
+                        <h3>No stories yet</h3>
+                        <p>Be the first to share a story!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = this.stories.map(story => `
+                <div class="story" onclick="primeMarApp.viewStory('${story.id}')">
+                    <div class="story-avatar">
+                        <div class="story-avatar-inner">
+                            ${story.profiles.name.charAt(0)}
+                        </div>
+                    </div>
+                    <div class="story-name">${story.profiles.username}</div>
+                </div>
+            `).join('');
+        }
+
+        async loadFeed() {
+            try {
+                const { data: posts, error } = await this.supabase
+                    .from('posts')
+                    .select(`
+                        *,
+                        profiles:author_id (
+                            name,
+                            username,
+                            avatar,
+                            is_verified
+                        ),
+                        post_likes!left (
+                            user_id,
+                            reaction
+                        ),
+                        comments!left (
+                            id
+                        )
+                    `)
+                    .order('created_at', { ascending: false })
+                    .limit(20);
+
+                if (error) throw error;
+                this.posts = posts || [];
+                this.renderFeed();
+            } catch (error) {
+                console.error('Error loading feed:', error);
+                this.posts = [];
+                this.renderFeed();
+            }
+        }
+
+        renderFeed() {
+            const container = document.getElementById('feedContainer');
+            
+            if (this.posts.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-feather"></i>
+                        <h3>No posts yet</h3>
+                        <p>Be the first to share something!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = this.posts.map(post => {
+                const isLiked = post.post_likes?.some(like => like.user_id === this.currentUser?.id);
+                const likeCount = post.likes_count || 0;
+                const commentCount = post.comments_count || 0;
+                
+                return `
+                    <div class="post">
+                        <div class="post-header">
+                            <div class="avatar">${post.profiles.name.charAt(0)}</div>
+                            <div class="post-user-info">
+                                <div class="user-name">
+                                    ${post.profiles.name}
+                                    ${post.profiles.is_verified ? '<i class="fas fa-check-circle" style="color: var(--primary-color); margin-left: 5px;"></i>' : ''}
+                                </div>
+                                <div class="user-handle">@${post.profiles.username}</div>
+                            </div>
+                            <div class="post-time">${this.formatTime(post.created_at)}</div>
+                        </div>
+                        <div class="post-content">${this.parseContent(post.content)}</div>
+                        ${post.media && post.media.length > 0 ? `
+                            <div class="post-image">
+                                <i class="fas fa-image"></i> ${post.media.length} media file(s)
+                            </div>
+                        ` : ''}
+                        ${post.tags && post.tags.length > 0 ? `
+                            <div style="margin-top: 10px;">
+                                ${post.tags.map(tag => `<span style="color: var(--primary-color); margin-right: 5px;">#${tag}</span>`).join('')}
+                            </div>
+                        ` : ''}
+                        <div class="post-actions">
+                            <button class="post-action" onclick="primeMarApp.commentOnPost('${post.id}')">
+                                <i class="fas fa-comment"></i>
+                                <span>${commentCount}</span>
+                            </button>
+                            <button class="post-action ${isLiked ? 'liked' : ''}" onclick="primeMarApp.likePost('${post.id}')">
+                                <i class="fas fa-heart"></i>
+                                <span>${likeCount}</span>
+                            </button>
+                            <button class="post-action" onclick="primeMarApp.sharePost('${post.id}')">
+                                <i class="fas fa-share"></i>
+                                <span>${post.shares_count || 0}</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ==================== ENHANCED SEARCH ====================
+        async performSearch(query) {
+            if (!query.trim()) {
+                this.hideSearchResults();
+                return;
+            }
+
+            try {
+                // Search users by name OR username
+                const { data: users, error } = await this.supabase
+                    .from('profiles')
+                    .select('id, name, username, avatar, is_verified')
+                    .or(`name.ilike.%${query}%,username.ilike.%${query}%`)
+                    .limit(10);
+
+                if (error) throw error;
+
+                // Search posts by content
+                const { data: posts, error: postsError } = await this.supabase
+                    .from('posts')
+                    .select(`
+                        *,
+                        profiles:author_id (
+                            name,
+                            username,
+                            avatar,
+                            is_verified
+                        )
+                    `)
+                    .ilike('content', `%${query}%`)
+                    .limit(5);
+
+                if (postsError) throw postsError;
+
+                // Search hashtags
+                const { data: hashtags, error: hashtagsError } = await this.supabase
+                    .from('hashtags')
+                    .select('*')
+                    .ilike('tag', `%${query}%`)
+                    .limit(5);
+
+                if (hashtagsError) throw hashtagsError;
+
+                // Search groups
+                const { data: groups, error: groupsError } = await this.supabase
+                    .from('groups')
+                    .select('*')
+                    .ilike('name', `%${query}%`)
+                    .limit(5);
+
+                if (groupsError) throw groupsError;
+
+                // Search communities
+                const { data: communities, error: communitiesError } = await this.supabase
+                    .from('communities')
+                    .select('*')
+                    .ilike('name', `%${query}%`)
+                    .limit(5);
+
+                if (communitiesError) throw communitiesError;
+
+                this.searchResults = {
+                    users: users || [],
+                    posts: posts || [],
+                    hashtags: hashtags || [],
+                    groups: groups || [],
+                    communities: communities || []
+                };
+                
+                this.renderSearchResults();
+            } catch (error) {
+                console.error('Error searching:', error);
+                this.searchResults = {};
+                this.renderSearchResults();
+            }
+        }
+
+        renderSearchResults() {
+            const container = document.getElementById('searchResults');
+            let html = '';
+            
+            // Users section
+            if (this.searchResults.users?.length > 0) {
+                html += `
+                    <div class="search-section">
+                        <div class="search-section-title"><i class="fas fa-users"></i> People</div>
+                        ${this.searchResults.users.map(user => `
+                            <div class="search-result-item" onclick="primeMarApp.viewUserProfile('${user.id}')">
+                                <div class="avatar">${user.name.charAt(0)}</div>
+                                <div>
+                                    <div class="user-name">
+                                        ${user.name}
+                                        ${user.is_verified ? '<i class="fas fa-check-circle" style="color: var(--primary-color); margin-left: 5px; font-size: 12px;"></i>' : ''}
+                                    </div>
+                                    <div class="user-handle">@${user.username}</div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+
+            // Posts section
+            if (this.searchResults.posts?.length > 0) {
+                html += `
+                    <div class="search-section">
+                        <div class="search-section-title"><i class="fas fa-newspaper"></i> Posts</div>
+                        ${this.searchResults.posts.map(post => `
+                            <div class="search-result-item" onclick="primeMarApp.viewPost('${post.id}')">
+                                <div class="avatar">${post.profiles.name.charAt(0)}</div>
+                                <div>
+                                    <div class="user-name">${post.profiles.name}</div>
+                                    <div class="message-preview">${post.content.substring(0, 50)}${post.content.length > 50 ? '...' : ''}</div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+
+            // Hashtags section
+            if (this.searchResults.hashtags?.length > 0) {
+                html += `
+                    <div class="search-section">
+                        <div class="search-section-title"><i class="fas fa-hashtag"></i> Hashtags</div>
+                        ${this.searchResults.hashtags.map(tag => `
+                            <div class="search-result-item" onclick="primeMarApp.searchByHashtag('${tag.tag}')">
+                                <div class="avatar" style="background: var(--primary-color);">
+                                    <i class="fas fa-hashtag" style="color: white;"></i>
+                                </div>
+                                <div>
+                                    <div class="user-name">#${tag.tag}</div>
+                                    <div class="user-handle">${tag.posts_count} posts</div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+
+            // Groups section
+            if (this.searchResults.groups?.length > 0) {
+                html += `
+                    <div class="search-section">
+                        <div class="search-section-title"><i class="fas fa-users"></i> Groups</div>
+                        ${this.searchResults.groups.map(group => `
+                            <div class="search-result-item" onclick="primeMarApp.openGroup('${group.id}')">
+                                <div class="avatar" style="background: var(--secondary-color);">
+                                    <i class="fas fa-users" style="color: white;"></i>
+                                </div>
+                                <div>
+                                    <div class="user-name">${group.name}</div>
+                                    <div class="user-handle">${group.members_count} members • ${group.privacy}</div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+
+            // Communities section
+            if (this.searchResults.communities?.length > 0) {
+                html += `
+                    <div class="search-section">
+                        <div class="search-section-title"><i class="fas fa-globe"></i> Communities</div>
+                        ${this.searchResults.communities.map(community => `
+                            <div class="search-result-item" onclick="primeMarApp.openCommunity('${community.id}')">
+                                <div class="avatar" style="background: var(--accent-color);">
+                                    <i class="fas fa-globe" style="color: white;"></i>
+                                </div>
+                                <div>
+                                    <div class="user-name">${community.name}</div>
+                                    <div class="user-handle">${community.members_count} members • ${community.category || 'General'}</div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+
+            if (!html) {
+                html = `<div class="empty-state" style="padding: 20px; text-align: center; color: var(--secondary-color);">
+                    <i class="fas fa-search"></i>
+                    <p>No results found</p>
+                </div>`;
+            }
+
+            container.innerHTML = html;
+            container.classList.add('active');
+        }
+
+        async searchByHashtag(tag) {
+            try {
+                const { data: posts, error } = await this.supabase
+                    .from('posts')
+                    .select(`
+                        *,
+                        profiles:author_id (
+                            name,
+                            username,
+                            avatar,
+                            is_verified
+                        )
+                    `)
+                    .contains('tags', [tag.replace('#', '')])
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                const container = document.getElementById('searchResultsFull');
+                if (posts.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-hashtag"></i>
+                            <h3>No posts with #${tag}</h3>
+                            <p>Be the first to use this hashtag!</p>
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = posts.map(post => `
+                        <div class="post">
+                            <div class="post-header">
+                                <div class="avatar">${post.profiles.name.charAt(0)}</div>
+                                <div class="post-user-info">
+                                    <div class="user-name">${post.profiles.name}</div>
+                                    <div class="user-handle">@${post.profiles.username}</div>
+                                </div>
+                                <div class="post-time">${this.formatTime(post.created_at)}</div>
+                            </div>
+                            <div class="post-content">${this.parseContent(post.content)}</div>
+                        </div>
+                    `).join('');
+                }
+
+                this.showPage('searchPage');
+                this.hideSearchResults();
+                this.showToast(`Showing posts with #${tag}`, 'info');
+            } catch (error) {
+                console.error('Error searching by hashtag:', error);
+                this.showToast('Error searching', 'error');
+            }
+        }
+
+        hideSearchResults() {
+            document.getElementById('searchResults').classList.remove('active');
+        }
+
+        // ==================== GROUPS & COMMUNITIES ====================
+        async loadGroups() {
+            try {
+                const { data: groups, error } = await this.supabase
+                    .from('group_members')
+                    .select(`
+                        *,
+                        group:groups!inner (
+                            *,
+                            creator:profiles!groups_created_by_fkey (
+                                name,
+                                username,
+                                avatar
+                            )
+                        )
+                    `)
+                    .eq('user_id', this.currentUser.id)
+                    .eq('is_banned', false)
+                    .order('joined_at', { ascending: false });
+
+                if (error) throw error;
+                this.groups = groups.map(gm => gm.group) || [];
+            } catch (error) {
+                console.error('Error loading groups:', error);
+                this.groups = [];
+            }
+        }
+
+        async loadCommunities() {
+            try {
+                const { data: communities, error } = await this.supabase
+                    .from('community_members')
+                    .select(`
+                        *,
+                        community:communities!inner (
+                            *,
+                            created_by:profiles!communities_created_by_fkey (
+                                name,
+                                username,
+                                avatar
+                            )
+                        )
+                    `)
+                    .eq('user_id', this.currentUser.id)
+                    .eq('is_banned', false)
+                    .order('joined_at', { ascending: false });
+
+                if (error) throw error;
+                this.communities = communities.map(cm => cm.community) || [];
+            } catch (error) {
+                console.error('Error loading communities:', error);
+                this.communities = [];
+            }
+        }
+
+        // ==================== GROUP MANAGEMENT ====================
+        async createGroup() {
+            const name = prompt('Enter group name:');
+            if (!name) return;
+
+            const description = prompt('Enter group description (optional):');
+            const privacy = prompt('Privacy (public/private/secret):', 'private');
+            
+            if (!['public', 'private', 'secret'].includes(privacy)) {
+                this.showToast('Invalid privacy setting', 'error');
+                return;
+            }
+
+            try {
+                const { data: group, error } = await this.supabase
+                    .from('groups')
+                    .insert([{
+                        name: name,
+                        description: description,
+                        created_by: this.currentUser.id,
+                        privacy: privacy,
+                        members_count: 1,
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString()
+                    }])
+                    .select()
+                    .single();
+
+                if (error) throw error;
+
+                // Add creator as admin
+                await this.supabase
+                    .from('group_members')
+                    .insert([{
+                        group_id: group.id,
+                        user_id: this.currentUser.id,
+                        role: 'admin',
+                        joined_at: new Date().toISOString()
+                    }]);
+
+                await this.loadGroups();
+                this.showToast(`Group "${name}" created successfully!`, 'success');
+                await this.openGroup(group.id);
+            } catch (error) {
+                console.error('Error creating group:', error);
+                this.showToast('Error creating group', 'error');
+            }
+        }
+
+        async openGroup(groupId) {
+            try {
+                const { data: group, error } = await this.supabase
+                    .from('groups')
+                    .select(`
+                        *,
+                        creator:profiles!groups_created_by_fkey (
+                            name,
+                            username,
+                            avatar
+                        ),
+                        group_members (
+                            *,
+                            profiles:user_id (
+                                name,
+                                username,
+                                avatar,
+                                is_online
+                            )
+                        )
+                    `)
+                    .eq('id', groupId)
+                    .single();
+
+                if (error) throw error;
+
+                // Check if user is a member
+                const isMember = group.group_members.some(member => member.user_id === this.currentUser.id);
+                if (!isMember && group.privacy === 'private') {
+                    this.showToast('You need to join this group first', 'error');
+                    return;
+                }
+
+                this.currentGroup = group;
+                this.showGroupModal();
+            } catch (error) {
+                console.error('Error opening group:', error);
+                this.showToast('Error loading group', 'error');
+            }
+        }
+
+        showGroupModal() {
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay';
+            modal.innerHTML = `
+                <div class="modal-content" style="max-width: 600px; max-height: 80vh; overflow-y: auto;">
+                    <div class="modal-header">
+                        <h2>${this.currentGroup.name}</h2>
+                        <button class="close-btn" onclick="this.closest('.modal-overlay').remove()">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div style="display: flex; align-items: center; margin-bottom: 20px;">
+                            <div class="avatar" style="width: 60px; height: 60px; background: var(--secondary-color);">
+                                <i class="fas fa-users" style="font-size: 24px;"></i>
+                            </div>
+                            <div style="margin-left: 15px;">
+                                <h3 style="margin: 0;">${this.currentGroup.name}</h3>
+                                <p style="color: var(--secondary-color); margin: 5px 0;">${this.currentGroup.members_count} members • ${this.currentGroup.privacy}</p>
+                                <p>${this.currentGroup.description || 'No description'}</p>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-bottom: 20px;">
+                            <h4>Group Members</h4>
+                            <div id="groupMembersList">
+                                ${this.currentGroup.group_members.map(member => `
+                                    <div style="display: flex; align-items: center; padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                        <div class="avatar">${member.profiles.name.charAt(0)}</div>
+                                        <div style="flex: 1; margin-left: 10px;">
+                                            <div>${member.profiles.name}</div>
+                                            <div style="font-size: 12px; color: var(--secondary-color);">
+                                                @${member.profiles.username} • ${member.role}
+                                            </div>
+                                        </div>
+                                        ${this.currentGroup.created_by === this.currentUser.id && member.user_id !== this.currentUser.id ? `
+                                            <button class="action-btn" onclick="primeMarApp.manageGroupMember('${member.user_id}', '${member.role}')">
+                                                <i class="fas fa-cog"></i>
+                                            </button>
+                                        ` : ''}
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; gap: 10px; margin-top: 20px;">
+                            ${this.currentGroup.group_members.some(m => m.user_id === this.currentUser.id) ? `
+                                <button class="btn" onclick="primeMarApp.leaveGroup('${this.currentGroup.id}')">Leave Group</button>
+                                <button class="btn" onclick="primeMarApp.viewGroupPosts('${this.currentGroup.id}')">View Posts</button>
+                                ${this.currentGroup.created_by === this.currentUser.id ? `
+                                    <button class="btn" onclick="primeMarApp.manageGroupSettings('${this.currentGroup.id}')">Manage</button>
+                                ` : ''}
+                            ` : `
+                                <button class="btn" onclick="primeMarApp.joinGroup('${this.currentGroup.id}')">Join Group</button>
+                            `}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+        }
+
+        async joinGroup(groupId) {
+            try {
+                const { data: group, error: groupError } = await this.supabase
+                    .from('groups')
+                    .select('privacy')
+                    .eq('id', groupId)
+                    .single();
+
+                if (groupError) throw groupError;
+
+                const { error } = await this.supabase
+                    .from('group_members')
+                    .insert([{
+                        group_id: groupId,
+                        user_id: this.currentUser.id,
+                        role: 'member',
+                        joined_at: new Date().toISOString()
+                    }]);
+
+                if (error) throw error;
+
+                // Update members count
+                await this.supabase
+                    .from('groups')
+                    .update({ members_count: this.currentGroup.members_count + 1 })
+                    .eq('id', groupId);
+
+                this.showToast('Joined group successfully!', 'success');
+                document.querySelector('.modal-overlay')?.remove();
+                await this.openGroup(groupId);
+            } catch (error) {
+                console.error('Error joining group:', error);
+                this.showToast('Error joining group', 'error');
+            }
+        }
+
+        async leaveGroup(groupId) {
+            if (!confirm('Are you sure you want to leave this group?')) return;
+
+            try {
+                const { error } = await this.supabase
+                    .from('group_members')
+                    .delete()
+                    .eq('group_id', groupId)
+                    .eq('user_id', this.currentUser.id);
+
+                if (error) throw error;
+
+                // Update members count
+                await this.supabase
+                    .from('groups')
+                    .update({ members_count: this.currentGroup.members_count - 1 })
+                    .eq('id', groupId);
+
+                this.showToast('Left group', 'info');
+                document.querySelector('.modal-overlay')?.remove();
+                await this.loadGroups();
+            } catch (error) {
+                console.error('Error leaving group:', error);
+                this.showToast('Error leaving group', 'error');
+            }
+        }
+
+        async manageGroupMember(userId, currentRole) {
+            const newRole = prompt('Change role (admin/moderator/member):', currentRole);
+            if (!newRole || !['admin', 'moderator', 'member'].includes(newRole)) return;
+
+            try {
+                const { error } = await this.supabase
+                    .from('group_members')
+                    .update({ role: newRole })
+                    .eq('group_id', this.currentGroup.id)
+                    .eq('user_id', userId);
+
+                if (error) throw error;
+
+                this.showToast('Role updated', 'success');
+                await this.openGroup(this.currentGroup.id);
+            } catch (error) {
+                console.error('Error updating role:', error);
+                this.showToast('Error updating role', 'error');
+            }
+        }
+
+        async manageGroupSettings(groupId) {
+            const settings = JSON.parse(this.currentGroup.settings || '{}');
+            const newSettings = {
+                allow_member_posts: confirm('Allow members to post?', settings.allow_member_posts),
+                approve_new_members: confirm('Approve new members?', settings.approve_new_members),
+                allow_media: confirm('Allow media uploads?', settings.allow_media),
+                allow_polls: confirm('Allow polls?', settings.allow_polls),
+                allow_events: confirm('Allow events?', settings.allow_events)
+            };
+
+            try {
+                const { error } = await this.supabase
+                    .from('groups')
+                    .update({ settings: newSettings })
+                    .eq('id', groupId);
+
+                if (error) throw error;
+
+                this.showToast('Group settings updated', 'success');
+                await this.openGroup(groupId);
+            } catch (error) {
+                console.error('Error updating settings:', error);
+                this.showToast('Error updating settings', 'error');
+            }
+        }
+
+        // ==================== COMMUNITY MANAGEMENT ====================
+        async createCommunity() {
+            const name = prompt('Enter community name:');
+            if (!name) return;
+
+            const description = prompt('Enter community description (optional):');
+            const category = prompt('Enter category (optional):');
+            const privacy = prompt('Privacy (public/private/restricted):', 'public');
+            
+            if (!['public', 'private', 'restricted'].includes(privacy)) {
+                this.showToast('Invalid privacy setting', 'error');
+                return;
+            }
+
+            try {
+                const { data: community, error } = await this.supabase
+                    .from('communities')
+                    .insert([{
+                        name: name,
+                        description: description,
+                        category: category,
+                        created_by: this.currentUser.id,
+                        privacy: privacy,
+                        members_count: 1,
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString()
+                    }])
+                    .select()
+                    .single();
+
+                if (error) throw error;
+
+                // Add creator as admin
+                await this.supabase
+                    .from('community_members')
+                    .insert([{
+                        community_id: community.id,
+                        user_id: this.currentUser.id,
+                        role: 'admin',
+                        joined_at: new Date().toISOString()
+                    }]);
+
+                await this.loadCommunities();
+                this.showToast(`Community "${name}" created successfully!`, 'success');
+                await this.openCommunity(community.id);
+            } catch (error) {
+                console.error('Error creating community:', error);
+                this.showToast('Error creating community', 'error');
+            }
+        }
+
+        async openCommunity(communityId) {
+            try {
+                const { data: community, error } = await this.supabase
+                    .from('communities')
+                    .select(`
+                        *,
+                        created_by:profiles!communities_created_by_fkey (
+                            name,
+                            username,
+                            avatar
+                        ),
+                        community_members (
+                            *,
+                            profiles:user_id (
+                                name,
+                                username,
+                                avatar
+                            )
+                        )
+                    `)
+                    .eq('id', communityId)
+                    .single();
+
+                if (error) throw error;
+
+                // Check if user is a member
+                const isMember = community.community_members.some(member => member.user_id === this.currentUser.id);
+                if (!isMember && community.privacy === 'private') {
+                    this.showToast('You need to join this community first', 'error');
+                    return;
+                }
+
+                this.currentCommunity = community;
+                this.showCommunityModal();
+            } catch (error) {
+                console.error('Error opening community:', error);
+                this.showToast('Error loading community', 'error');
+            }
+        }
+
+        showCommunityModal() {
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay';
+            modal.innerHTML = `
+                <div class="modal-content" style="max-width: 600px; max-height: 80vh; overflow-y: auto;">
+                    <div class="modal-header">
+                        <h2>${this.currentCommunity.name}</h2>
+                        <button class="close-btn" onclick="this.closest('.modal-overlay').remove()">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div style="display: flex; align-items: center; margin-bottom: 20px;">
+                            <div class="avatar" style="width: 60px; height: 60px; background: var(--accent-color);">
+                                <i class="fas fa-globe" style="font-size: 24px;"></i>
+                            </div>
+                            <div style="margin-left: 15px;">
+                                <h3 style="margin: 0;">${this.currentCommunity.name}</h3>
+                                <p style="color: var(--secondary-color); margin: 5px 0;">
+                                    ${this.currentCommunity.members_count} members • ${this.currentCommunity.category || 'General'} • ${this.currentCommunity.privacy}
+                                </p>
+                                <p>${this.currentCommunity.description || 'No description'}</p>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-bottom: 20px;">
+                            <h4>Community Members</h4>
+                            <div id="communityMembersList">
+                                ${this.currentCommunity.community_members.map(member => `
+                                    <div style="display: flex; align-items: center; padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                        <div class="avatar">${member.profiles.name.charAt(0)}</div>
+                                        <div style="flex: 1; margin-left: 10px;">
+                                            <div>${member.profiles.name}</div>
+                                            <div style="font-size: 12px; color: var(--secondary-color);">
+                                                @${member.profiles.username} • ${member.role}
+                                            </div>
+                                        </div>
+                                        ${this.currentCommunity.created_by === this.currentUser.id && member.user_id !== this.currentUser.id ? `
+                                            <button class="action-btn" onclick="primeMarApp.manageCommunityMember('${member.user_id}', '${member.role}')">
+                                                <i class="fas fa-cog"></i>
+                                            </button>
+                                        ` : ''}
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; gap: 10px; margin-top: 20px;">
+                            ${this.currentCommunity.community_members.some(m => m.user_id === this.currentUser.id) ? `
+                                <button class="btn" onclick="primeMarApp.leaveCommunity('${this.currentCommunity.id}')">Leave Community</button>
+                                <button class="btn" onclick="primeMarApp.viewCommunityPosts('${this.currentCommunity.id}')">View Posts</button>
+                                ${this.currentCommunity.created_by === this.currentUser.id ? `
+                                    <button class="btn" onclick="primeMarApp.manageCommunitySettings('${this.currentCommunity.id}')">Manage</button>
+                                ` : ''}
+                            ` : `
+                                <button class="btn" onclick="primeMarApp.joinCommunity('${this.currentCommunity.id}')">Join Community</button>
+                            `}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+        }
+
+        async joinCommunity(communityId) {
+            try {
+                const { error } = await this.supabase
+                    .from('community_members')
+                    .insert([{
+                        community_id: communityId,
+                        user_id: this.currentUser.id,
+                        role: 'member',
+                        joined_at: new Date().toISOString()
+                    }]);
+
+                if (error) throw error;
+
+                // Update members count
+                await this.supabase
+                    .from('communities')
+                    .update({ members_count: this.currentCommunity.members_count + 1 })
+                    .eq('id', communityId);
+
+                this.showToast('Joined community successfully!', 'success');
+                document.querySelector('.modal-overlay')?.remove();
+                await this.openCommunity(communityId);
+            } catch (error) {
+                console.error('Error joining community:', error);
+                this.showToast('Error joining community', 'error');
+            }
+        }
+
+        async leaveCommunity(communityId) {
+            if (!confirm('Are you sure you want to leave this community?')) return;
+
+            try {
+                const { error } = await this.supabase
+                    .from('community_members')
+                    .delete()
+                    .eq('community_id', communityId)
+                    .eq('user_id', this.currentUser.id);
+
+                if (error) throw error;
+
+                // Update members count
+                await this.supabase
+                    .from('communities')
+                    .update({ members_count: this.currentCommunity.members_count - 1 })
+                    .eq('id', communityId);
+
+                this.showToast('Left community', 'info');
+                document.querySelector('.modal-overlay')?.remove();
+                await this.loadCommunities();
+            } catch (error) {
+                console.error('Error leaving community:', error);
+                this.showToast('Error leaving community', 'error');
+            }
+        }
+
+        async manageCommunityMember(userId, currentRole) {
+            const newRole = prompt('Change role (admin/moderator/member):', currentRole);
+            if (!newRole || !['admin', 'moderator', 'member'].includes(newRole)) return;
+
+            try {
+                const { error } = await this.supabase
+                    .from('community_members')
+                    .update({ role: newRole })
+                    .eq('community_id', this.currentCommunity.id)
+                    .eq('user_id', userId);
+
+                if (error) throw error;
+
+                this.showToast('Role updated', 'success');
+                await this.openCommunity(this.currentCommunity.id);
+            } catch (error) {
+                console.error('Error updating role:', error);
+                this.showToast('Error updating role', 'error');
+            }
+        }
+
+        async manageCommunitySettings(communityId) {
+            const settings = JSON.parse(this.currentCommunity.settings || '{}');
+            const newSettings = {
+                allow_images: confirm('Allow images?', settings.allow_images),
+                allow_videos: confirm('Allow videos?', settings.allow_videos),
+                allow_links: confirm('Allow links?', settings.allow_links),
+                moderate_posts: confirm('Moderate posts?', settings.moderate_posts),
+                send_notifications: confirm('Send notifications?', settings.send_notifications)
+            };
+
+            try {
+                const { error } = await this.supabase
+                    .from('communities')
+                    .update({ settings: newSettings })
+                    .eq('id', communityId);
+
+                if (error) throw error;
+
+                this.showToast('Community settings updated', 'success');
+                await this.openCommunity(communityId);
+            } catch (error) {
+                console.error('Error updating settings:', error);
+                this.showToast('Error updating settings', 'error');
+            }
+        }
+
+        // ==================== MESSAGES ====================
+        async loadConversations() {
+            try {
+                const { data: conversations, error } = await this.supabase
+                    .from('conversations')
+                    .select(`
+                        *,
+                        user1:profiles!conversations_user1_id_fkey (id, name, username, avatar),
+                        user2:profiles!conversations_user2_id_fkey (id, name, username, avatar)
+                    `)
+                    .or(`user1_id.eq.${this.currentUser.id},user2_id.eq.${this.currentUser.id}`)
+                    .order('updated_at', { ascending: false });
+
+                if (error) throw error;
+                this.conversations = conversations || [];
+                this.renderConversations();
+            } catch (error) {
+                console.error('Error loading conversations:', error);
+                this.conversations = [];
+                this.renderConversations();
+            }
+        }
+
+        renderConversations() {
+            const container = document.getElementById('messagesList');
+            
+            if (this.conversations.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-comments"></i>
+                        <h3>No conversations</h3>
+                        <p>Start a conversation with someone!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = this.conversations.map(conv => {
+                const otherUser = conv.user1_id === this.currentUser.id ? conv.user2 : conv.user1;
+                const unreadCount = conv.user1_id === this.currentUser.id ? conv.unread_count_user1 : conv.unread_count_user2;
+                
+                return `
+                    <div class="message-item" onclick="primeMarApp.openChat('${conv.id}')">
+                        <div class="avatar">${otherUser.name.charAt(0)}</div>
+                        <div class="message-item-info">
+                            <div class="user-name">${otherUser.name}</div>
+                            <div class="message-preview">${conv.last_message?.substring(0, 50) || 'Start a conversation'}</div>
+                        </div>
+                        <div class="post-time">${this.formatTime(conv.updated_at)}</div>
+                        ${unreadCount > 0 ? `<div class="unread-badge">${unreadCount}</div>` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async startNewChat() {
+            const username = prompt("Enter username to start chat:");
+            if (username) {
+                try {
+                    const { data: user, error } = await this.supabase
+                        .from('profiles')
+                        .select('id, name')
+                        .eq('username', username)
+                        .single();
+
+                    if (error) throw error;
+
+                    // Create conversation
+                    const sortedUsers = [this.currentUser.id, user.id].sort();
+                    const { data: conversation, error: convError } = await this.supabase
+                        .from('conversations')
+                        .upsert({
+                            user1_id: sortedUsers[0],
+                            user2_id: sortedUsers[1],
+                            updated_at: new Date().toISOString()
+                        }, {
+                            onConflict: 'user1_id,user2_id'
+                        })
+                        .select()
+                        .single();
+
+                    if (convError) throw convError;
+
+                    this.showPage('messagesPage');
+                    await this.openChat(conversation.id);
+                    
+                } catch (error) {
+                    console.error('Error starting chat:', error);
+                    this.showToast('User not found', 'error');
+                }
+            }
+        }
+
+        // ==================== OTHER FUNCTIONS ====================
+        parseContent(content) {
+            return content.replace(/#(\w+)/g, '<span style="color: var(--primary-color);">#$1</span>');
+        }
+
+        formatTime(timestamp) {
+            if (!timestamp) return 'just now';
+            
+            const now = new Date();
+            const time = new Date(timestamp);
+            const diff = now - time;
+            const seconds = Math.floor(diff / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const hours = Math.floor(minutes / 60);
+            const days = Math.floor(hours / 24);
+
+            if (seconds < 60) return 'just now';
+            if (minutes < 60) return `${minutes}m`;
+            if (hours < 24) return `${hours}h`;
+            if (days < 7) return `${days}d`;
+            return time.toLocaleDateString();
+        }
+
+        showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            document.getElementById('toastContainer').appendChild(toast);
+            
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        showPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            
+            document.querySelectorAll('.nav-item').forEach(nav => {
+                nav.classList.remove('active');
+                if (nav.dataset.page === pageId) nav.classList.add('active');
+            });
+
+            if (pageId !== 'searchPage') this.hideSearchResults();
+            this.hideProfileDropdown();
+        }
+
+        setupEventListeners() {
+            // Add group and community buttons to profile dropdown
+            setTimeout(() => {
+                const profileDropdown = document.getElementById('profileDropdown');
+                if (profileDropdown) {
+                    // Add Groups button
+                    const groupsItem = document.createElement('button');
+                    groupsItem.className = 'dropdown-item';
+                    groupsItem.innerHTML = '<i class="fas fa-users"></i><span>My Groups</span>';
+                    groupsItem.onclick = () => this.showMyGroups();
+                    
+                    // Add Communities button
+                    const communitiesItem = document.createElement('button');
+                    communitiesItem.className = 'dropdown-item';
+                    communitiesItem.innerHTML = '<i class="fas fa-globe"></i><span>My Communities</span>';
+                    communitiesItem.onclick = () => this.showMyCommunities();
+                    
+                    // Insert before divider
+                    const divider = profileDropdown.querySelector('.dropdown-divider');
+                    if (divider) {
+                        profileDropdown.insertBefore(groupsItem, divider);
+                        profileDropdown.insertBefore(communitiesItem, divider);
+                    }
+                    
+                    // Add Create buttons in messages page
+                    const messagesPage = document.getElementById('messagesPage');
+                    if (messagesPage) {
+                        const header = messagesPage.querySelector('.chat-header');
+                        if (header) {
+                            const createButtons = document.createElement('div');
+                            createButtons.style.marginTop = '10px';
+                            createButtons.innerHTML = `
+                                <button class="btn" onclick="primeMarApp.createGroup()" style="margin-right: 10px; padding: 8px 12px;">
+                                    <i class="fas fa-plus"></i> Create Group
+                                </button>
+                                <button class="btn" onclick="primeMarApp.createCommunity()" style="padding: 8px 12px;">
+                                    <i class="fas fa-plus"></i> Create Community
+                                </button>
+                            `;
+                            header.appendChild(createButtons);
+                        }
+                    }
+                }
+            }, 1000);
+            
+            // Existing event listeners...
+            document.getElementById('loginBtn').addEventListener('click', () => this.handleLogin());
+            document.getElementById('signupBtn').addEventListener('click', () => this.handleSignup());
+            document.getElementById('showSignup').addEventListener('click', (e) => {
+                e.preventDefault();
+                this.showSignupForm();
+            });
+            document.getElementById('showLogin').addEventListener('click', (e) => {
+                e.preventDefault();
+                this.showLoginForm();
+            });
+
+            document.getElementById('loginPassword').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') this.handleLogin();
+            });
+
+            document.getElementById('signupPassword').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') this.handleSignup();
+            });
+
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', () => this.showPage(item.dataset.page));
+            });
+
+            document.getElementById('notificationBtn').addEventListener('click', () => {
+                this.showPage('notificationsPage');
+            });
+
+            document.getElementById('profileBtn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.toggleProfileDropdown();
+            });
+
+            document.addEventListener('click', () => this.hideProfileDropdown());
+
+            document.getElementById('themeToggleBtn').addEventListener('click', () => {
+                this.toggleTheme();
+                this.hideProfileDropdown();
+            });
+
+            document.getElementById('logoutBtn').addEventListener('click', () => {
+                this.logout();
+                this.hideProfileDropdown();
+            });
+
+            const postTextarea = document.getElementById('postTextarea');
+            const postBtn = document.getElementById('postBtn');
+            postTextarea.addEventListener('input', () => {
+                postBtn.disabled = !postTextarea.value.trim().length;
+            });
+            postBtn.addEventListener('click', () => this.createPost(postTextarea.value));
+
+            document.getElementById('searchInput').addEventListener('input', (e) => {
+                this.performSearch(e.target.value);
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.search-container')) this.hideSearchResults();
+            });
+
+            document.getElementById('sendBtn').addEventListener('click', () => this.sendMessage());
+            document.getElementById('chatInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') this.sendMessage();
+            });
+        }
+
+        // Keep other existing methods (handleLogin, handleSignup, createPost, likePost, etc.)
+        // They remain the same as in your original code...
+    }
+
+    // Initialize the app
+    document.addEventListener('DOMContentLoaded', () => {
+        window.primeMarApp = new PrimeMar();
+    });
+</script>
+
+
        
                
 </body>
