@@ -1034,6 +1034,113 @@
             margin-bottom: 16px;
             opacity: 0.5;
         }
+
+    /* Add these styles for the new features */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2000;
+        padding: 20px;
+    }
+
+    .modal-content {
+        background: var(--card-bg-dark);
+        border-radius: 15px;
+        width: 100%;
+        max-width: 500px;
+        animation: slideUp 0.3s ease;
+    }
+
+    body.light-mode .modal-content {
+        background: var(--card-bg-light);
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    body.light-mode .modal-header {
+        border-bottom: 1px solid rgba(0,0,0,0.1);
+    }
+
+    .close-btn {
+        background: none;
+        border: none;
+        color: var(--secondary-color);
+        font-size: 24px;
+        cursor: pointer;
+        padding: 0;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .close-btn:hover {
+        background: rgba(255,255,255,0.1);
+    }
+
+    .modal-body {
+        padding: 20px;
+    }
+
+    .search-section {
+        margin-bottom: 20px;
+    }
+
+    .search-section-title {
+        padding: 10px 15px;
+        font-weight: 600;
+        color: var(--primary-color);
+        background: rgba(255,152,0,0.1);
+        border-radius: 8px;
+        margin-bottom: 10px;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .action-btn {
+        background: rgba(255,255,255,0.1);
+        border: none;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        color: var(--secondary-color);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .action-btn:hover {
+        background: rgba(255,255,255,0.2);
+    }
+
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
     </style>
 </head>
 <body>
