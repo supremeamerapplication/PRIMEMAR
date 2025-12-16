@@ -9,200 +9,116 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
     <script src="https://cdn.jsdelivr.net/npm/markdown-it@13/dist/markdown-it.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root {
-            --primary-color: #ff6b35;
-            --secondary-color: #f7c948;
-            --accent-color: #ff3864;
-            --success-color: #2ecc71;
-            --info-color: #3498db;
-            --warning-color: #f39c12;
-            --dark-bg: #0f0f23;
-            --darker-bg: #0a0a1a;
-            --card-bg-dark: rgba(25, 25, 40, 0.95);
-            --text-dark: #ffffff;
-            --shadow-color: rgba(0, 0, 0, 0.3);
-            --gradient-primary: linear-gradient(135deg, var(--primary-color), var(--accent-color));
-            --gradient-secondary: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
-            --gradient-dark: linear-gradient(135deg, var(--dark-bg), var(--darker-bg));
-            --border-radius-sm: 8px;
-            --border-radius-md: 12px;
-            --border-radius-lg: 16px;
-            --border-radius-xl: 20px;
-            --transition-normal: 0.3s ease;
-            --header-height: 70px;
-            --nav-height: 65px;
-        }
-
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        :root {
+            --primary: #ff6b35;
+            --secondary: #f7c948;
+            --accent: #ff3864;
+            --success: #2ecc71;
+            --info: #3498db;
+            --dark: #0f0f23;
+            --darker: #0a0a1a;
+            --light: #ffffff;
+            --card-bg: rgba(25, 25, 40, 0.95);
+            --text: #ffffff;
+            --border: rgba(255, 255, 255, 0.1);
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            --gradient: linear-gradient(135deg, var(--primary), var(--accent));
+            --radius: 12px;
+            --header-h: 70px;
+            --nav-h: 65px;
         }
 
         body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            background: var(--gradient-dark);
-            color: var(--text-dark);
+            background: var(--dark);
+            color: var(--text);
             min-height: 100vh;
             overflow-x: hidden;
         }
 
         /* Loading Screen */
-        .loading-screen {
+        #loadingScreen {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: var(--gradient-dark);
+            background: var(--darker);
             display: flex;
             flex-direction: column;
-            align-items: center;
             justify-content: center;
+            align-items: center;
             z-index: 9999;
+            transition: opacity 0.3s;
+        }
+
+        #loadingScreen.hidden {
+            opacity: 0;
+            pointer-events: none;
         }
 
         .loading-logo {
             font-size: 3rem;
             font-weight: 800;
-            background: var(--gradient-primary);
+            background: var(--gradient);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin-bottom: 20px;
+            margin-bottom: 30px;
         }
 
-        .loading-progress {
-            width: 200px;
+        .loading-bar {
+            width: 300px;
             height: 4px;
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255,255,255,0.1);
             border-radius: 2px;
             overflow: hidden;
         }
 
-        .loading-progress-bar {
+        #loadingProgress {
             height: 100%;
-            background: var(--gradient-primary);
+            background: var(--gradient);
             width: 0%;
             transition: width 0.3s;
         }
 
-        /* Auth Modal */
-        .modal {
+        /* Toast Container */
+        #toastContainer {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(15, 15, 35, 0.95);
-            backdrop-filter: blur(10px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            padding: 20px;
+            top: 20px;
+            right: 20px;
+            z-index: 9998;
         }
 
-        .modal.hidden {
+        .toast {
+            background: var(--card-bg);
+            color: white;
+            padding: 12px 20px;
+            border-radius: var(--radius);
+            margin-bottom: 10px;
+            box-shadow: var(--shadow);
+            border-left: 4px solid var(--primary);
+            animation: slideIn 0.3s;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* App Container */
+        #appContainer {
             display: none;
         }
 
-        .modal-content {
-            background: var(--card-bg-dark);
-            border-radius: var(--border-radius-xl);
-            max-width: 400px;
-            width: 100%;
-            overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .modal-header {
-            background: var(--gradient-primary);
-            padding: 30px;
-            text-align: center;
-            color: white;
-        }
-
-        .modal-body {
-            padding: 30px;
-        }
-
-        .input-group {
-            margin-bottom: 20px;
-        }
-
-        .input-label {
+        #appContainer.active {
             display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: var(--secondary-color);
-        }
-
-        .input-field {
-            width: 100%;
-            padding: 12px 16px;
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            border-radius: var(--border-radius-sm);
-            background: rgba(255, 255, 255, 0.05);
-            color: white;
-            font-size: 16px;
-            transition: all var(--transition-normal);
-        }
-
-        .input-field:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .btn {
-            width: 100%;
-            padding: 14px;
-            border: none;
-            border-radius: var(--border-radius-sm);
-            background: var(--gradient-primary);
-            color: white;
-            font-weight: bold;
-            font-size: 16px;
-            cursor: pointer;
-            transition: all var(--transition-normal);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(255, 107, 53, 0.3);
-        }
-
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none !important;
-        }
-
-        .btn-secondary {
-            background: transparent;
-            border: 2px solid var(--primary-color);
-            color: var(--primary-color);
-        }
-
-        .btn-secondary:hover {
-            background: var(--primary-color);
-            color: white;
-        }
-
-        .error-message {
-            color: var(--accent-color);
-            margin: 10px 0;
-            padding: 12px;
-            background: rgba(255, 56, 100, 0.1);
-            border-radius: var(--border-radius-sm);
-            text-align: center;
-            border: 1px solid rgba(255, 56, 100, 0.2);
         }
 
         /* Header */
@@ -211,62 +127,149 @@
             top: 0;
             left: 0;
             right: 0;
-            height: var(--header-height);
-            background: rgba(15, 15, 35, 0.95);
+            height: var(--header-h);
+            background: rgba(15, 15, 35, 0.9);
             backdrop-filter: blur(10px);
-            padding: 0 20px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            z-index: 100;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 0 20px;
+            z-index: 1000;
+            border-bottom: 1px solid var(--border);
         }
 
         .logo {
-            font-size: 1.8rem;
+            font-size: 2rem;
             font-weight: 800;
-            background: var(--gradient-primary);
+            background: var(--gradient);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
-        /* Navigation */
-        .nav-container {
+        .search-box {
+            flex: 1;
+            max-width: 500px;
+            margin: 0 20px;
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 10px 20px;
+            padding-left: 45px;
+            border-radius: 25px;
+            border: 1px solid var(--border);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-size: 14px;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--secondary);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .icon-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: var(--text);
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .icon-btn:hover {
+            background: rgba(255,107,53,0.2);
+            transform: translateY(-2px);
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: var(--accent);
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        /* Main Content */
+        .main-content {
+            padding-top: var(--header-h);
+            padding-bottom: var(--nav-h);
+            min-height: 100vh;
+        }
+
+        .page {
+            display: none;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
             position: fixed;
             bottom: 0;
             left: 0;
             right: 0;
-            background: rgba(15, 15, 35, 0.95);
+            height: var(--nav-h);
+            background: rgba(15, 15, 35, 0.9);
             backdrop-filter: blur(10px);
             display: flex;
             justify-content: space-around;
-            padding: 12px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            z-index: 100;
+            align-items: center;
+            border-top: 1px solid var(--border);
+            z-index: 1000;
         }
 
         .nav-item {
             display: flex;
             flex-direction: column;
             align-items: center;
-            color: var(--secondary-color);
+            gap: 4px;
+            color: var(--secondary);
             cursor: pointer;
-            padding: 8px 12px;
-            border-radius: var(--border-radius-sm);
-            transition: all var(--transition-normal);
+            padding: 10px;
+            border-radius: 10px;
+            transition: all 0.3s;
             flex: 1;
             max-width: 80px;
         }
 
         .nav-item.active {
-            color: var(--primary-color);
-            background: rgba(255, 107, 53, 0.1);
+            color: var(--primary);
+            background: rgba(255,107,53,0.1);
             transform: translateY(-5px);
         }
 
         .nav-icon {
             font-size: 20px;
-            margin-bottom: 4px;
         }
 
         .nav-label {
@@ -274,114 +277,121 @@
             font-weight: 600;
         }
 
-        /* Main Content */
-        .main-content {
-            padding: 90px 20px 80px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .page {
-            display: none;
-        }
-
-        .page.active {
-            display: block;
-        }
-
         /* Post Composer */
         .post-composer {
-            background: var(--card-bg-dark);
-            border-radius: var(--border-radius-lg);
+            background: var(--card-bg);
+            border-radius: var(--radius);
             padding: 20px;
             margin-bottom: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--border);
         }
 
         .composer-header {
             display: flex;
-            gap: 12px;
-            margin-bottom: 16px;
+            gap: 15px;
+            margin-bottom: 15px;
         }
 
         .avatar {
-            width: 48px;
-            height: 48px;
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
-            background: var(--gradient-secondary);
+            background: var(--gradient);
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
+            font-size: 20px;
             color: white;
-            font-size: 18px;
-            flex-shrink: 0;
         }
 
-        .composer-textarea {
+        .composer-input {
             flex: 1;
             background: transparent;
             border: none;
             color: white;
             font-size: 16px;
             resize: none;
-            min-height: 80px;
-            font-family: inherit;
+            min-height: 60px;
             outline: none;
+            font-family: inherit;
         }
 
         .composer-actions {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding-left: 60px;
+            padding-left: 65px;
         }
 
         .action-buttons {
             display: flex;
-            gap: 12px;
+            gap: 10px;
         }
 
         .action-btn {
             background: none;
             border: none;
-            color: var(--primary-color);
+            color: var(--primary);
             font-size: 18px;
             cursor: pointer;
             padding: 8px;
             border-radius: 8px;
-            transition: all var(--transition-normal);
+            transition: all 0.3s;
         }
 
         .action-btn:hover {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255,255,255,0.1);
         }
 
-        /* Post Feed */
-        .post-feed {
+        .post-btn {
+            background: var(--gradient);
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .post-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255,107,53,0.3);
+        }
+
+        .post-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Feed */
+        .feed {
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 20px;
         }
 
         .post-card {
-            background: var(--card-bg-dark);
-            border-radius: var(--border-radius-lg);
+            background: var(--card-bg);
+            border-radius: var(--radius);
             padding: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: all var(--transition-normal);
+            border: 1px solid var(--border);
+            transition: all 0.3s;
         }
 
         .post-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px var(--shadow-color);
+            transform: translateY(-3px);
+            box-shadow: var(--shadow);
         }
 
         .post-header {
             display: flex;
             align-items: center;
-            gap: 12px;
-            margin-bottom: 12px;
+            gap: 15px;
+            margin-bottom: 15px;
         }
 
         .post-user-info {
@@ -395,108 +405,585 @@
         }
 
         .post-user-handle {
-            color: var(--secondary-color);
+            color: var(--secondary);
             font-size: 14px;
-            cursor: pointer;
         }
 
         .post-time {
-            color: var(--secondary-color);
+            color: var(--secondary);
             font-size: 12px;
         }
 
         .post-content {
-            margin-bottom: 12px;
+            margin-bottom: 15px;
             line-height: 1.6;
+        }
+
+        .post-media {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .media-item {
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .media-item img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
         }
 
         .post-actions {
             display: flex;
             justify-content: space-around;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            padding-top: 12px;
+            border-top: 1px solid var(--border);
+            padding-top: 15px;
+            margin-top: 15px;
         }
 
-        .post-action-btn {
+        .post-action {
             background: none;
             border: none;
-            color: var(--secondary-color);
+            color: var(--secondary);
             cursor: pointer;
-            padding: 8px 12px;
+            padding: 8px 15px;
             border-radius: 8px;
             display: flex;
             align-items: center;
-            gap: 6px;
-            font-weight: 600;
-            transition: all var(--transition-normal);
-        }
-
-        .post-action-btn:hover {
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .post-action-btn.active {
-            color: var(--accent-color);
-        }
-
-        /* Media Gallery */
-        .media-gallery {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
             gap: 8px;
-            margin: 12px 0;
+            font-weight: 600;
+            transition: all 0.3s;
         }
 
-        .media-item {
-            position: relative;
-            border-radius: var(--border-radius-sm);
+        .post-action:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .post-action.liked {
+            color: var(--accent);
+        }
+
+        /* Profile Page */
+        .profile-header {
+            background: var(--card-bg);
+            border-radius: var(--radius);
             overflow: hidden;
-            aspect-ratio: 1;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
         }
 
-        .media-item img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+        .profile-banner {
+            height: 200px;
+            background: var(--gradient);
+            position: relative;
         }
 
-        /* Upload Zone */
-        .upload-zone {
-            border: 2px dashed rgba(255, 255, 255, 0.2);
-            border-radius: var(--border-radius-md);
-            padding: 30px 20px;
-            text-align: center;
-            margin: 12px 0;
-            cursor: pointer;
-            transition: all var(--transition-normal);
+        .profile-avatar-container {
+            position: absolute;
+            top: 150px;
+            left: 30px;
         }
 
-        .upload-zone:hover {
-            border-color: var(--primary-color);
-            background: rgba(255, 107, 53, 0.05);
-        }
-
-        /* Poll Editor */
-        .poll-editor {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: var(--border-radius-md);
-            padding: 16px;
-            margin: 12px 0;
-        }
-
-        .poll-option {
+        .profile-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--secondary), var(--primary));
             display: flex;
             align-items: center;
-            gap: 8px;
+            justify-content: center;
+            font-size: 40px;
+            font-weight: bold;
+            color: white;
+            border: 4px solid var(--card-bg);
+        }
+
+        .profile-info {
+            padding: 80px 30px 30px;
+        }
+
+        .profile-name {
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+        }
+
+        .profile-handle {
+            color: var(--secondary);
+            margin-bottom: 15px;
+        }
+
+        .profile-bio {
+            margin-bottom: 20px;
+        }
+
+        .profile-stats {
+            display: flex;
+            gap: 30px;
+            margin: 20px 0;
+        }
+
+        .stat {
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--secondary);
+        }
+
+        .profile-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .profile-btn {
+            flex: 1;
+            padding: 10px;
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: var(--gradient);
+            color: white;
+            border: none;
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+
+        /* Chat Page */
+        .chat-container {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            height: calc(100vh - 180px);
+            display: flex;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .conversations-list {
+            width: 300px;
+            border-right: 1px solid var(--border);
+            overflow-y: auto;
+        }
+
+        .conversation-item {
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border);
+            transition: all 0.3s;
+        }
+
+        .conversation-item:hover {
+            background: rgba(255,255,255,0.05);
+        }
+
+        .conversation-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+        }
+
+        .conversation-info {
+            flex: 1;
+        }
+
+        .conversation-name {
+            font-weight: bold;
+        }
+
+        .conversation-last {
+            color: var(--secondary);
+            font-size: 12px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            display: flex;
+            gap: 10px;
+            max-width: 70%;
+        }
+
+        .message.outgoing {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+
+        .message-bubble {
+            background: rgba(255,255,255,0.1);
+            padding: 10px 15px;
+            border-radius: 18px;
+            word-break: break-word;
+        }
+
+        .message.outgoing .message-bubble {
+            background: var(--gradient);
+            color: white;
+        }
+
+        .chat-input-container {
+            padding: 20px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px 20px;
+            border-radius: 25px;
+            border: 1px solid var(--border);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            outline: none;
+        }
+
+        .send-btn {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: var(--gradient);
+            border: none;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        /* Modal System */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(10px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            max-width: 500px;
+            width: 100%;
+            max-height: 90vh;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-body {
+            padding: 20px;
+            overflow-y: auto;
+            max-height: calc(90vh - 80px);
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--secondary);
+            font-size: 24px;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
             margin-bottom: 8px;
+            color: var(--secondary);
+            font-weight: 600;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        .form-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(255,107,53,0.1);
+        }
+
+        /* Auth Modal */
+        #authModal .modal-content {
+            max-width: 450px;
+        }
+
+        .auth-header {
+            background: var(--gradient);
+            padding: 40px;
+            text-align: center;
+            color: white;
+        }
+
+        .auth-body {
+            padding: 40px;
+        }
+
+        .auth-tabs {
+            display: flex;
+            margin-bottom: 30px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .auth-tab {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            background: none;
+            border: none;
+            color: var(--secondary);
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+        }
+
+        .auth-tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .auth-form {
+            display: none;
+        }
+
+        .auth-form.active {
+            display: block;
+        }
+
+        .auth-btn {
+            width: 100%;
+            padding: 14px;
+            background: var(--gradient);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.3s;
+        }
+
+        .auth-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255,107,53,0.3);
+        }
+
+        .error-message {
+            color: var(--accent);
+            padding: 10px;
+            background: rgba(255,56,100,0.1);
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .search-box {
+                display: none;
+            }
+            
+            .conversations-list {
+                width: 100%;
+            }
+            
+            .chat-area {
+                display: none;
+            }
+            
+            .chat-area.active {
+                display: flex;
+            }
+            
+            .profile-avatar-container {
+                left: 50%;
+                transform: translateX(-50%);
+                top: 140px;
+            }
+            
+            .profile-info {
+                padding-top: 60px;
+                text-align: center;
+            }
+            
+            .profile-stats {
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header {
+                padding: 0 10px;
+            }
+            
+            .page {
+                padding: 10px;
+            }
+            
+            .post-actions {
+                flex-wrap: wrap;
+            }
+            
+            .post-action {
+                flex: 1;
+                justify-content: center;
+            }
+        }
+
+        /* FAB Button */
+        .fab {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--gradient);
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .fab:hover {
+            transform: scale(1.1);
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            position: fixed;
+            bottom: 150px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 99;
+        }
+
+        .quick-action {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--card-bg);
+            border: none;
+            color: var(--primary);
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow);
+            transition: all 0.3s;
+        }
+
+        .quick-action:hover {
+            transform: translateY(-3px);
+            background: var(--gradient);
+            color: white;
         }
 
         /* Stories */
         .stories-container {
             display: flex;
-            gap: 12px;
+            gap: 15px;
             overflow-x: auto;
-            padding: 16px 0;
+            padding: 20px 0;
             margin-bottom: 20px;
             scrollbar-width: none;
         }
@@ -506,481 +993,328 @@
         }
 
         .story-item {
-            position: relative;
             min-width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            background: var(--gradient-primary);
-            padding: 3px;
+            text-align: center;
             cursor: pointer;
-            flex-shrink: 0;
         }
 
-        .story-content {
-            width: 100%;
-            height: 100%;
+        .story-avatar {
+            width: 70px;
+            height: 70px;
             border-radius: 50%;
-            overflow: hidden;
-            background: var(--dark-bg);
+            background: var(--gradient);
             display: flex;
             align-items: center;
             justify-content: center;
-        }
-
-        /* Analytics Dashboard */
-        .analytics-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-            margin: 20px 0;
-        }
-
-        .analytics-card {
-            background: var(--card-bg-dark);
-            border-radius: var(--border-radius-md);
-            padding: 20px;
-            text-align: center;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        /* Music Player */
-        .music-player {
-            position: fixed;
-            bottom: 70px;
-            left: 20px;
-            right: 20px;
-            background: var(--card-bg-dark);
-            border-radius: var(--border-radius-lg);
-            padding: 12px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            z-index: 90;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .music-cover {
-            width: 40px;
-            height: 40px;
-            border-radius: 8px;
-            object-fit: cover;
-        }
-
-        .music-info {
-            flex: 1;
-        }
-
-        .music-controls {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        /* Notification Badge */
-        .notification-badge {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background: var(--accent-color);
+            font-size: 24px;
             color: white;
+            margin: 0 auto 10px;
+            padding: 3px;
+        }
+
+        .story-avatar::before {
+            content: '';
+            position: absolute;
+            width: 70px;
+            height: 70px;
             border-radius: 50%;
-            width: 18px;
-            height: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 10px;
-            font-weight: bold;
+            background: transparent;
+            border: 2px solid transparent;
+            background-clip: padding-box;
         }
 
-        /* Utility Classes */
-        .hidden {
-            display: none !important;
+        .story-avatar.active::before {
+            background: linear-gradient(45deg, #ff6b35, #ff3864);
+            -webkit-mask: 
+                linear-gradient(#fff 0 0) content-box, 
+                linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
         }
 
-        .flex {
-            display: flex;
+        .story-username {
+            font-size: 12px;
+            color: var(--secondary);
         }
 
-        .flex-col {
-            flex-direction: column;
+        /* Emoji Picker */
+        .emoji-picker {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 5px;
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 15px;
+            border: 1px solid var(--border);
+            position: absolute;
+            bottom: 80px;
+            right: 20px;
+            z-index: 101;
+            display: none;
         }
 
-        .items-center {
-            align-items: center;
+        .emoji-picker.active {
+            display: grid;
         }
 
-        .justify-between {
-            justify-content: space-between;
-        }
-
-        .gap-2 { gap: 8px; }
-        .gap-3 { gap: 12px; }
-        .gap-4 { gap: 16px; }
-
-        .mb-2 { margin-bottom: 8px; }
-        .mb-3 { margin-bottom: 12px; }
-        .mb-4 { margin-bottom: 16px; }
-        .mb-6 { margin-bottom: 24px; }
-
-        .mt-2 { margin-top: 8px; }
-        .mt-3 { margin-top: 12px; }
-        .mt-4 { margin-top: 16px; }
-
-        .text-sm { font-size: 14px; }
-        .text-xs { font-size: 12px; }
-
-        .text-secondary {
-            color: var(--secondary-color);
-        }
-
-        .text-center {
+        .emoji {
+            padding: 5px;
             text-align: center;
-        }
-
-        .cursor-pointer {
             cursor: pointer;
+            border-radius: 5px;
+            font-size: 20px;
         }
 
-        .relative {
-            position: relative;
+        .emoji:hover {
+            background: rgba(255,255,255,0.1);
         }
 
-        /* Animations */
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+        /* Poll */
+        .poll-container {
+            background: rgba(255,255,255,0.05);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin: 15px 0;
         }
 
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        .poll-question {
+            font-weight: bold;
+            margin-bottom: 15px;
         }
 
-        .fade-in {
-            animation: fadeIn 0.5s ease;
+        .poll-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            margin-bottom: 10px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
         }
 
-        .slide-up {
-            animation: slideUp 0.5s ease;
+        .poll-option:hover {
+            background: rgba(255,255,255,0.15);
+        }
+
+        .poll-bar {
+            height: 8px;
+            background: var(--gradient);
+            border-radius: 4px;
+            margin-top: 5px;
+        }
+
+        /* Progress Bar */
+        .progress-bar {
+            height: 4px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 2px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--gradient);
+            width: 0%;
+            transition: width 0.3s;
         }
     </style>
 </head>
 <body>
     <!-- Loading Screen -->
-    <div class="loading-screen" id="loadingScreen">
+    <div id="loadingScreen">
         <div class="loading-logo">
             <i class="fas fa-fire"></i> PrimeMar Pro
         </div>
-        <div class="loading-progress">
-            <div class="loading-progress-bar" id="loadingProgress"></div>
+        <div class="loading-bar">
+            <div id="loadingProgress"></div>
         </div>
-        <div class="mt-4 text-secondary">Loading...</div>
+        <p style="margin-top: 20px; opacity: 0.7;">Loading social experience...</p>
     </div>
 
+    <!-- Toast Container -->
+    <div id="toastContainer"></div>
+
     <!-- Auth Modal -->
-    <div class="modal" id="authModal">
+    <div id="authModal" class="modal">
         <div class="modal-content">
-            <div class="modal-header">
-                <h1 style="font-size: 2rem; margin-bottom: 8px;">
+            <div class="auth-header">
+                <h1 style="font-size: 2.5rem; margin-bottom: 10px;">
                     <i class="fas fa-fire"></i> PrimeMar Pro
                 </h1>
-                <p>Next Generation Social Experience</p>
+                <p style="font-weight: 600;">Next Generation Social Experience</p>
             </div>
-            
-            <div class="modal-body">
-                <div id="loginForm">
-                    <h2 class="mb-4 text-center">Welcome Back</h2>
-                    
-                    <div class="error-message hidden" id="loginError"></div>
-                    
-                    <div class="input-group">
-                        <label class="input-label">Email</label>
-                        <input type="email" class="input-field" id="loginEmail" placeholder="Enter your email">
-                    </div>
-                    
-                    <div class="input-group">
-                        <label class="input-label">Password</label>
-                        <input type="password" class="input-field" id="loginPassword" placeholder="Enter your password">
-                    </div>
-                    
-                    <div class="flex items-center justify-between mb-4">
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="checkbox" id="rememberMe">
-                            <span class="text-sm">Remember me</span>
-                        </label>
-                        <a href="#" class="text-sm" style="color: var(--primary-color);" onclick="showForgotPassword()">Forgot password?</a>
-                    </div>
-                    
-                    <button class="btn mb-4" id="loginBtn">
-                        <i class="fas fa-sign-in-alt"></i> Sign In
-                    </button>
-                    
-                    <div class="text-center text-sm">
-                        Don't have an account? 
-                        <a href="#" style="color: var(--primary-color); font-weight: 600;" onclick="showSignup()">Sign up</a>
-                    </div>
+            <div class="auth-body">
+                <div class="auth-tabs">
+                    <button class="auth-tab active" onclick="showAuthForm('login')">Login</button>
+                    <button class="auth-tab" onclick="showAuthForm('signup')">Sign Up</button>
                 </div>
-
-                <div id="signupForm" class="hidden">
-                    <h2 class="mb-4 text-center">Join PrimeMar Pro</h2>
-                    
-                    <div class="error-message hidden" id="signupError"></div>
-                    
-                    <div class="input-group">
-                        <label class="input-label">Full Name</label>
-                        <input type="text" class="input-field" id="signupName" placeholder="Enter your full name">
+                
+                <div id="loginForm" class="auth-form active">
+                    <div id="loginError" class="error-message"></div>
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-input" id="loginEmail" placeholder="Enter your email">
                     </div>
-                    
-                    <div class="input-group">
-                        <label class="input-label">Username</label>
-                        <input type="text" class="input-field" id="signupUsername" placeholder="Choose a username">
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-input" id="loginPassword" placeholder="Enter your password">
                     </div>
-                    
-                    <div class="input-group">
-                        <label class="input-label">Email</label>
-                        <input type="email" class="input-field" id="signupEmail" placeholder="Enter your email">
-                    </div>
-                    
-                    <div class="input-group">
-                        <label class="input-label">Password</label>
-                        <input type="password" class="input-field" id="signupPassword" placeholder="Create a password">
-                    </div>
-                    
-                    <button class="btn mb-4" id="signupBtn">
-                        <i class="fas fa-user-plus"></i> Create Account
-                    </button>
-                    
-                    <div class="text-center text-sm">
-                        Already have an account? 
-                        <a href="#" style="color: var(--primary-color); font-weight: 600;" onclick="showLogin()">Sign in</a>
-                    </div>
+                    <button class="auth-btn" onclick="login()">Sign In</button>
                 </div>
-
-                <div id="forgotPasswordForm" class="hidden">
-                    <h2 class="mb-4 text-center">Reset Password</h2>
-                    
-                    <div class="error-message hidden" id="forgotPasswordError"></div>
-                    
-                    <div class="input-group">
-                        <label class="input-label">Email</label>
-                        <input type="email" class="input-field" id="forgotPasswordEmail" placeholder="Enter your email">
+                
+                <div id="signupForm" class="auth-form">
+                    <div id="signupError" class="error-message"></div>
+                    <div class="form-group">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" class="form-input" id="signupName" placeholder="Enter your full name">
                     </div>
-                    
-                    <button class="btn mb-4" id="forgotPasswordBtn">
-                        <i class="fas fa-paper-plane"></i> Send Reset Link
-                    </button>
-                    
-                    <div class="text-center text-sm">
-                        <a href="#" style="color: var(--primary-color); font-weight: 600;" onclick="showLogin()">Back to login</a>
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-input" id="signupEmail" placeholder="Enter your email">
                     </div>
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-input" id="signupPassword" placeholder="Create a password">
+                    </div>
+                    <button class="auth-btn" onclick="signup()">Create Account</button>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Main App -->
-    <div id="appContainer" class="hidden">
+    <div id="appContainer">
         <!-- Header -->
         <header class="header">
             <div class="logo">
                 <i class="fas fa-fire"></i> PrimeMar
             </div>
             
-            <div class="flex items-center gap-4">
-                <div class="relative">
-                    <button class="action-btn" id="notificationBtn">
-                        <i class="fas fa-bell"></i>
-                        <span class="notification-badge hidden" id="notificationCount">0</span>
-                    </button>
-                </div>
-                
-                <div class="relative">
-                    <button class="action-btn" id="profileBtn">
-                        <i class="fas fa-user"></i>
-                    </button>
-                    <div class="hidden" id="profileDropdown" style="position: absolute; top: 100%; right: 0; background: var(--card-bg-dark); border-radius: var(--border-radius-md); padding: 8px; min-width: 200px; margin-top: 8px; border: 1px solid rgba(255,255,255,0.1);">
-                        <button class="post-action-btn w-100" onclick="showPage('profilePage')">
-                            <i class="fas fa-user"></i> Profile
-                        </button>
-                        <button class="post-action-btn w-100" onclick="showPage('settingsPage')">
-                            <i class="fas fa-cog"></i> Settings
-                        </button>
-                        <div style="border-top: 1px solid rgba(255,255,255,0.1); margin: 8px 0;"></div>
-                        <button class="post-action-btn w-100" onclick="logout()" style="color: var(--accent-color);">
-                            <i class="fas fa-sign-out-alt"></i> Logout
-                        </button>
-                    </div>
-                </div>
+            <div class="search-box">
+                <input type="text" class="search-input" placeholder="Search users, posts...">
+                <i class="fas fa-search search-icon"></i>
+            </div>
+            
+            <div class="header-actions">
+                <button class="icon-btn" onclick="showPage('homePage')">
+                    <i class="fas fa-home"></i>
+                </button>
+                <button class="icon-btn" onclick="showPage('chatPage')">
+                    <i class="fas fa-comments"></i>
+                    <span class="notification-badge" id="messageBadge" style="display: none;">0</span>
+                </button>
+                <button class="icon-btn" onclick="showPage('notificationsPage')">
+                    <i class="fas fa-bell"></i>
+                    <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
+                </button>
+                <button class="icon-btn" onclick="toggleProfileMenu()">
+                    <i class="fas fa-user"></i>
+                </button>
             </div>
         </header>
 
-        <!-- Music Player -->
-        <div class="music-player hidden" id="musicPlayer">
-            <img class="music-cover" id="musicCover" src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=100&h=100&fit=crop" alt="Album">
-            <div class="music-info">
-                <div class="text-sm" id="musicTitle">Now Playing</div>
-                <div class="text-xs text-secondary" id="musicArtist">Artist</div>
+        <!-- Profile Menu -->
+        <div id="profileMenu" style="display: none; position: fixed; top: 70px; right: 20px; background: var(--card-bg); border-radius: var(--radius); padding: 15px; min-width: 200px; box-shadow: var(--shadow); border: 1px solid var(--border); z-index: 1000;">
+            <div style="padding: 10px 0; border-bottom: 1px solid var(--border);">
+                <div style="font-weight: bold;" id="menuUserName">User Name</div>
+                <div style="font-size: 12px; color: var(--secondary);" id="menuUserEmail">user@email.com</div>
             </div>
-            <div class="music-controls">
-                <button class="action-btn" onclick="prevTrack()">
-                    <i class="fas fa-step-backward"></i>
-                </button>
-                <button class="action-btn" onclick="togglePlay()" id="playBtn">
-                    <i class="fas fa-play"></i>
-                </button>
-                <button class="action-btn" onclick="nextTrack()">
-                    <i class="fas fa-step-forward"></i>
-                </button>
-            </div>
+            <button class="post-action" style="width: 100%; justify-content: flex-start; border: none;" onclick="showPage('profilePage'); toggleProfileMenu()">
+                <i class="fas fa-user"></i> Profile
+            </button>
+            <button class="post-action" style="width: 100%; justify-content: flex-start; border: none;" onclick="showSettings()">
+                <i class="fas fa-cog"></i> Settings
+            </button>
+            <button class="post-action" style="width: 100%; justify-content: flex-start; border: none;" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
         </div>
 
         <!-- Main Content -->
         <main class="main-content">
             <!-- Home Page -->
             <section id="homePage" class="page active">
-                <!-- Post Composer -->
-                <div class="post-composer">
-                    <div class="composer-header">
-                        <div class="avatar" id="composerAvatar">U</div>
-                        <textarea class="composer-textarea" id="postContent" placeholder="What's on your mind?" maxlength="500"></textarea>
-                    </div>
-                    
-                    <!-- Media Preview -->
-                    <div class="media-gallery hidden" id="mediaPreview"></div>
-                    
-                    <!-- Upload Zone -->
-                    <div class="upload-zone hidden" id="uploadZone" onclick="triggerFileInput()">
-                        <i class="fas fa-cloud-upload-alt fa-2x mb-3" style="color: var(--primary-color);"></i>
-                        <div class="text-sm">Click to upload media</div>
-                    </div>
-                    
-                    <div class="composer-actions">
-                        <div class="action-buttons">
-                            <button class="action-btn" onclick="addMedia()" title="Add media">
-                                <i class="fas fa-image"></i>
-                            </button>
-                            <button class="action-btn" onclick="togglePoll()" title="Add poll">
-                                <i class="fas fa-poll"></i>
-                            </button>
-                        </div>
-                        <button class="btn" id="postBtn" onclick="createPost()">
-                            <i class="fas fa-paper-plane"></i> Post
-                        </button>
-                    </div>
-                    
-                    <!-- Poll Editor -->
-                    <div class="poll-editor hidden" id="pollEditor">
-                        <input type="text" class="input-field mb-3" id="pollQuestion" placeholder="Poll question">
-                        <div id="pollOptions">
-                            <div class="poll-option">
-                                <input type="text" class="input-field" placeholder="Option 1">
-                                <button class="action-btn" onclick="removePollOption(this)">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            </div>
-                            <div class="poll-option">
-                                <input type="text" class="input-field" placeholder="Option 2">
-                                <button class="action-btn" onclick="removePollOption(this)">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <button class="btn-secondary mt-3" onclick="addPollOption()">
-                            <i class="fas fa-plus"></i> Add Option
-                        </button>
-                    </div>
-                </div>
-
                 <!-- Stories -->
                 <div class="stories-container" id="storiesContainer">
                     <!-- Stories will be loaded here -->
                 </div>
 
+                <!-- Post Composer -->
+                <div class="post-composer">
+                    <div class="composer-header">
+                        <div class="avatar" id="composerAvatar">U</div>
+                        <textarea class="composer-input" id="postInput" placeholder="What's on your mind?" rows="3"></textarea>
+                    </div>
+                    <div class="composer-actions">
+                        <div class="action-buttons">
+                            <button class="action-btn" onclick="attachMedia()">
+                                <i class="fas fa-image"></i>
+                            </button>
+                            <button class="action-btn" onclick="showEmojiPicker()">
+                                <i class="fas fa-smile"></i>
+                            </button>
+                            <button class="action-btn" onclick="createPoll()">
+                                <i class="fas fa-poll"></i>
+                            </button>
+                        </div>
+                        <button class="post-btn" id="postBtn" onclick="createPost()" disabled>Post</button>
+                    </div>
+                    
+                    <!-- Media Preview -->
+                    <div id="mediaPreview" class="post-media" style="display: none;"></div>
+                    
+                    <!-- Poll Editor -->
+                    <div id="pollEditor" class="poll-container" style="display: none;">
+                        <input type="text" class="form-input" id="pollQuestion" placeholder="Ask a question..." style="margin-bottom: 15px;">
+                        <div id="pollOptions">
+                            <div class="poll-option">
+                                <input type="text" class="form-input" placeholder="Option 1" style="background: transparent; border: none; padding: 0;">
+                            </div>
+                            <div class="poll-option">
+                                <input type="text" class="form-input" placeholder="Option 2" style="background: transparent; border: none; padding: 0;">
+                            </div>
+                        </div>
+                        <button class="post-action" onclick="addPollOption()" style="border: none;">
+                            <i class="fas fa-plus"></i> Add Option
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Emoji Picker -->
+                <div id="emojiPicker" class="emoji-picker"></div>
+
                 <!-- Feed -->
-                <div class="post-feed" id="postFeed">
+                <div class="feed" id="feedContainer">
                     <!-- Posts will be loaded here -->
                 </div>
             </section>
 
-            <!-- Profile Page -->
-            <section id="profilePage" class="page">
-                <div class="post-composer mb-6">
-                    <div class="flex items-center gap-4 mb-4">
-                        <div class="avatar" id="profileAvatar" style="width: 80px; height: 80px; font-size: 24px;">U</div>
-                        <div>
-                            <h2 id="profileName">Loading...</h2>
-                            <div class="text-secondary" id="profileUsername">@username</div>
+            <!-- Chat Page -->
+            <section id="chatPage" class="page">
+                <div class="chat-container">
+                    <div class="conversations-list">
+                        <div id="conversationsList">
+                            <!-- Conversations will be loaded here -->
                         </div>
                     </div>
-                    
-                    <div class="mb-4" id="profileBio">Loading bio...</div>
-                    
-                    <div class="flex gap-6 mb-4">
-                        <div class="text-center cursor-pointer" onclick="showUserPosts()">
-                            <div class="text-lg font-bold" id="postCount">0</div>
-                            <div class="text-sm text-secondary">Posts</div>
-                        </div>
-                        <div class="text-center cursor-pointer" onclick="showFollowers()">
-                            <div class="text-lg font-bold" id="followerCount">0</div>
-                            <div class="text-sm text-secondary">Followers</div>
-                        </div>
-                        <div class="text-center cursor-pointer" onclick="showFollowing()">
-                            <div class="text-lg font-bold" id="followingCount">0</div>
-                            <div class="text-sm text-secondary">Following</div>
-                        </div>
-                    </div>
-                    
-                    <button class="btn-secondary" onclick="editProfile()">
-                        <i class="fas fa-edit"></i> Edit Profile
-                    </button>
-                </div>
-                
-                <div id="profilePosts">
-                    <!-- User's posts will be loaded here -->
-                </div>
-            </section>
-
-            <!-- Messages Page -->
-            <section id="messagesPage" class="page">
-                <div class="post-composer mb-6">
-                    <h2 class="mb-4">Messages</h2>
-                    <button class="btn" onclick="startNewChat()">
-                        <i class="fas fa-plus"></i> New Message
-                    </button>
-                </div>
-                
-                <div id="conversationsList">
-                    <!-- Conversations will be loaded here -->
-                </div>
-                
-                <div class="hidden" id="chatView">
-                    <div class="post-composer mb-4">
-                        <div class="flex items-center justify-between mb-4">
-                            <div class="flex items-center gap-3">
-                                <button class="action-btn" onclick="closeChat()">
-                                    <i class="fas fa-arrow-left"></i>
-                                </button>
+                    <div class="chat-area" id="chatArea">
+                        <div class="chat-header">
+                            <div style="display: flex; align-items: center; gap: 15px;">
+                                <div class="avatar" id="chatAvatar">U</div>
                                 <div>
-                                    <h3 id="chatWithName">User</h3>
-                                    <div class="text-sm text-secondary" id="chatStatus">Online</div>
+                                    <div id="chatUserName">Select a conversation</div>
+                                    <div id="chatUserStatus" style="font-size: 12px; color: var(--secondary);">Online</div>
                                 </div>
                             </div>
                         </div>
-                        
-                        <div style="height: 300px; overflow-y: auto;" id="chatMessages">
-                            <!-- Chat messages will be loaded here -->
+                        <div class="chat-messages" id="chatMessages">
+                            <!-- Messages will be loaded here -->
                         </div>
-                        
-                        <div class="flex gap-3 mt-4">
-                            <input type="text" class="input-field" id="messageInput" placeholder="Type a message...">
-                            <button class="btn" onclick="sendMessage()">
+                        <div class="chat-input-container">
+                            <input type="text" class="chat-input" id="messageInput" placeholder="Type a message..." disabled>
+                            <button class="send-btn" onclick="sendMessage()" disabled>
                                 <i class="fas fa-paper-plane"></i>
                             </button>
                         </div>
@@ -988,966 +1322,852 @@
                 </div>
             </section>
 
-            <!-- Notifications Page -->
-            <section id="notificationsPage" class="page">
-                <div class="post-composer mb-6">
-                    <h2 class="mb-4">Notifications</h2>
-                    <button class="btn-secondary" onclick="markAllAsRead()">
-                        <i class="fas fa-check-double"></i> Mark all as read
-                    </button>
+            <!-- Profile Page -->
+            <section id="profilePage" class="page">
+                <div class="profile-header">
+                    <div class="profile-banner">
+                        <button class="icon-btn" style="position: absolute; top: 20px; right: 20px;" onclick="editBanner()">
+                            <i class="fas fa-camera"></i>
+                        </button>
+                    </div>
+                    <div class="profile-avatar-container">
+                        <div class="profile-avatar" id="profileAvatar">U</div>
+                        <button class="icon-btn" style="position: absolute; bottom: 0; right: 0;" onclick="editAvatar()">
+                            <i class="fas fa-camera"></i>
+                        </button>
+                    </div>
+                    <div class="profile-info">
+                        <h1 class="profile-name" id="profileName">Loading...</h1>
+                        <div class="profile-handle" id="profileHandle">@username</div>
+                        <div class="profile-bio" id="profileBio">Welcome to my profile!</div>
+                        
+                        <div class="profile-stats">
+                            <div class="stat" onclick="showUserPosts()">
+                                <div class="stat-number" id="postCount">0</div>
+                                <div class="stat-label">Posts</div>
+                            </div>
+                            <div class="stat" onclick="showFollowers()">
+                                <div class="stat-number" id="followerCount">0</div>
+                                <div class="stat-label">Followers</div>
+                            </div>
+                            <div class="stat" onclick="showFollowing()">
+                                <div class="stat-number" id="followingCount">0</div>
+                                <div class="stat-label">Following</div>
+                            </div>
+                        </div>
+                        
+                        <div class="profile-actions">
+                            <button class="profile-btn btn-primary" onclick="editProfile()">
+                                <i class="fas fa-edit"></i> Edit Profile
+                            </button>
+                            <button class="profile-btn btn-secondary" onclick="logout()">
+                                <i class="fas fa-sign-out-alt"></i> Logout
+                            </button>
+                        </div>
+                    </div>
                 </div>
                 
-                <div id="notificationsList">
-                    <!-- Notifications will be loaded here -->
+                <div class="feed" id="profileFeed">
+                    <!-- User's posts will be loaded here -->
                 </div>
             </section>
 
-            <!-- Settings Page -->
-            <section id="settingsPage" class="page">
-                <div class="post-composer mb-6">
-                    <h2 class="mb-4">Settings</h2>
-                    
-                    <div class="input-group">
-                        <label class="input-label">Email</label>
-                        <input type="email" class="input-field" id="settingsEmail" placeholder="Your email">
+            <!-- Notifications Page -->
+            <section id="notificationsPage" class="page">
+                <div style="background: var(--card-bg); border-radius: var(--radius); padding: 20px; border: 1px solid var(--border);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h2>Notifications</h2>
+                        <button class="post-action" onclick="markAllAsRead()">
+                            <i class="fas fa-check-double"></i> Mark all read
+                        </button>
                     </div>
-                    
-                    <div class="input-group">
-                        <label class="input-label">Username</label>
-                        <input type="text" class="input-field" id="settingsUsername" placeholder="Your username">
-                    </div>
-                    
-                    <button class="btn mb-6" onclick="updateSettings()">
-                        <i class="fas fa-save"></i> Save Changes
-                    </button>
-                    
-                    <div class="input-group">
-                        <label class="input-label">Theme</label>
-                        <select class="input-field" id="themeSelect">
-                            <option value="dark">Dark Mode</option>
-                            <option value="light">Light Mode</option>
-                        </select>
-                    </div>
-                    
-                    <div class="flex items-center justify-between mb-4">
-                        <span>Enable Music Player</span>
-                        <label class="cursor-pointer">
-                            <input type="checkbox" id="musicPlayerToggle">
-                            <span class="ml-2">Toggle</span>
-                        </label>
+                    <div id="notificationsList">
+                        <!-- Notifications will be loaded here -->
                     </div>
                 </div>
             </section>
         </main>
 
-        <!-- Navigation -->
-        <nav class="nav-container">
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav">
             <div class="nav-item active" onclick="showPage('homePage')">
                 <div class="nav-icon"><i class="fas fa-home"></i></div>
                 <div class="nav-label">Home</div>
             </div>
-            <div class="nav-item" onclick="showPage('profilePage')">
-                <div class="nav-icon"><i class="fas fa-user"></i></div>
-                <div class="nav-label">Profile</div>
-            </div>
-            <div class="nav-item" onclick="showPage('messagesPage')">
+            <div class="nav-item" onclick="showPage('chatPage')">
                 <div class="nav-icon"><i class="fas fa-comments"></i></div>
                 <div class="nav-label">Chats</div>
+            </div>
+            <div class="nav-item" onclick="showCreatePost()">
+                <div class="nav-icon"><i class="fas fa-plus"></i></div>
+                <div class="nav-label">Create</div>
             </div>
             <div class="nav-item" onclick="showPage('notificationsPage')">
                 <div class="nav-icon"><i class="fas fa-bell"></i></div>
                 <div class="nav-label">Alerts</div>
             </div>
-            <div class="nav-item" onclick="showPage('settingsPage')">
-                <div class="nav-icon"><i class="fas fa-cog"></i></div>
-                <div class="nav-label">Settings</div>
+            <div class="nav-item" onclick="showPage('profilePage')">
+                <div class="nav-icon"><i class="fas fa-user"></i></div>
+                <div class="nav-label">Profile</div>
             </div>
         </nav>
+
+        <!-- FAB Button -->
+        <button class="fab" onclick="showCreatePost()">
+            <i class="fas fa-plus"></i>
+        </button>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions" id="quickActions" style="display: none;">
+            <button class="quick-action" onclick="createStory()">
+                <i class="fas fa-camera"></i>
+            </button>
+            <button class="quick-action" onclick="goLive()">
+                <i class="fas fa-video"></i>
+            </button>
+            <button class="quick-action" onclick="createPoll()">
+                <i class="fas fa-poll"></i>
+            </button>
+        </div>
     </div>
 
-    <!-- Hidden File Input -->
-    <input type="file" class="hidden" id="fileInput" multiple accept="image/*,video/*">
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Settings</h3>
+                <button class="close-btn" onclick="closeModal('settingsModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Theme</label>
+                    <select class="form-input" id="themeSelect">
+                        <option value="dark">Dark</option>
+                        <option value="light">Light</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Notifications</label>
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        <label style="display: flex; align-items: center; gap: 10px;">
+                            <input type="checkbox" id="notifyPosts" checked> Post notifications
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 10px;">
+                            <input type="checkbox" id="notifyMessages" checked> Message notifications
+                        </label>
+                    </div>
+                </div>
+                <button class="auth-btn" onclick="saveSettings()">Save Settings</button>
+            </div>
+        </div>
+    </div>
 
-    <!-- Audio Player for Music -->
-    <audio id="audioPlayer" hidden></audio>
+    <!-- Edit Profile Modal -->
+    <div id="editProfileModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Profile</h3>
+                <button class="close-btn" onclick="closeModal('editProfileModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" class="form-input" id="editName">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Bio</label>
+                    <textarea class="form-input" id="editBio" rows="4"></textarea>
+                </div>
+                <button class="auth-btn" onclick="saveProfile()">Save Changes</button>
+            </div>
+        </div>
+    </div>
 
     <script>
-    // ==================== CONFIGURATION ====================
-    const CONFIG = {
-        SUPABASE_URL: 'https://mtqvgnkkzrqctapnxikg.supabase.co',
-        SUPABASE_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im10cXZnbmtrenJxY3RhcG54aWtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyMzIwMTYsImV4cCI6MjA4MDgwODAxNn0.lJ9wNxHjvWejFI6q6-sh-CQ_3bKFM1S__6J7WZSG8dY',
-        STORAGE_BUCKET: 'media',
-        ENABLE_MUSIC: true,
-        ENABLE_STORIES: true
-    };
+    // Initialize Supabase
+    const supabaseUrl = 'https://mtqvgnkkzrqctapnxikg.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im10cXZnbmtrenJxY3RhcG54aWtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyMzIwMTYsImV4cCI6MjA4MDgwODAxNn0.lJ9wNxHjvWejFI6q6-sh-CQ_3bKFM1S__6J7WZSG8dY';
+    
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-    // ==================== GLOBAL STATE ====================
-    let state = {
-        currentUser: null,
-        userProfile: null,
-        posts: [],
-        conversations: [],
-        notifications: [],
-        stories: [],
-        selectedFiles: [],
-        currentChat: null,
-        isPlayingMusic: false,
-        currentTrack: 0,
-        tracks: [
-            {
-                title: 'Chill Vibes',
-                artist: 'LoFi Beats',
-                cover: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop',
-                url: 'https://assets.mixkit.co/music/preview/mixkit-chill-abstract-loop-309.mp3'
-            },
-            {
-                title: 'Summer Waves',
-                artist: 'Beach Sounds',
-                cover: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=400&h=400&fit=crop',
-                url: 'https://assets.mixkit.co/music/preview/mixkit-summer-beach-124.mp3'
-            }
-        ]
-    };
+    // App State
+    let currentUser = null;
+    let userProfile = null;
+    let posts = [];
+    let conversations = [];
+    let notifications = [];
+    let stories = [];
+    let currentChat = null;
+    let isTyping = false;
 
-    // ==================== SUPABASE CLIENT ====================
-    const supabase = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY);
+    // DOM Elements
+    const loadingScreen = document.getElementById('loadingScreen');
+    const appContainer = document.getElementById('appContainer');
+    const authModal = document.getElementById('authModal');
+    const loginForm = document.getElementById('loginForm');
+    const signupForm = document.getElementById('signupForm');
+    const loginError = document.getElementById('loginError');
+    const signupError = document.getElementById('signupError');
+    const postInput = document.getElementById('postInput');
+    const postBtn = document.getElementById('postBtn');
+    const feedContainer = document.getElementById('feedContainer');
+    const profileFeed = document.getElementById('profileFeed');
+    const chatArea = document.getElementById('chatArea');
+    const messageInput = document.getElementById('messageInput');
+    const sendBtn = document.querySelector('.send-btn');
+    const conversationsList = document.getElementById('conversationsList');
+    const chatMessages = document.getElementById('chatMessages');
+    const notificationsList = document.getElementById('notificationsList');
+    const storiesContainer = document.getElementById('storiesContainer');
+    const emojiPicker = document.getElementById('emojiPicker');
+    const mediaPreview = document.getElementById('mediaPreview');
+    const pollEditor = document.getElementById('pollEditor');
+    const pollOptions = document.getElementById('pollOptions');
 
-    // ==================== INITIALIZATION ====================
+    // Initialize App
     document.addEventListener('DOMContentLoaded', async () => {
-        await initializeApp();
+        updateLoading(30);
+        
+        // Initialize event listeners
+        setupEventListeners();
+        
+        updateLoading(60);
+        
+        // Check for existing session
+        await checkSession();
+        
+        updateLoading(100);
+        
+        setTimeout(() => {
+            loadingScreen.classList.add('hidden');
+        }, 500);
     });
 
-    async function initializeApp() {
-        try {
-            // Check for existing session
-            const { data: { session }, error } = await supabase.auth.getSession();
-            
-            if (error) throw error;
-            
-            if (session) {
-                state.currentUser = session.user;
-                await loadUserProfile();
-                showApp();
-                await loadAllData();
-            } else {
-                showAuth();
-            }
-            
-            hideLoading();
-            
-        } catch (error) {
-            console.error('Initialization error:', error);
-            showError('loginError', 'Failed to initialize app');
-            hideLoading();
-        }
+    function updateLoading(percent) {
+        const progress = document.getElementById('loadingProgress');
+        progress.style.width = percent + '%';
     }
 
-    // ==================== AUTHENTICATION ====================
-    async function handleLogin() {
-        const email = document.getElementById('loginEmail').value.trim();
-        const password = document.getElementById('loginPassword').value.trim();
-        const errorElement = document.getElementById('loginError');
+    function setupEventListeners() {
+        // Post input validation
+        postInput.addEventListener('input', () => {
+            postBtn.disabled = postInput.value.trim() === '';
+        });
+
+        // Message input
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // Close modals on escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeAllModals();
+            }
+        });
+
+        // Close profile menu when clicking outside
+        document.addEventListener('click', (e) => {
+            const profileMenu = document.getElementById('profileMenu');
+            if (profileMenu && !e.target.closest('.icon-btn') && !e.target.closest('#profileMenu')) {
+                profileMenu.style.display = 'none';
+            }
+        });
+    }
+
+    async function checkSession() {
+        const { data: { session } } = await supabase.auth.getSession();
         
-        if (!email || !password) {
-            showError(errorElement, 'Please enter email and password');
-            return;
-        }
-        
-        const btn = document.getElementById('loginBtn');
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing in...';
-        btn.disabled = true;
-        
-        try {
-            const { data, error } = await supabase.auth.signInWithPassword({
-                email,
-                password
-            });
-            
-            if (error) throw error;
-            
-            state.currentUser = data.user;
+        if (session) {
+            currentUser = session.user;
             await loadUserProfile();
             showApp();
-            await loadAllData();
-            
-            showToast('Welcome back!', 'success');
-            
-        } catch (error) {
-            showError(errorElement, error.message || 'Login failed');
-        } finally {
-            btn.innerHTML = originalText;
-            btn.disabled = false;
+            await loadInitialData();
+        } else {
+            showAuth();
         }
     }
 
-    async function handleSignup() {
+    async function login() {
+        const email = document.getElementById('loginEmail').value.trim();
+        const password = document.getElementById('loginPassword').value.trim();
+        
+        if (!email || !password) {
+            showError(loginError, 'Please enter email and password');
+            return;
+        }
+
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email,
+            password
+        });
+
+        if (error) {
+            showError(loginError, error.message);
+            return;
+        }
+
+        currentUser = data.user;
+        await loadUserProfile();
+        showApp();
+        await loadInitialData();
+        showToast('Welcome back!', 'success');
+    }
+
+    async function signup() {
         const name = document.getElementById('signupName').value.trim();
-        const username = document.getElementById('signupUsername').value.trim();
         const email = document.getElementById('signupEmail').value.trim();
         const password = document.getElementById('signupPassword').value.trim();
-        const errorElement = document.getElementById('signupError');
         
-        // Validation
-        if (!name || !username || !email || !password) {
-            showError(errorElement, 'All fields are required');
+        if (!name || !email || !password) {
+            showError(signupError, 'Please fill in all fields');
             return;
         }
-        
+
         if (password.length < 6) {
-            showError(errorElement, 'Password must be at least 6 characters');
+            showError(signupError, 'Password must be at least 6 characters');
             return;
         }
-        
-        const btn = document.getElementById('signupBtn');
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating account...';
-        btn.disabled = true;
-        
-        try {
-            // Check if username exists
-            const { data: existingUser } = await supabase
-                .from('profiles')
-                .select('username')
-                .eq('username', username)
-                .single();
-            
-            if (existingUser) {
-                throw new Error('Username already taken');
+
+        const { data, error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+                data: { name }
             }
-            
-            // Create auth user
-            const { data: authData, error: authError } = await supabase.auth.signUp({
-                email,
-                password,
-                options: {
-                    data: { name, username }
-                }
-            });
-            
-            if (authError) throw authError;
-            
-            // Create profile
-            const profile = {
-                id: authData.user.id,
+        });
+
+        if (error) {
+            showError(signupError, error.message);
+            return;
+        }
+
+        currentUser = data.user;
+        await createUserProfile(name, email);
+        showToast('Account created successfully!', 'success');
+        showAuthForm('login');
+    }
+
+    async function createUserProfile(name, email) {
+        const { error } = await supabase
+            .from('profiles')
+            .insert([{
+                id: currentUser.id,
                 name,
-                username,
                 email,
-                bio: 'Welcome to my profile!',
                 avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=ff6b35&color=fff&size=256`,
-                banner_color: getRandomGradient(),
                 created_at: new Date().toISOString()
-            };
-            
-            const { error: profileError } = await supabase
-                .from('profiles')
-                .insert([profile]);
-            
-            if (profileError) throw profileError;
-            
-            state.currentUser = authData.user;
-            state.userProfile = profile;
-            
-            showToast('Account created successfully!', 'success');
-            setTimeout(() => showLogin(), 1500);
-            
-        } catch (error) {
-            showError(errorElement, error.message);
-        } finally {
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-        }
+            }]);
+
+        if (error) console.error('Profile creation error:', error);
     }
 
-    async function logout() {
-        try {
-            await supabase.auth.signOut();
-            state.currentUser = null;
-            state.userProfile = null;
-            state.posts = [];
-            showAuth();
-            showToast('Logged out successfully', 'info');
-        } catch (error) {
-            console.error('Logout error:', error);
-        }
-    }
-
-    // ==================== USER PROFILE ====================
     async function loadUserProfile() {
-        if (!state.currentUser) return;
-        
-        try {
-            const { data, error } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', state.currentUser.id)
-                .single();
-            
-            if (error) throw error;
-            
-            state.userProfile = data;
-            updateProfileUI();
-            
-        } catch (error) {
-            console.error('Profile load error:', error);
-            // Create default profile
-            state.userProfile = {
-                id: state.currentUser.id,
-                name: state.currentUser.user_metadata?.name || 'User',
-                username: state.currentUser.user_metadata?.username || 'user',
-                email: state.currentUser.email,
-                bio: 'Welcome to my profile!',
-                avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(state.currentUser.user_metadata?.name || 'User')}&background=ff6b35&color=fff&size=256`
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', currentUser.id)
+            .single();
+
+        if (error) {
+            console.error('Error loading profile:', error);
+            userProfile = {
+                id: currentUser.id,
+                name: currentUser.user_metadata?.name || 'User',
+                email: currentUser.email,
+                avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.user_metadata?.name || 'User')}&background=ff6b35&color=fff&size=256`
             };
-            updateProfileUI();
+        } else {
+            userProfile = data;
         }
+
+        updateProfileUI();
     }
 
     function updateProfileUI() {
-        if (!state.userProfile) return;
-        
-        // Update avatar
-        document.querySelectorAll('.avatar').forEach(avatar => {
-            avatar.textContent = state.userProfile.name.charAt(0).toUpperCase();
-        });
-        
-        // Update profile page
-        document.getElementById('profileName').textContent = state.userProfile.name;
-        document.getElementById('profileUsername').textContent = `@${state.userProfile.username}`;
-        document.getElementById('profileBio').textContent = state.userProfile.bio || 'No bio yet';
-        
-        // Update settings
-        document.getElementById('settingsEmail').value = state.userProfile.email;
-        document.getElementById('settingsUsername').value = state.userProfile.username;
-    }
-
-    async function editProfile() {
-        const name = prompt('Enter your name:', state.userProfile.name);
-        if (!name) return;
-        
-        const bio = prompt('Enter your bio:', state.userProfile.bio || '');
-        
-        try {
-            const { error } = await supabase
-                .from('profiles')
-                .update({
-                    name,
-                    bio,
-                    updated_at: new Date().toISOString()
-                })
-                .eq('id', state.currentUser.id);
-            
-            if (error) throw error;
-            
-            state.userProfile.name = name;
-            state.userProfile.bio = bio;
-            updateProfileUI();
-            
-            showToast('Profile updated!', 'success');
-            
-        } catch (error) {
-            console.error('Profile update error:', error);
-            showToast('Failed to update profile', 'error');
-        }
-    }
-
-    // ==================== POST SYSTEM ====================
-    async function createPost() {
-        const content = document.getElementById('postContent').value.trim();
-        const media = state.selectedFiles;
-        
-        if (!content && media.length === 0) {
-            showToast('Please add some content', 'error');
-            return;
-        }
-        
-        const btn = document.getElementById('postBtn');
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Posting...';
-        btn.disabled = true;
-        
-        try {
-            // Upload media files
-            const mediaUrls = [];
-            for (const file of media) {
-                const url = await uploadFile(file);
-                mediaUrls.push(url);
+        // Update avatar elements
+        const avatars = document.querySelectorAll('.avatar, .profile-avatar');
+        avatars.forEach(avatar => {
+            if (userProfile) {
+                if (avatar.id === 'profileAvatar' || avatar.id === 'composerAvatar') {
+                    avatar.textContent = userProfile.name.charAt(0).toUpperCase();
+                } else if (avatar.classList.contains('avatar')) {
+                    avatar.textContent = userProfile.name.charAt(0).toUpperCase();
+                }
             }
+        });
+
+        // Update profile page
+        if (userProfile) {
+            document.getElementById('profileName').textContent = userProfile.name;
+            document.getElementById('profileHandle').textContent = '@' + (userProfile.username || userProfile.name.toLowerCase());
+            document.getElementById('profileBio').textContent = userProfile.bio || 'Welcome to my profile!';
             
-            // Create post data
-            const postData = {
-                author_id: state.currentUser.id,
-                content,
-                media: mediaUrls,
-                created_at: new Date().toISOString(),
-                likes: 0,
-                comments: 0,
-                shares: 0
-            };
-            
-            // Save to database
-            const { data: post, error } = await supabase
-                .from('posts')
-                .insert([postData])
-                .select()
-                .single();
-            
-            if (error) throw error;
-            
-            // Add to state and UI
-            state.posts.unshift({
-                ...post,
-                author: state.userProfile
-            });
-            
-            renderPosts();
-            
-            // Clear composer
-            document.getElementById('postContent').value = '';
-            clearMedia();
-            hidePollEditor();
-            
-            showToast('Post published!', 'success');
-            
-        } catch (error) {
-            console.error('Post creation error:', error);
-            showToast('Failed to create post', 'error');
-        } finally {
-            btn.innerHTML = originalText;
-            btn.disabled = false;
+            // Update menu
+            document.getElementById('menuUserName').textContent = userProfile.name;
+            document.getElementById('menuUserEmail').textContent = userProfile.email;
         }
+    }
+
+    async function loadInitialData() {
+        await Promise.all([
+            loadPosts(),
+            loadConversations(),
+            loadNotifications(),
+            loadStories(),
+            loadProfileStats()
+        ]);
     }
 
     async function loadPosts() {
-        try {
-            const { data: posts, error } = await supabase
-                .from('posts')
-                .select(`
-                    *,
-                    author:profiles(*)
-                `)
-                .order('created_at', { ascending: false })
-                .limit(20);
-            
-            if (error) throw error;
-            
-            state.posts = posts || [];
-            renderPosts();
-            
-        } catch (error) {
-            console.error('Posts load error:', error);
-        }
-    }
+        const { data, error } = await supabase
+            .from('posts')
+            .select(`
+                *,
+                profiles:author_id (
+                    name,
+                    avatar
+                )
+            `)
+            .order('created_at', { ascending: false })
+            .limit(20);
 
-    function renderPosts() {
-        const container = document.getElementById('postFeed');
-        const profileContainer = document.getElementById('profilePosts');
-        
-        if (!state.posts || state.posts.length === 0) {
-            const emptyHTML = `
-                <div class="post-card text-center">
-                    <i class="fas fa-feather fa-2x mb-3" style="color: var(--secondary-color); opacity: 0.5;"></i>
-                    <h3 class="mb-2">No posts yet</h3>
-                    <p class="text-secondary">Be the first to share something!</p>
-                </div>
-            `;
-            
-            container.innerHTML = emptyHTML;
-            if (profileContainer) profileContainer.innerHTML = emptyHTML;
+        if (error) {
+            console.error('Error loading posts:', error);
             return;
         }
-        
-        const postsHTML = state.posts.map(post => `
-            <div class="post-card" id="post-${post.id}">
-                <div class="post-header">
-                    <div class="avatar">${post.author?.name?.charAt(0) || 'U'}</div>
-                    <div class="post-user-info">
-                        <div class="post-user-name">${post.author?.name || 'User'}</div>
-                        <div class="post-user-handle">@${post.author?.username || 'user'}</div>
-                    </div>
-                    <div class="post-time">${formatTimeAgo(post.created_at)}</div>
+
+        posts = data || [];
+        renderPosts();
+    }
+
+    function renderPosts(container = feedContainer) {
+        if (!posts.length) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 40px; color: var(--secondary);">
+                    <i class="fas fa-newspaper" style="font-size: 3em; margin-bottom: 20px; opacity: 0.5;"></i>
+                    <h3>No posts yet</h3>
+                    <p>Be the first to share something!</p>
                 </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = posts.map(post => `
+            <div class="post-card" data-post-id="${post.id}">
+                <div class="post-header">
+                    <div class="avatar">${post.profiles?.name?.charAt(0) || 'U'}</div>
+                    <div class="post-user-info">
+                        <div class="post-user-name">${post.profiles?.name || 'User'}</div>
+                        <div class="post-time">${formatTimeAgo(post.created_at)}</div>
+                    </div>
+                </div>
+                <div class="post-content">${formatPostContent(post.content)}</div>
                 
-                ${post.content ? `<div class="post-content mb-3">${formatContent(post.content)}</div>` : ''}
+                ${post.media ? `
+                    <div class="post-media">
+                        ${post.media.split(',').map(url => `
+                            <div class="media-item" onclick="viewMedia('${url}')">
+                                <img src="${url}" alt="Post media">
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : ''}
                 
-                ${post.media && post.media.length > 0 ? renderMedia(post.media) : ''}
+                ${post.poll ? renderPoll(post.poll) : ''}
                 
                 <div class="post-actions">
-                    <button class="post-action-btn ${post.liked ? 'active' : ''}" onclick="likePost('${post.id}')">
+                    <button class="post-action" onclick="likePost('${post.id}')">
                         <i class="fas fa-heart"></i>
                         <span>${post.likes || 0}</span>
                     </button>
-                    <button class="post-action-btn" onclick="commentOnPost('${post.id}')">
+                    <button class="post-action" onclick="commentOnPost('${post.id}')">
                         <i class="fas fa-comment"></i>
                         <span>${post.comments || 0}</span>
                     </button>
-                    <button class="post-action-btn" onclick="sharePost('${post.id}')">
+                    <button class="post-action" onclick="sharePost('${post.id}')">
                         <i class="fas fa-share"></i>
-                        <span>${post.shares || 0}</span>
                     </button>
                 </div>
             </div>
         `).join('');
-        
-        container.innerHTML = postsHTML;
-        if (profileContainer) profileContainer.innerHTML = postsHTML;
+    }
+
+    function formatPostContent(content) {
+        if (!content) return '';
+        // Convert URLs to links
+        return content.replace(/https?:\/\/[^\s]+/g, url => 
+            `<a href="${url}" target="_blank" style="color: var(--primary);">${url}</a>`
+        ).replace(/\n/g, '<br>');
+    }
+
+    function renderPoll(pollData) {
+        const poll = typeof pollData === 'string' ? JSON.parse(pollData) : pollData;
+        return `
+            <div class="poll-container">
+                <div class="poll-question">${poll.question}</div>
+                ${poll.options.map((option, index) => `
+                    <div class="poll-option" onclick="voteOnPoll('${poll.id}', ${index})">
+                        <div style="flex: 1;">${option.text}</div>
+                        <div>${option.votes || 0}</div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
+
+    async function createPost() {
+        const content = postInput.value.trim();
+        if (!content) return;
+
+        const postData = {
+            author_id: currentUser.id,
+            content,
+            created_at: new Date().toISOString(),
+            likes: 0,
+            comments: 0
+        };
+
+        const { data, error } = await supabase
+            .from('posts')
+            .insert([postData])
+            .select(`
+                *,
+                profiles:author_id (
+                    name,
+                    avatar
+                )
+            `)
+            .single();
+
+        if (error) {
+            showToast('Failed to create post', 'error');
+            console.error('Post creation error:', error);
+            return;
+        }
+
+        posts.unshift(data);
+        renderPosts();
+        postInput.value = '';
+        postBtn.disabled = true;
+        showToast('Post created successfully!', 'success');
     }
 
     async function likePost(postId) {
-        try {
-            // In a real app, you would update the database
-            // For now, just update the UI
-            const post = state.posts.find(p => p.id === postId);
-            if (post) {
-                post.liked = !post.liked;
-                post.likes = post.liked ? (post.likes || 0) + 1 : Math.max(0, (post.likes || 1) - 1);
-                renderPosts();
-                
-                showToast(post.liked ? 'Post liked!' : 'Post unliked', 'info');
-            }
-        } catch (error) {
+        const post = posts.find(p => p.id === postId);
+        if (!post) return;
+
+        post.likes = (post.likes || 0) + 1;
+        
+        const { error } = await supabase
+            .from('posts')
+            .update({ likes: post.likes })
+            .eq('id', postId);
+
+        if (error) {
             console.error('Like error:', error);
-        }
-    }
-
-    // ==================== MEDIA UPLOAD ====================
-    function addMedia() {
-        document.getElementById('fileInput').click();
-    }
-
-    function triggerFileInput() {
-        document.getElementById('fileInput').click();
-    }
-
-    document.getElementById('fileInput').addEventListener('change', handleFileSelect);
-
-    function handleFileSelect(event) {
-        const files = Array.from(event.target.files);
-        state.selectedFiles = [...state.selectedFiles, ...files];
-        
-        showUploadZone();
-        renderMediaPreview();
-    }
-
-    function showUploadZone() {
-        document.getElementById('uploadZone').classList.remove('hidden');
-    }
-
-    function renderMediaPreview() {
-        const container = document.getElementById('mediaPreview');
-        
-        if (state.selectedFiles.length === 0) {
-            container.classList.add('hidden');
             return;
         }
-        
-        container.classList.remove('hidden');
-        container.innerHTML = state.selectedFiles.map((file, index) => `
-            <div class="media-item">
-                ${file.type.startsWith('image/') ? 
-                    `<img src="${URL.createObjectURL(file)}" alt="Preview ${index + 1}">` :
-                    `<div class="flex items-center justify-center h-full">
-                        <i class="fas fa-video fa-2x"></i>
-                    </div>`
-                }
-                <button class="action-btn" style="position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.5);" onclick="removeMedia(${index})">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-        `).join('');
+
+        renderPosts();
+        showToast('Post liked!', 'success');
     }
 
-    function removeMedia(index) {
-        state.selectedFiles.splice(index, 1);
-        if (state.selectedFiles.length === 0) {
-            document.getElementById('uploadZone').classList.add('hidden');
-            document.getElementById('mediaPreview').classList.add('hidden');
-        } else {
-            renderMediaPreview();
-        }
-    }
-
-    function clearMedia() {
-        state.selectedFiles = [];
-        document.getElementById('uploadZone').classList.add('hidden');
-        document.getElementById('mediaPreview').classList.add('hidden');
-        document.getElementById('fileInput').value = '';
-    }
-
-    async function uploadFile(file) {
-        // In a real app, upload to Supabase Storage
-        // For demo, return a placeholder
-        return new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                // Return data URL for demo
-                resolve(e.target.result);
-            };
-            reader.readAsDataURL(file);
-        });
-    }
-
-    // ==================== POLL SYSTEM ====================
-    function togglePoll() {
-        const editor = document.getElementById('pollEditor');
-        editor.classList.toggle('hidden');
-        
-        if (!editor.classList.contains('hidden')) {
-            document.getElementById('pollQuestion').focus();
-        }
-    }
-
-    function addPollOption() {
-        const container = document.getElementById('pollOptions');
-        const optionCount = container.children.length + 1;
-        
-        const optionDiv = document.createElement('div');
-        optionDiv.className = 'poll-option';
-        optionDiv.innerHTML = `
-            <input type="text" class="input-field" placeholder="Option ${optionCount}">
-            <button class="action-btn" onclick="removePollOption(this)">
-                <i class="fas fa-times"></i>
-            </button>
-        `;
-        
-        container.appendChild(optionDiv);
-    }
-
-    function removePollOption(button) {
-        if (document.getElementById('pollOptions').children.length > 2) {
-            button.parentElement.remove();
-        }
-    }
-
-    function hidePollEditor() {
-        document.getElementById('pollEditor').classList.add('hidden');
-    }
-
-    // ==================== STORIES ====================
-    async function loadStories() {
-        if (!CONFIG.ENABLE_STORIES) return;
-        
-        try {
-            // For demo, create some mock stories
-            const mockStories = [
-                { id: 1, user: { name: 'Alice', avatar: 'A' }, hasUnseen: true },
-                { id: 2, user: { name: 'Bob', avatar: 'B' }, hasUnseen: false },
-                { id: 3, user: { name: 'Charlie', avatar: 'C' }, hasUnseen: true },
-                { id: 4, user: { name: 'Diana', avatar: 'D' }, hasUnseen: false }
-            ];
-            
-            state.stories = mockStories;
-            renderStories();
-            
-        } catch (error) {
-            console.error('Stories load error:', error);
-        }
-    }
-
-    function renderStories() {
-        const container = document.getElementById('storiesContainer');
-        
-        const storiesHTML = state.stories.map(story => `
-            <div class="story-item" onclick="viewStory(${story.id})">
-                <div class="story-content">
-                    <div class="avatar" style="width: 100%; height: 100%; font-size: 24px;">${story.user.avatar}</div>
-                </div>
-                ${story.hasUnseen ? '<div style="position: absolute; top: 0; right: 0; width: 12px; height: 12px; background: var(--accent-color); border-radius: 50%; border: 2px solid var(--dark-bg);"></div>' : ''}
-            </div>
-        `).join('');
-        
-        container.innerHTML = storiesHTML;
-    }
-
-    function viewStory(storyId) {
-        showToast(`Viewing story ${storyId}`, 'info');
-        // In a real app, show story viewer
-    }
-
-    // ==================== MESSAGES ====================
     async function loadConversations() {
-        try {
-            // For demo, create mock conversations
-            const mockConversations = [
-                { id: 1, user: { name: 'Alice', avatar: 'A' }, lastMessage: 'Hey there!', time: '2 min ago', unread: 2 },
-                { id: 2, user: { name: 'Bob', avatar: 'B' }, lastMessage: 'See you tomorrow', time: '1 hour ago', unread: 0 },
-                { id: 3, user: { name: 'Charlie', avatar: 'C' }, lastMessage: 'Thanks for the help!', time: '3 hours ago', unread: 1 }
-            ];
-            
-            state.conversations = mockConversations;
-            renderConversations();
-            
-        } catch (error) {
-            console.error('Conversations load error:', error);
+        const { data, error } = await supabase
+            .from('conversations')
+            .select(`
+                *,
+                user1:profiles!conversations_user1_id_fkey(*),
+                user2:profiles!conversations_user2_id_fkey(*)
+            `)
+            .or(`user1_id.eq.${currentUser.id},user2_id.eq.${currentUser.id}`)
+            .order('updated_at', { ascending: false });
+
+        if (error) {
+            console.error('Error loading conversations:', error);
+            return;
         }
+
+        conversations = data || [];
+        renderConversations();
     }
 
     function renderConversations() {
-        const container = document.getElementById('conversationsList');
-        
-        const conversationsHTML = state.conversations.map(conv => `
-            <div class="post-card mb-3 cursor-pointer" onclick="openChat(${conv.id})">
-                <div class="flex items-center gap-3">
-                    <div class="avatar">${conv.user.avatar}</div>
-                    <div style="flex: 1;">
-                        <div class="flex items-center justify-between">
-                            <div class="post-user-name">${conv.user.name}</div>
-                            <div class="text-xs text-secondary">${conv.time}</div>
-                        </div>
-                        <div class="text-sm text-secondary">${conv.lastMessage}</div>
-                    </div>
-                    ${conv.unread > 0 ? `<div class="notification-badge">${conv.unread}</div>` : ''}
+        if (!conversations.length) {
+            conversationsList.innerHTML = `
+                <div style="text-align: center; padding: 40px; color: var(--secondary);">
+                    <i class="fas fa-comments" style="font-size: 3em; margin-bottom: 20px; opacity: 0.5;"></i>
+                    <h3>No conversations</h3>
+                    <p>Start a conversation with someone!</p>
                 </div>
-            </div>
-        `).join('');
-        
-        container.innerHTML = conversationsHTML;
-    }
+            `;
+            return;
+        }
 
-    function startNewChat() {
-        showToast('Starting new chat...', 'info');
-        // In a real app, show user selection modal
-    }
-
-    function openChat(conversationId) {
-        const conversation = state.conversations.find(c => c.id === conversationId);
-        if (!conversation) return;
-        
-        state.currentChat = conversationId;
-        
-        document.getElementById('conversationsList').classList.add('hidden');
-        document.getElementById('chatView').classList.remove('hidden');
-        
-        document.getElementById('chatWithName').textContent = conversation.user.name;
-        document.getElementById('chatStatus').textContent = 'Online';
-        
-        // Load chat messages
-        loadChatMessages(conversationId);
-    }
-
-    function closeChat() {
-        state.currentChat = null;
-        document.getElementById('conversationsList').classList.remove('hidden');
-        document.getElementById('chatView').classList.add('hidden');
-    }
-
-    async function loadChatMessages(conversationId) {
-        // Mock messages for demo
-        const mockMessages = [
-            { id: 1, sender: 'them', content: 'Hello! How are you?', time: '10:00 AM' },
-            { id: 2, sender: 'me', content: 'I\'m good, thanks! How about you?', time: '10:05 AM' },
-            { id: 3, sender: 'them', content: 'Doing great! Working on a new project.', time: '10:10 AM' }
-        ];
-        
-        const container = document.getElementById('chatMessages');
-        container.innerHTML = mockMessages.map(msg => `
-            <div class="mb-3 ${msg.sender === 'me' ? 'text-right' : ''}">
-                <div class="text-xs text-secondary mb-1">${msg.time}</div>
-                <div style="display: inline-block; background: ${msg.sender === 'me' ? 'var(--primary-color)' : 'rgba(255,255,255,0.1)'}; padding: 8px 12px; border-radius: 12px; max-width: 70%;">
-                    ${msg.content}
-                </div>
-            </div>
-        `).join('');
-    }
-
-    function sendMessage() {
-        const input = document.getElementById('messageInput');
-        const message = input.value.trim();
-        
-        if (!message) return;
-        
-        // Add to chat
-        const container = document.getElementById('chatMessages');
-        const messageHTML = `
-            <div class="mb-3 text-right">
-                <div class="text-xs text-secondary mb-1">Just now</div>
-                <div style="display: inline-block; background: var(--primary-color); padding: 8px 12px; border-radius: 12px; max-width: 70%;">
-                    ${message}
-                </div>
-            </div>
-        `;
-        
-        container.innerHTML += messageHTML;
-        container.scrollTop = container.scrollHeight;
-        
-        input.value = '';
-        
-        // Simulate reply
-        setTimeout(() => {
-            const replyHTML = `
-                <div class="mb-3">
-                    <div class="text-xs text-secondary mb-1">Just now</div>
-                    <div style="display: inline-block; background: rgba(255,255,255,0.1); padding: 8px 12px; border-radius: 12px; max-width: 70%;">
-                        Thanks for your message!
+        conversationsList.innerHTML = conversations.map(conv => {
+            const otherUser = conv.user1_id === currentUser.id ? conv.user2 : conv.user1;
+            return `
+                <div class="conversation-item" onclick="openChat('${conv.id}', '${otherUser.id}')">
+                    <div class="conversation-avatar">${otherUser?.name?.charAt(0) || 'U'}</div>
+                    <div class="conversation-info">
+                        <div class="conversation-name">${otherUser?.name || 'User'}</div>
+                        <div class="conversation-last">${conv.last_message || 'Start a conversation...'}</div>
                     </div>
                 </div>
             `;
-            container.innerHTML += replyHTML;
-            container.scrollTop = container.scrollHeight;
-        }, 1000);
+        }).join('');
     }
 
-    // ==================== NOTIFICATIONS ====================
-    async function loadNotifications() {
-        try {
-            // Mock notifications for demo
-            const mockNotifications = [
-                { id: 1, type: 'like', user: 'Alice', content: 'liked your post', time: '5 min ago', read: false },
-                { id: 2, type: 'comment', user: 'Bob', content: 'commented on your photo', time: '1 hour ago', read: false },
-                { id: 3, type: 'follow', user: 'Charlie', content: 'started following you', time: '3 hours ago', read: true }
-            ];
-            
-            state.notifications = mockNotifications;
-            renderNotifications();
-            
-            // Update badge
-            const unreadCount = mockNotifications.filter(n => !n.read).length;
-            updateNotificationBadge(unreadCount);
-            
-        } catch (error) {
-            console.error('Notifications load error:', error);
-        }
-    }
-
-    function renderNotifications() {
-        const container = document.getElementById('notificationsList');
+    async function openChat(conversationId, userId) {
+        currentChat = conversationId;
         
-        const notificationsHTML = state.notifications.map(notif => `
-            <div class="post-card mb-3 ${notif.read ? '' : 'border-l-4 border-l-primary-color'}" style="border-left: ${notif.read ? 'none' : '4px solid var(--primary-color)'};">
-                <div class="flex items-center gap-3">
-                    <div class="avatar" style="width: 40px; height: 40px; font-size: 16px;">
-                        ${notif.user.charAt(0)}
-                    </div>
-                    <div style="flex: 1;">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <span class="font-bold">${notif.user}</span>
-                                <span class="text-sm"> ${notif.content}</span>
-                            </div>
-                            <div class="text-xs text-secondary">${notif.time}</div>
-                        </div>
-                    </div>
-                </div>
+        // Get user info
+        const { data: user } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', userId)
+            .single();
+
+        if (user) {
+            document.getElementById('chatUserName').textContent = user.name;
+            document.getElementById('chatAvatar').textContent = user.name.charAt(0).toUpperCase();
+        }
+
+        // Enable chat input
+        messageInput.disabled = false;
+        sendBtn.disabled = false;
+        
+        // Show chat area on mobile
+        chatArea.classList.add('active');
+        
+        // Load messages
+        await loadMessages(conversationId);
+    }
+
+    async function loadMessages(conversationId) {
+        const { data, error } = await supabase
+            .from('messages')
+            .select('*')
+            .eq('conversation_id', conversationId)
+            .order('created_at', { ascending: true });
+
+        if (error) {
+            console.error('Error loading messages:', error);
+            return;
+        }
+
+        renderMessages(data || []);
+    }
+
+    function renderMessages(messages) {
+        chatMessages.innerHTML = messages.map(msg => `
+            <div class="message ${msg.sender_id === currentUser.id ? 'outgoing' : 'incoming'}">
+                <div class="message-bubble">${msg.content}</div>
             </div>
         `).join('');
         
-        container.innerHTML = notificationsHTML;
+        // Scroll to bottom
+        chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
-    function markAllAsRead() {
-        state.notifications.forEach(notif => notif.read = true);
+    async function sendMessage() {
+        const content = messageInput.value.trim();
+        if (!content || !currentChat) return;
+
+        const messageData = {
+            conversation_id: currentChat,
+            sender_id: currentUser.id,
+            content,
+            created_at: new Date().toISOString()
+        };
+
+        const { error } = await supabase
+            .from('messages')
+            .insert([messageData]);
+
+        if (error) {
+            console.error('Message error:', error);
+            showToast('Failed to send message', 'error');
+            return;
+        }
+
+        // Add to UI
+        chatMessages.innerHTML += `
+            <div class="message outgoing">
+                <div class="message-bubble">${content}</div>
+            </div>
+        `;
+        
+        messageInput.value = '';
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        
+        // Update conversation
+        await supabase
+            .from('conversations')
+            .update({ 
+                last_message: content,
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', currentChat);
+    }
+
+    async function loadNotifications() {
+        const { data, error } = await supabase
+            .from('notifications')
+            .select('*')
+            .eq('user_id', currentUser.id)
+            .eq('read', false)
+            .order('created_at', { ascending: false })
+            .limit(20);
+
+        if (error) {
+            console.error('Error loading notifications:', error);
+            return;
+        }
+
+        notifications = data || [];
         renderNotifications();
-        updateNotificationBadge(0);
-        showToast('All notifications marked as read', 'success');
+        updateNotificationBadge();
     }
 
-    function updateNotificationBadge(count) {
-        const badge = document.getElementById('notificationCount');
-        if (count > 0) {
-            badge.textContent = count;
-            badge.classList.remove('hidden');
+    function renderNotifications() {
+        if (!notifications.length) {
+            notificationsList.innerHTML = `
+                <div style="text-align: center; padding: 40px; color: var(--secondary);">
+                    <i class="fas fa-bell" style="font-size: 3em; margin-bottom: 20px; opacity: 0.5;"></i>
+                    <h3>No notifications</h3>
+                    <p>You're all caught up!</p>
+                </div>
+            `;
+            return;
+        }
+
+        notificationsList.innerHTML = notifications.map(notif => `
+            <div class="conversation-item">
+                <div class="conversation-avatar" style="background: ${getNotificationColor(notif.type)};">
+                    <i class="fas ${getNotificationIcon(notif.type)}"></i>
+                </div>
+                <div class="conversation-info">
+                    <div class="conversation-name">${notif.title}</div>
+                    <div class="conversation-last">${notif.message}</div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function getNotificationColor(type) {
+        switch(type) {
+            case 'like': return 'var(--accent)';
+            case 'comment': return 'var(--info)';
+            case 'follow': return 'var(--success)';
+            default: return 'var(--primary)';
+        }
+    }
+
+    function getNotificationIcon(type) {
+        switch(type) {
+            case 'like': return 'fa-heart';
+            case 'comment': return 'fa-comment';
+            case 'follow': return 'fa-user-plus';
+            default: return 'fa-bell';
+        }
+    }
+
+    function updateNotificationBadge() {
+        const badge = document.getElementById('notificationBadge');
+        if (notifications.length > 0) {
+            badge.textContent = notifications.length;
+            badge.style.display = 'flex';
         } else {
-            badge.classList.add('hidden');
+            badge.style.display = 'none';
         }
     }
 
-    // ==================== MUSIC PLAYER ====================
-    function togglePlay() {
-        const audio = document.getElementById('audioPlayer');
-        const btn = document.getElementById('playBtn');
+    async function loadStories() {
+        // For demo, create fake stories
+        stories = [
+            { id: 1, user_id: '1', user_name: 'John', has_new: true },
+            { id: 2, user_id: '2', user_name: 'Sarah', has_new: false },
+            { id: 3, user_id: '3', user_name: 'Mike', has_new: true },
+            { id: 4, user_id: '4', user_name: 'Emma', has_new: false },
+            { id: 5, user_id: '5', user_name: 'Alex', has_new: true }
+        ];
         
-        if (state.isPlayingMusic) {
-            audio.pause();
-            btn.innerHTML = '<i class="fas fa-play"></i>';
+        renderStories();
+    }
+
+    function renderStories() {
+        storiesContainer.innerHTML = `
+            <div class="story-item" onclick="createStory()">
+                <div class="story-avatar" style="background: transparent; border: 2px dashed var(--primary);">
+                    <i class="fas fa-plus" style="color: var(--primary);"></i>
+                </div>
+                <div class="story-username">Add Story</div>
+            </div>
+            ${stories.map(story => `
+                <div class="story-item" onclick="viewStory('${story.id}')">
+                    <div class="story-avatar ${story.has_new ? 'active' : ''}">
+                        ${story.user_name.charAt(0)}
+                    </div>
+                    <div class="story-username">${story.user_name}</div>
+                </div>
+            `).join('')}
+        `;
+    }
+
+    async function loadProfileStats() {
+        // Get post count
+        const { count: postCount } = await supabase
+            .from('posts')
+            .select('*', { count: 'exact', head: true })
+            .eq('author_id', currentUser.id);
+
+        document.getElementById('postCount').textContent = postCount || 0;
+        document.getElementById('followerCount').textContent = '0';
+        document.getElementById('followingCount').textContent = '0';
+    }
+
+    function showAuth() {
+        authModal.classList.add('active');
+    }
+
+    function hideAuth() {
+        authModal.classList.remove('active');
+    }
+
+    function showAuthForm(form) {
+        loginForm.classList.remove('active');
+        signupForm.classList.remove('active');
+        loginError.classList.remove('show');
+        signupError.classList.remove('show');
+        
+        if (form === 'login') {
+            loginForm.classList.add('active');
+            document.querySelectorAll('.auth-tab')[0].classList.add('active');
+            document.querySelectorAll('.auth-tab')[1].classList.remove('active');
         } else {
-            const track = state.tracks[state.currentTrack];
-            audio.src = track.url;
-            audio.play();
-            updateMusicPlayer();
-            btn.innerHTML = '<i class="fas fa-pause"></i>';
-        }
-        
-        state.isPlayingMusic = !state.isPlayingMusic;
-    }
-
-    function nextTrack() {
-        state.currentTrack = (state.currentTrack + 1) % state.tracks.length;
-        updateMusicPlayer();
-        
-        if (state.isPlayingMusic) {
-            const audio = document.getElementById('audioPlayer');
-            const track = state.tracks[state.currentTrack];
-            audio.src = track.url;
-            audio.play();
+            signupForm.classList.add('active');
+            document.querySelectorAll('.auth-tab')[0].classList.remove('active');
+            document.querySelectorAll('.auth-tab')[1].classList.add('active');
         }
     }
 
-    function prevTrack() {
-        state.currentTrack = (state.currentTrack - 1 + state.tracks.length) % state.tracks.length;
-        updateMusicPlayer();
-        
-        if (state.isPlayingMusic) {
-            const audio = document.getElementById('audioPlayer');
-            const track = state.tracks[state.currentTrack];
-            audio.src = track.url;
-            audio.play();
-        }
+    function showApp() {
+        hideAuth();
+        appContainer.classList.add('active');
     }
 
-    function updateMusicPlayer() {
-        const track = state.tracks[state.currentTrack];
-        document.getElementById('musicTitle').textContent = track.title;
-        document.getElementById('musicArtist').textContent = track.artist;
-        document.getElementById('musicCover').src = track.cover;
-        
-        // Show music player if enabled
-        const enabled = document.getElementById('musicPlayerToggle')?.checked || CONFIG.ENABLE_MUSIC;
-        if (enabled) {
-            document.getElementById('musicPlayer').classList.remove('hidden');
-        }
-    }
-
-    // ==================== SETTINGS ====================
-    function updateSettings() {
-        const email = document.getElementById('settingsEmail').value;
-        const username = document.getElementById('settingsUsername').value;
-        const theme = document.getElementById('themeSelect').value;
-        
-        // Update user profile
-        if (state.userProfile) {
-            state.userProfile.email = email;
-            state.userProfile.username = username;
-            updateProfileUI();
-        }
-        
-        // Update theme
-        if (theme === 'light') {
-            document.body.style.background = '#f8f9fa';
-            document.body.style.color = '#1a1a2e';
-        } else {
-            document.body.style.background = 'var(--gradient-dark)';
-            document.body.style.color = 'var(--text-dark)';
-        }
-        
-        // Update music player visibility
-        const musicEnabled = document.getElementById('musicPlayerToggle')?.checked;
-        if (musicEnabled) {
-            document.getElementById('musicPlayer').classList.remove('hidden');
-        } else {
-            document.getElementById('musicPlayer').classList.add('hidden');
-        }
-        
-        showToast('Settings saved!', 'success');
-    }
-
-    // ==================== NAVIGATION ====================
     function showPage(pageId) {
         // Hide all pages
         document.querySelectorAll('.page').forEach(page => {
             page.classList.remove('active');
         });
         
-        // Remove active from all nav items
+        // Update navigation
         document.querySelectorAll('.nav-item').forEach(item => {
             item.classList.remove('active');
         });
@@ -1955,20 +2175,20 @@
         // Show selected page
         document.getElementById(pageId).classList.add('active');
         
-        // Set active nav item
-        document.querySelector(`.nav-item[onclick="showPage('${pageId}')"]`).classList.add('active');
+        // Update nav item
+        const navItems = document.querySelectorAll('.nav-item');
+        const pageIndex = ['homePage', 'chatPage', '', 'notificationsPage', 'profilePage'].indexOf(pageId);
+        if (pageIndex !== -1 && navItems[pageIndex]) {
+            navItems[pageIndex].classList.add('active');
+        }
         
         // Load page data
         switch(pageId) {
             case 'homePage':
                 loadPosts();
-                loadStories();
                 break;
             case 'profilePage':
                 loadUserPosts();
-                break;
-            case 'messagesPage':
-                loadConversations();
                 break;
             case 'notificationsPage':
                 loadNotifications();
@@ -1976,169 +2196,306 @@
         }
     }
 
-    function loadUserPosts() {
-        // Filter posts by current user
-        const userPosts = state.posts.filter(post => post.author_id === state.currentUser.id);
-        
-        // Update counts
-        document.getElementById('postCount').textContent = userPosts.length;
-        document.getElementById('followerCount').textContent = '42'; // Mock
-        document.getElementById('followingCount').textContent = '87'; // Mock
-    }
+    async function loadUserPosts() {
+        const { data, error } = await supabase
+            .from('posts')
+            .select(`
+                *,
+                profiles:author_id (
+                    name,
+                    avatar
+                )
+            `)
+            .eq('author_id', currentUser.id)
+            .order('created_at', { ascending: false });
 
-    // ==================== UTILITY FUNCTIONS ====================
-    function showLoading() {
-        document.getElementById('loadingScreen').style.display = 'flex';
-    }
+        if (error) {
+            console.error('Error loading user posts:', error);
+            return;
+        }
 
-    function hideLoading() {
-        document.getElementById('loadingScreen').style.display = 'none';
-    }
-
-    function showAuth() {
-        document.getElementById('authModal').classList.remove('hidden');
-        document.getElementById('appContainer').classList.add('hidden');
-    }
-
-    function showApp() {
-        document.getElementById('authModal').classList.add('hidden');
-        document.getElementById('appContainer').classList.remove('hidden');
-    }
-
-    function showLogin() {
-        document.getElementById('loginForm').style.display = 'block';
-        document.getElementById('signupForm').classList.add('hidden');
-        document.getElementById('forgotPasswordForm').classList.add('hidden');
-    }
-
-    function showSignup() {
-        document.getElementById('loginForm').style.display = 'none';
-        document.getElementById('signupForm').classList.remove('hidden');
-        document.getElementById('forgotPasswordForm').classList.add('hidden');
-    }
-
-    function showForgotPassword() {
-        document.getElementById('loginForm').style.display = 'none';
-        document.getElementById('signupForm').classList.add('hidden');
-        document.getElementById('forgotPasswordForm').classList.remove('hidden');
-    }
-
-    function showError(elementId, message) {
-        const element = document.getElementById(elementId);
-        element.textContent = message;
-        element.classList.remove('hidden');
-        
-        setTimeout(() => {
-            element.classList.add('hidden');
-        }, 5000);
+        posts = data || [];
+        renderPosts(profileFeed);
     }
 
     function showToast(message, type = 'info') {
-        Toastify({
-            text: message,
-            duration: 3000,
-            gravity: 'top',
-            position: 'right',
-            backgroundColor: type === 'success' ? '#2ecc71' : type === 'error' ? '#ff3864' : '#3498db',
-            stopOnFocus: true
-        }).showToast();
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.textContent = message;
+        toast.style.borderLeftColor = type === 'success' ? 'var(--success)' : 
+                                   type === 'error' ? 'var(--accent)' : 'var(--primary)';
+        
+        document.getElementById('toastContainer').appendChild(toast);
+        
+        setTimeout(() => {
+            toast.remove();
+        }, 3000);
     }
 
-    function formatTimeAgo(dateString) {
-        const date = new Date(dateString);
+    function showError(element, message) {
+        element.textContent = message;
+        element.classList.add('show');
+        
+        setTimeout(() => {
+            element.classList.remove('show');
+        }, 5000);
+    }
+
+    function formatTimeAgo(timestamp) {
         const now = new Date();
-        const diffMs = now - date;
-        const diffMins = Math.floor(diffMs / 60000);
-        const diffHours = Math.floor(diffMins / 60);
-        const diffDays = Math.floor(diffHours / 24);
-        
-        if (diffMins < 1) return 'just now';
-        if (diffMins < 60) return `${diffMins}m ago`;
-        if (diffHours < 24) return `${diffHours}h ago`;
-        if (diffDays < 7) return `${diffDays}d ago`;
-        return date.toLocaleDateString();
+        const time = new Date(timestamp);
+        const diff = now - time;
+        const minutes = Math.floor(diff / 60000);
+        const hours = Math.floor(minutes / 60);
+        const days = Math.floor(hours / 24);
+
+        if (minutes < 1) return 'just now';
+        if (minutes < 60) return `${minutes}m ago`;
+        if (hours < 24) return `${hours}h ago`;
+        if (days < 7) return `${days}d ago`;
+        return time.toLocaleDateString();
     }
 
-    function formatContent(content) {
-        // Convert URLs to links
-        return content.replace(
-            /(https?:\/\/[^\s]+)/g,
-            '<a href="$1" target="_blank" style="color: var(--primary-color);">$1</a>'
-        );
+    function toggleProfileMenu() {
+        const menu = document.getElementById('profileMenu');
+        menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
     }
 
-    function renderMedia(mediaUrls) {
-        if (!mediaUrls || mediaUrls.length === 0) return '';
+    function showSettings() {
+        toggleProfileMenu();
+        document.getElementById('settingsModal').classList.add('active');
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).classList.remove('active');
+    }
+
+    function closeAllModals() {
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.classList.remove('active');
+        });
+    }
+
+    async function saveSettings() {
+        const theme = document.getElementById('themeSelect').value;
+        // Save settings logic here
+        closeModal('settingsModal');
+        showToast('Settings saved', 'success');
+    }
+
+    function editProfile() {
+        document.getElementById('editName').value = userProfile.name;
+        document.getElementById('editBio').value = userProfile.bio || '';
+        document.getElementById('editProfileModal').classList.add('active');
+    }
+
+    async function saveProfile() {
+        const name = document.getElementById('editName').value.trim();
+        const bio = document.getElementById('editBio').value.trim();
+
+        const { error } = await supabase
+            .from('profiles')
+            .update({ name, bio })
+            .eq('id', currentUser.id);
+
+        if (error) {
+            console.error('Profile update error:', error);
+            showToast('Failed to update profile', 'error');
+            return;
+        }
+
+        userProfile.name = name;
+        userProfile.bio = bio;
+        updateProfileUI();
+        closeModal('editProfileModal');
+        showToast('Profile updated successfully', 'success');
+    }
+
+    async function logout() {
+        await supabase.auth.signOut();
+        currentUser = null;
+        userProfile = null;
+        posts = [];
+        conversations = [];
+        notifications = [];
+        appContainer.classList.remove('active');
+        showAuth();
+        showToast('Logged out successfully', 'success');
+    }
+
+    function showCreatePost() {
+        postInput.focus();
+        showPage('homePage');
+    }
+
+    function attachMedia() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*,video/*';
+        input.multiple = true;
+        input.onchange = (e) => {
+            const files = Array.from(e.target.files);
+            previewMedia(files);
+        };
+        input.click();
+    }
+
+    function previewMedia(files) {
+        mediaPreview.innerHTML = '';
+        mediaPreview.style.display = 'grid';
         
-        return `
-            <div class="media-gallery mb-3">
-                ${mediaUrls.map(url => `
-                    <div class="media-item">
-                        <img src="${url}" alt="Media">
-                    </div>
-                `).join('')}
-            </div>
+        files.forEach(file => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                const div = document.createElement('div');
+                div.className = 'media-item';
+                div.appendChild(img);
+                mediaPreview.appendChild(div);
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    function showEmojiPicker() {
+        if (emojiPicker.classList.contains('active')) {
+            emojiPicker.classList.remove('active');
+            return;
+        }
+
+        // Create emoji list
+        const emojis = ['😀', '😂', '🥰', '😎', '😜', '🤔', '😍', '🥳', '😭', '😡', '🤯', '🥶', '🤢', '👻', '💩', '🤡', '👀', '🙏', '💪', '🦄', '🌈', '🔥', '🌟', '🎉', '💯'];
+        
+        emojiPicker.innerHTML = emojis.map(emoji => `
+            <span class="emoji" onclick="insertEmoji('${emoji}')">${emoji}</span>
+        `).join('');
+
+        emojiPicker.classList.add('active');
+    }
+
+    function insertEmoji(emoji) {
+        postInput.value += emoji;
+        postInput.focus();
+        emojiPicker.classList.remove('active');
+    }
+
+    function createPoll() {
+        pollEditor.style.display = pollEditor.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function addPollOption() {
+        const optionCount = pollOptions.children.length + 1;
+        const div = document.createElement('div');
+        div.className = 'poll-option';
+        div.innerHTML = `
+            <input type="text" class="form-input" placeholder="Option ${optionCount}" style="background: transparent; border: none; padding: 0;">
         `;
+        pollOptions.appendChild(div);
     }
 
-    function getRandomGradient() {
-        const gradients = [
-            'linear-gradient(135deg, #FF6B35, #FF3864)',
-            'linear-gradient(135deg, #F7C948, #FF6B35)',
-            'linear-gradient(135deg, #2ECC71, #3498DB)'
-        ];
-        return gradients[Math.floor(Math.random() * gradients.length)];
+    async function markAllAsRead() {
+        const { error } = await supabase
+            .from('notifications')
+            .update({ read: true })
+            .eq('user_id', currentUser.id)
+            .eq('read', false);
+
+        if (error) {
+            console.error('Mark read error:', error);
+            return;
+        }
+
+        notifications = [];
+        renderNotifications();
+        updateNotificationBadge();
+        showToast('All notifications marked as read', 'success');
     }
 
-    async function loadAllData() {
-        await Promise.all([
-            loadPosts(),
-            loadConversations(),
-            loadNotifications(),
-            loadStories()
-        ]);
+    // Feature functions
+    function createStory() {
+        showToast('Story feature - Coming soon', 'info');
     }
 
-    // ==================== EVENT LISTENERS ====================
-    document.getElementById('loginBtn').addEventListener('click', handleLogin);
-    document.getElementById('signupBtn').addEventListener('click', handleSignup);
-    document.getElementById('loginPassword').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') handleLogin();
-    });
-
-    // Profile dropdown
-    document.getElementById('profileBtn').addEventListener('click', (e) => {
-        e.stopPropagation();
-        document.getElementById('profileDropdown').classList.toggle('hidden');
-    });
-
-    document.addEventListener('click', () => {
-        document.getElementById('profileDropdown').classList.add('hidden');
-    });
-
-    // Post content validation
-    document.getElementById('postContent').addEventListener('input', function() {
-        const hasContent = this.value.trim().length > 0;
-        const hasMedia = state.selectedFiles.length > 0;
-        document.getElementById('postBtn').disabled = !hasContent && !hasMedia;
-    });
-
-    // ==================== INITIALIZE ====================
-    // Initialize music player
-    if (CONFIG.ENABLE_MUSIC) {
-        updateMusicPlayer();
+    function viewStory(storyId) {
+        showToast(`Viewing story ${storyId}`, 'info');
     }
 
-    // Add event listeners for music player
-    document.getElementById('audioPlayer').addEventListener('ended', nextTrack);
+    function goLive() {
+        showToast('Live streaming - Coming soon', 'info');
+    }
 
-    // Show loading progress
-    let progress = 0;
-    const progressInterval = setInterval(() => {
-        progress += 10;
-        document.getElementById('loadingProgress').style.width = `${progress}%`;
-        if (progress >= 100) clearInterval(progressInterval);
-    }, 300);
+    function commentOnPost(postId) {
+        showToast(`Comment on post ${postId}`, 'info');
+    }
+
+    function sharePost(postId) {
+        showToast(`Share post ${postId}`, 'info');
+    }
+
+    function voteOnPoll(pollId, optionIndex) {
+        showToast(`Voted on poll ${pollId}, option ${optionIndex}`, 'success');
+    }
+
+    function viewMedia(url) {
+        window.open(url, '_blank');
+    }
+
+    function editBanner() {
+        showToast('Edit banner - Coming soon', 'info');
+    }
+
+    function editAvatar() {
+        showToast('Edit avatar - Coming soon', 'info');
+    }
+
+    function showUserPosts() {
+        showPage('profilePage');
+    }
+
+    function showFollowers() {
+        showToast('Followers list - Coming soon', 'info');
+    }
+
+    function showFollowing() {
+        showToast('Following list - Coming soon', 'info');
+    }
+
+    // Global functions for HTML onclick
+    window.showAuthForm = showAuthForm;
+    window.login = login;
+    window.signup = signup;
+    window.showPage = showPage;
+    window.createPost = createPost;
+    window.likePost = likePost;
+    window.sendMessage = sendMessage;
+    window.toggleProfileMenu = toggleProfileMenu;
+    window.logout = logout;
+    window.showSettings = showSettings;
+    window.editProfile = editProfile;
+    window.saveProfile = saveProfile;
+    window.closeModal = closeModal;
+    window.saveSettings = saveSettings;
+    window.attachMedia = attachMedia;
+    window.showEmojiPicker = showEmojiPicker;
+    window.insertEmoji = insertEmoji;
+    window.createPoll = createPoll;
+    window.addPollOption = addPollOption;
+    window.markAllAsRead = markAllAsRead;
+    window.createStory = createStory;
+    window.viewStory = viewStory;
+    window.goLive = goLive;
+    window.commentOnPost = commentOnPost;
+    window.sharePost = sharePost;
+    window.voteOnPoll = voteOnPoll;
+    window.viewMedia = viewMedia;
+    window.editBanner = editBanner;
+    window.editAvatar = editAvatar;
+    window.showUserPosts = showUserPosts;
+    window.showFollowers = showFollowers;
+    window.showFollowing = showFollowing;
+    window.openChat = openChat;
+    window.showCreatePost = showCreatePost;
     </script>
 </body>
 </html>
