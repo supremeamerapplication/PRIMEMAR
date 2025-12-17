@@ -4,40 +4,58 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PrimeMar - Complete Social Platform</title>
-    <meta name="theme-color" content="#ff9800">
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <!-- Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <style>
-        /* COMPLETE CSS - NO CHANGES NEEDED */
+        /* ========== COMPLETE STYLES ========== */
         :root {
             --primary: #ff9800;
             --secondary: #fdc500;
             --accent: #ff3333;
             --success: #4CAF50;
             --info: #2196F3;
+            --warning: #ffc107;
+            
             --dark-bg: #0a0a0a;
             --dark-card: #1a1a1a;
             --dark-border: #333;
-            --text-dark: #fff;
-            --text-secondary: #aaa;
+            --dark-text: #fff;
+            --dark-secondary: #aaa;
+            
+            --light-bg: #ffffff;
+            --light-card: #f8f9fa;
+            --light-border: #dee2e6;
+            --light-text: #212529;
+            --light-secondary: #6c757d;
         }
 
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: var(--dark-bg);
-            color: var(--text-dark);
+            color: var(--dark-text);
             min-height: 100vh;
+            overflow-x: hidden;
         }
 
-        /* Loading Screen */
+        body.light-mode {
+            background: var(--light-bg);
+            color: var(--light-text);
+        }
+
+        /* ========== LOADING SCREEN ========== */
         #loadingScreen {
             position: fixed;
             top: 0;
@@ -50,6 +68,21 @@
             align-items: center;
             justify-content: center;
             z-index: 9999;
+            transition: opacity 0.3s;
+        }
+
+        .loading-content {
+            text-align: center;
+        }
+
+        .loading-logo {
+            font-size: 3.5rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 2rem;
+            animation: pulse 2s infinite;
         }
 
         .loading-spinner {
@@ -59,16 +92,23 @@
             border-top: 4px solid var(--primary);
             border-radius: 50%;
             animation: spin 1s linear infinite;
+            margin: 2rem auto;
         }
 
-        /* Auth Screen */
+        .loading-text {
+            color: var(--dark-secondary);
+            font-size: 1.1rem;
+            margin-top: 1rem;
+        }
+
+        /* ========== AUTH SCREEN ========== */
         #authScreen {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: var(--dark-bg);
+            background: linear-gradient(135deg, var(--dark-bg), #1a1a1a);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -79,39 +119,98 @@
         .auth-container {
             background: var(--dark-card);
             border-radius: 20px;
-            padding: 40px;
+            padding: 2.5rem;
             width: 100%;
-            max-width: 400px;
+            max-width: 450px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
             border: 1px solid var(--dark-border);
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .auth-title {
+            font-size: 2.2rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .auth-subtitle {
+            color: var(--dark-secondary);
+            font-size: 1rem;
         }
 
         .auth-form {
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 1.25rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--dark-secondary);
         }
 
         .form-input {
-            padding: 14px;
+            padding: 1rem;
             background: rgba(255,255,255,0.05);
             border: 1px solid var(--dark-border);
             border-radius: 10px;
-            color: var(--text-dark);
-            font-size: 16px;
+            color: var(--dark-text);
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(255,152,0,0.1);
         }
 
         .auth-btn {
             background: linear-gradient(135deg, var(--primary), var(--secondary));
             color: black;
             border: none;
-            padding: 14px;
+            padding: 1rem;
             border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
+            font-size: 1rem;
+            font-weight: 700;
             cursor: pointer;
+            transition: transform 0.2s;
+            margin-top: 0.5rem;
         }
 
-        /* App Container */
+        .auth-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .auth-switch {
+            text-align: center;
+            margin-top: 1.5rem;
+            color: var(--dark-secondary);
+            font-size: 0.95rem;
+        }
+
+        .auth-link {
+            color: var(--primary);
+            cursor: pointer;
+            font-weight: 700;
+            margin-left: 0.5rem;
+        }
+
+        /* ========== APP CONTAINER ========== */
         #appContainer {
             display: none;
             height: 100vh;
@@ -122,35 +221,201 @@
             display: flex;
         }
 
-        /* Header */
+        /* ========== HEADER ========== */
         .header {
             background: rgba(26, 26, 26, 0.95);
-            padding: 15px 20px;
+            backdrop-filter: blur(20px);
+            padding: 1rem 1.25rem;
             display: flex;
             align-items: center;
             justify-content: space-between;
             border-bottom: 1px solid var(--dark-border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
 
         .logo {
-            font-size: 24px;
-            font-weight: 800;
+            font-size: 1.8rem;
+            font-weight: 900;
             background: linear-gradient(135deg, var(--primary), var(--secondary));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .online-status {
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
         }
 
         .header-btn {
-            width: 40px;
-            height: 40px;
+            width: 42px;
+            height: 42px;
             border-radius: 50%;
             background: rgba(255,255,255,0.1);
             border: none;
-            color: var(--text-secondary);
+            color: var(--dark-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
             cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
         }
 
-        /* Main Content */
+        .header-btn:hover {
+            background: rgba(255,255,255,0.15);
+            color: var(--primary);
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: -3px;
+            right: -3px;
+            background: var(--accent);
+            color: white;
+            font-size: 0.7rem;
+            min-width: 18px;
+            height: 18px;
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        /* ========== SEARCH ========== */
+        .search-container {
+            flex: 1;
+            max-width: 500px;
+            margin: 0 1.5rem;
+            position: relative;
+        }
+
+        .search-wrapper {
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 3rem;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid var(--dark-border);
+            border-radius: 25px;
+            color: var(--dark-text);
+            font-size: 0.95rem;
+            transition: all 0.3s;
+        }
+
+        .search-input:focus {
+            background: rgba(255,255,255,0.12);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(255,152,0,0.1);
+            outline: none;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 1.2rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--dark-secondary);
+        }
+
+        .search-results {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            right: 0;
+            background: var(--dark-card);
+            border: 1px solid var(--dark-border);
+            border-radius: 12px;
+            max-height: 450px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+
+        .search-results.active {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        .search-section {
+            padding: 1rem;
+            border-bottom: 1px solid var(--dark-border);
+        }
+
+        .search-section-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .search-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-bottom: 0.5rem;
+        }
+
+        .search-item:hover {
+            background: rgba(255,255,255,0.05);
+        }
+
+        .search-item-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            font-size: 1.2rem;
+            margin-right: 1rem;
+            flex-shrink: 0;
+        }
+
+        .search-item-info {
+            flex: 1;
+        }
+
+        .search-item-name {
+            font-weight: 700;
+            font-size: 1rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .search-item-details {
+            font-size: 0.85rem;
+            color: var(--dark-secondary);
+        }
+
+        /* ========== MAIN CONTENT ========== */
         .main-content {
             flex: 1;
             overflow-y: auto;
@@ -159,17 +424,18 @@
 
         .page {
             display: none;
+            height: 100%;
         }
 
         .page.active {
             display: block;
         }
 
-        /* Home Page */
+        /* ========== HOME PAGE ========== */
         .stories-container {
             display: flex;
-            gap: 15px;
-            padding: 20px;
+            gap: 1rem;
+            padding: 1.25rem;
             overflow-x: auto;
             border-bottom: 1px solid var(--dark-border);
         }
@@ -179,16 +445,29 @@
             flex-direction: column;
             align-items: center;
             cursor: pointer;
-            min-width: 70px;
+            min-width: 75px;
         }
 
         .story-avatar {
-            width: 60px;
-            height: 60px;
+            width: 65px;
+            height: 65px;
             border-radius: 50%;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            background: linear-gradient(135deg, var(--primary), var(--secondary), var(--accent));
             padding: 3px;
-            margin-bottom: 8px;
+            margin-bottom: 0.5rem;
+            position: relative;
+        }
+
+        .story-avatar.has-story::after {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary), var(--accent));
+            border-radius: 50%;
+            z-index: -1;
         }
 
         .story-avatar-inner {
@@ -199,24 +478,30 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--primary);
             font-weight: bold;
+            color: var(--primary);
+            font-size: 1.2rem;
+        }
+
+        .story-add .story-avatar-inner {
+            background: rgba(255,255,255,0.1);
+            color: var(--dark-text);
         }
 
         .post-composer {
-            padding: 20px;
+            padding: 1.5rem;
             border-bottom: 1px solid var(--dark-border);
         }
 
         .composer-header {
             display: flex;
-            gap: 12px;
-            margin-bottom: 15px;
+            gap: 1rem;
+            margin-bottom: 1rem;
         }
 
         .avatar {
-            width: 45px;
-            height: 45px;
+            width: 48px;
+            height: 48px;
             border-radius: 50%;
             background: linear-gradient(135deg, var(--primary), var(--secondary));
             display: flex;
@@ -224,36 +509,69 @@
             justify-content: center;
             font-weight: bold;
             color: white;
-            font-size: 18px;
+            font-size: 1.2rem;
+            flex-shrink: 0;
         }
 
         .composer-textarea {
             flex: 1;
             background: none;
             border: none;
-            color: var(--text-dark);
-            font-size: 16px;
+            color: var(--dark-text);
+            font-size: 1.1rem;
             resize: none;
-            min-height: 60px;
+            min-height: 70px;
             font-family: inherit;
             outline: none;
+            line-height: 1.5;
+        }
+
+        .composer-textarea::placeholder {
+            color: var(--dark-secondary);
         }
 
         .composer-actions {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding-left: 57px;
+            margin-top: 1rem;
+            padding-left: 60px;
+        }
+
+        .composer-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .composer-btn {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: var(--primary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .composer-btn:hover {
+            background: rgba(255,255,255,0.15);
+            transform: scale(1.1);
         }
 
         .post-btn {
             background: linear-gradient(135deg, var(--secondary), var(--primary));
             color: black;
             border: none;
-            padding: 10px 25px;
-            border-radius: 20px;
-            font-weight: 600;
+            padding: 0.75rem 2rem;
+            border-radius: 25px;
+            font-weight: 700;
+            font-size: 1rem;
             cursor: pointer;
+            transition: transform 0.2s;
         }
 
         .post-btn:disabled {
@@ -261,146 +579,242 @@
             cursor: not-allowed;
         }
 
-        .feed {
-            padding: 20px;
+        .post-btn:not(:disabled):hover {
+            transform: translateY(-2px);
         }
 
+        .feed {
+            padding: 1rem;
+        }
+
+        /* ========== POSTS ========== */
         .post {
             background: var(--dark-card);
             border: 1px solid var(--dark-border);
-            border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 15px;
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .post:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
         }
 
         .post-header {
             display: flex;
             align-items: center;
-            gap: 12px;
-            margin-bottom: 15px;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .post-user-info {
+            flex: 1;
+        }
+
+        .post-user-name {
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 0.25rem;
+            cursor: pointer;
+        }
+
+        .post-user-handle {
+            font-size: 0.9rem;
+            color: var(--dark-secondary);
+            cursor: pointer;
+        }
+
+        .post-time {
+            font-size: 0.85rem;
+            color: var(--dark-secondary);
         }
 
         .post-content {
-            margin-bottom: 15px;
-            line-height: 1.5;
+            font-size: 1.05rem;
+            line-height: 1.6;
+            margin-bottom: 1rem;
+            word-break: break-word;
+        }
+
+        .post-media {
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+            max-height: 500px;
+        }
+
+        .post-media img {
+            width: 100%;
+            height: auto;
+            display: block;
         }
 
         .post-actions {
             display: flex;
             justify-content: space-around;
-            padding-top: 15px;
+            padding-top: 1rem;
             border-top: 1px solid var(--dark-border);
         }
 
         .post-action {
             background: none;
             border: none;
-            color: var(--text-secondary);
+            color: var(--dark-secondary);
             cursor: pointer;
-            padding: 8px 12px;
+            padding: 0.5rem 1rem;
             border-radius: 8px;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 0.5rem;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .post-action:hover {
+            background: rgba(255,255,255,0.05);
+            color: var(--primary);
         }
 
         .post-action.liked {
             color: var(--accent);
         }
 
-        /* Profile Page */
-        .profile-header {
-            height: 200px;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            position: relative;
+        .post-action-count {
+            font-size: 0.9rem;
+            font-weight: 700;
         }
 
-        .profile-avatar {
-            position: absolute;
-            bottom: -30px;
-            left: 20px;
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            border: 4px solid var(--dark-bg);
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
+        /* ========== MESSAGES PAGE ========== */
+        .messages-container {
+            height: 100%;
             display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 30px;
-            font-weight: bold;
-            color: white;
         }
 
-        .profile-info {
-            padding: 60px 20px 20px;
-        }
-
-        .profile-name {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-
-        .profile-handle {
-            color: var(--text-secondary);
-            margin-bottom: 15px;
-        }
-
-        .profile-stats {
+        .conversations-sidebar {
+            width: 380px;
+            border-right: 1px solid var(--dark-border);
             display: flex;
-            justify-content: space-around;
-            margin: 20px 0;
-            padding: 20px 0;
-            border-top: 1px solid var(--dark-border);
+            flex-direction: column;
+            background: rgba(255,255,255,0.02);
+        }
+
+        .conversations-header {
+            padding: 1.5rem;
             border-bottom: 1px solid var(--dark-border);
         }
 
-        .stat {
-            text-align: center;
+        .conversations-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .new-chat-btn {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: black;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 25px;
+            font-weight: 700;
             cursor: pointer;
-        }
-
-        .stat-number {
-            display: block;
-            font-size: 20px;
-            font-weight: bold;
-            color: var(--primary);
-        }
-
-        .stat-label {
-            font-size: 12px;
-            color: var(--text-secondary);
-        }
-
-        /* Notifications */
-        .notification-item {
-            padding: 15px 20px;
-            border-bottom: 1px solid var(--dark-border);
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 0.5rem;
+            transition: transform 0.2s;
         }
 
-        /* Messages */
+        .new-chat-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .conversations-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+
         .conversation-item {
             display: flex;
             align-items: center;
-            padding: 15px 20px;
+            padding: 1rem 1.5rem;
             border-bottom: 1px solid var(--dark-border);
             cursor: pointer;
+            transition: background 0.2s;
+            position: relative;
+        }
+
+        .conversation-item.active,
+        .conversation-item:hover {
+            background: rgba(255,255,255,0.05);
+        }
+
+        .conversation-unread {
+            position: absolute;
+            right: 1.5rem;
+            width: 10px;
+            height: 10px;
+            background: var(--primary);
+            border-radius: 50%;
+        }
+
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--dark-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255,255,255,0.02);
+        }
+
+        .chat-partner-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .chat-call-buttons {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .call-header-btn {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: var(--dark-text);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .call-header-btn:hover {
+            background: rgba(255,255,255,0.15);
+            color: var(--primary);
         }
 
         .chat-messages {
-            padding: 20px;
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 1rem;
         }
 
         .message {
             display: flex;
-            gap: 10px;
+            gap: 0.75rem;
             max-width: 70%;
         }
 
@@ -411,55 +825,555 @@
 
         .message-content {
             background: rgba(255,255,255,0.1);
-            padding: 12px 16px;
+            padding: 0.75rem 1rem;
             border-radius: 18px;
-            word-wrap: break-word;
+            word-break: break-word;
+            max-width: 100%;
+            line-height: 1.4;
         }
 
         .message.own .message-content {
             background: linear-gradient(135deg, var(--secondary), var(--primary));
-            color: white;
+            color: black;
         }
 
-        /* Groups */
+        .message-time {
+            font-size: 0.75rem;
+            color: var(--dark-secondary);
+            margin-top: 0.25rem;
+            text-align: right;
+        }
+
+        .chat-input-container {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--dark-border);
+            display: flex;
+            gap: 1rem;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 0.75rem 1.25rem;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid var(--dark-border);
+            border-radius: 25px;
+            color: var(--dark-text);
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        .chat-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(255,152,0,0.1);
+        }
+
+        .send-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--secondary), var(--primary));
+            border: none;
+            color: black;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+        }
+
+        .send-btn:hover {
+            transform: scale(1.1);
+        }
+
+        /* ========== GROUPS PAGE ========== */
+        .groups-container {
+            padding: 1.5rem;
+        }
+
+        .groups-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .groups-title {
+            font-size: 1.8rem;
+            font-weight: 800;
+        }
+
+        .create-group-btn {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: black;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 25px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: transform 0.2s;
+        }
+
+        .create-group-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .groups-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1rem;
+        }
+
         .group-card {
             background: var(--dark-card);
             border: 1px solid var(--dark-border);
-            border-radius: 12px;
-            padding: 15px;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
+            border-radius: 16px;
+            padding: 1.5rem;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
         }
 
-        /* Bottom Navigation */
-        .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: rgba(26, 26, 26, 0.95);
+        .group-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .group-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .group-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+        }
+
+        .group-info {
+            flex: 1;
+        }
+
+        .group-name {
+            font-weight: 700;
+            font-size: 1.2rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .group-members {
+            font-size: 0.9rem;
+            color: var(--dark-secondary);
+        }
+
+        .group-description {
+            color: var(--dark-secondary);
+            line-height: 1.5;
+            margin-bottom: 1rem;
+        }
+
+        .group-stats {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.9rem;
+            color: var(--dark-secondary);
+        }
+
+        /* ========== PROFILE PAGE ========== */
+        .profile-header {
+            height: 220px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            position: relative;
+        }
+
+        .profile-cover {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.9;
+        }
+
+        .profile-avatar-container {
+            position: absolute;
+            bottom: -50px;
+            left: 1.5rem;
+            display: flex;
+            align-items: flex-end;
+            gap: 1rem;
+        }
+
+        .profile-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            border: 4px solid var(--dark-bg);
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: white;
+            position: relative;
+        }
+
+        .online-badge {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            width: 12px;
+            height: 12px;
+            background: var(--success);
+            border: 2px solid var(--dark-bg);
+            border-radius: 50%;
+        }
+
+        .profile-actions {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .profile-info {
+            padding: 4rem 1.5rem 1.5rem;
+        }
+
+        .profile-name {
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin-bottom: 0.25rem;
+        }
+
+        .profile-handle {
+            font-size: 1.1rem;
+            color: var(--dark-secondary);
+            margin-bottom: 1rem;
+        }
+
+        .profile-bio {
+            font-size: 1rem;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+
+        .profile-stats {
             display: flex;
             justify-content: space-around;
-            padding: 10px 0;
+            margin: 1.5rem 0;
+            padding: 1.5rem 0;
             border-top: 1px solid var(--dark-border);
+            border-bottom: 1px solid var(--dark-border);
         }
 
-        .nav-item {
+        .stat {
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .stat:hover {
+            transform: scale(1.1);
+        }
+
+        .stat-number {
+            display: block;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--dark-secondary);
+        }
+
+        .profile-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--dark-border);
+            margin-bottom: 1.5rem;
+        }
+
+        .profile-tab {
+            flex: 1;
+            text-align: center;
+            padding: 1rem;
+            background: none;
+            border: none;
+            color: var(--dark-secondary);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+
+        .profile-tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        /* ========== SETTINGS PAGE ========== */
+        .settings-container {
+            padding: 1.5rem;
+        }
+
+        .settings-section {
+            background: var(--dark-card);
+            border: 1px solid var(--dark-border);
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+        }
+
+        .settings-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--dark-border);
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .settings-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--dark-border);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .settings-item:last-child {
+            border-bottom: none;
+        }
+
+        .settings-item:hover {
+            background: rgba(255,255,255,0.05);
+        }
+
+        .settings-item-label {
             display: flex;
             flex-direction: column;
-            align-items: center;
-            padding: 8px 12px;
-            color: var(--text-secondary);
+            gap: 0.25rem;
+        }
+
+        .settings-item-title {
+            font-weight: 600;
+        }
+
+        .settings-item-description {
+            font-size: 0.85rem;
+            color: var(--dark-secondary);
+        }
+
+        .settings-switch {
+            position: relative;
+            display: inline-block;
+            width: 52px;
+            height: 26px;
+        }
+
+        .settings-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .settings-slider {
+            position: absolute;
             cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255,255,255,0.1);
+            transition: .4s;
+            border-radius: 34px;
         }
 
-        .nav-item.active {
-            color: var(--primary);
+        .settings-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
         }
 
-        /* Modal */
+        input:checked + .settings-slider {
+            background-color: var(--primary);
+        }
+
+        input:checked + .settings-slider:before {
+            transform: translateX(26px);
+        }
+
+        /* ========== CALL INTERFACE ========== */
+        .call-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: black;
+            z-index: 2000;
+            display: none;
+            flex-direction: column;
+        }
+
+        .call-container.active {
+            display: flex;
+        }
+
+        .call-header {
+            padding: 1.5rem;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            text-align: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 2;
+        }
+
+        .call-videos {
+            flex: 1;
+            position: relative;
+        }
+
+        .remote-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .local-video {
+            position: absolute;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            width: 120px;
+            height: 160px;
+            border-radius: 12px;
+            border: 2px solid white;
+            object-fit: cover;
+            background: black;
+        }
+
+        .call-controls {
+            position: absolute;
+            bottom: 2rem;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            z-index: 2;
+        }
+
+        .call-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .call-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .call-mute {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        .call-end {
+            background: var(--accent);
+            color: white;
+        }
+
+        .call-video {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        /* ========== NOTIFICATIONS ========== */
+        .notification {
+            position: fixed;
+            top: 1.5rem;
+            right: 1.5rem;
+            background: var(--dark-card);
+            border: 1px solid var(--dark-border);
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            max-width: 350px;
+            z-index: 1001;
+            transform: translateX(200%);
+            transition: transform 0.3s;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: black;
+            font-size: 1.2rem;
+        }
+
+        .notification-content {
+            flex: 1;
+        }
+
+        .notification-title {
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .notification-message {
+            font-size: 0.9rem;
+            color: var(--dark-secondary);
+        }
+
+        .notification-close {
+            background: none;
+            border: none;
+            color: var(--dark-secondary);
+            cursor: pointer;
+            padding: 0.25rem;
+        }
+
+        /* ========== MODALS ========== */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -470,76 +1384,354 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 2000;
-            padding: 20px;
+            z-index: 3000;
+            padding: 1.5rem;
         }
 
         .modal-content {
             background: var(--dark-card);
-            border-radius: 15px;
+            border-radius: 16px;
             width: 100%;
             max-width: 500px;
             max-height: 80vh;
             overflow-y: auto;
+            border: 1px solid var(--dark-border);
         }
 
         .modal-header {
-            padding: 20px;
+            padding: 1.5rem;
             border-bottom: 1px solid var(--dark-border);
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
-        .modal-body {
-            padding: 20px;
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
         }
 
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--dark-secondary);
+            cursor: pointer;
+            font-size: 1.5rem;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .modal-close:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        /* ========== BOTTOM NAVIGATION ========== */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(26, 26, 26, 0.95);
+            backdrop-filter: blur(20px);
+            display: flex;
+            justify-content: space-around;
+            padding: 0.75rem 0;
+            border-top: 1px solid var(--dark-border);
+            z-index: 100;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0.5rem 0.75rem;
+            color: var(--dark-secondary);
+            cursor: pointer;
+            border-radius: 12px;
+            transition: all 0.3s;
+            position: relative;
+            min-width: 70px;
+        }
+
+        .nav-item.active {
+            color: var(--primary);
+            background: rgba(255,152,0,0.1);
+        }
+
+        .nav-item:hover:not(.active) {
+            background: rgba(255,255,255,0.05);
+        }
+
+        .nav-icon {
+            font-size: 1.5rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .nav-badge {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background: var(--accent);
+            color: white;
+            font-size: 0.7rem;
+            min-width: 18px;
+            height: 18px;
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .nav-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        /* ========== UTILITY CLASSES ========== */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1.5rem;
+            color: var(--dark-secondary);
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .loading-state {
+            text-align: center;
+            padding: 2rem;
+            color: var(--dark-secondary);
+        }
+
+        .loading-spinner-small {
+            width: 30px;
+            height: 30px;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        /* ========== ANIMATIONS ========== */
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ========== SCROLLBAR ========== */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.05);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--secondary);
+        }
+
+        /* ========== RESPONSIVE ========== */
+        @media (max-width: 768px) {
+            .conversations-sidebar {
+                width: 100%;
+            }
+            
+            .messages-container {
+                flex-direction: column;
+            }
+            
+            .search-container {
+                display: none;
+            }
+            
+            .groups-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ========== LIGHT MODE ========== */
+        body.light-mode {
+            background: var(--light-bg);
+            color: var(--light-text);
+        }
+
+        body.light-mode .header {
+            background: rgba(248, 249, 250, 0.95);
+            border-bottom: 1px solid var(--light-border);
+        }
+
+        body.light-mode .header-btn {
+            background: rgba(0,0,0,0.05);
+            color: var(--light-secondary);
+        }
+
+        body.light-mode .header-btn:hover {
+            background: rgba(0,0,0,0.1);
+            color: var(--primary);
+        }
+
+        body.light-mode .search-input {
+            background: rgba(0,0,0,0.05);
+            border-color: var(--light-border);
+            color: var(--light-text);
+        }
+
+        body.light-mode .search-results {
+            background: var(--light-card);
+            border-color: var(--light-border);
+        }
+
+        body.light-mode .bottom-nav {
+            background: rgba(248, 249, 250, 0.95);
+            border-top: 1px solid var(--light-border);
+        }
+
+        body.light-mode .nav-item {
+            color: var(--light-secondary);
+        }
+
+        body.light-mode .nav-item.active {
+            background: rgba(255,152,0,0.1);
+            color: var(--primary);
+        }
+
+        body.light-mode .post {
+            background: var(--light-card);
+            border-color: var(--light-border);
+        }
+
+        body.light-mode .post-action:hover {
+            background: rgba(0,0,0,0.05);
+        }
+
+        body.light-mode .message-content {
+            background: rgba(0,0,0,0.05);
+        }
+
+        body.light-mode .settings-section {
+            background: var(--light-card);
+            border-color: var(--light-border);
+        }
+
+        body.light-mode .settings-item:hover {
+            background: rgba(0,0,0,0.05);
+        }
+
+        body.light-mode .notification {
+            background: var(--light-card);
+            border-color: var(--light-border);
+        }
+
+        body.light-mode .modal-content {
+            background: var(--light-card);
+            border-color: var(--light-border);
         }
     </style>
 </head>
 <body>
     <!-- Loading Screen -->
     <div id="loadingScreen">
-        <div class="loading-spinner"></div>
-        <div style="margin-top: 20px;">Loading...</div>
+        <div class="loading-content">
+            <div class="loading-logo">
+                <i class="fas fa-fire"></i> PrimeMar
+            </div>
+            <div class="loading-spinner"></div>
+            <div class="loading-text" id="loadingText">Initializing...</div>
+        </div>
     </div>
 
     <!-- Auth Screen -->
     <div id="authScreen">
         <div class="auth-container">
-            <div style="text-align: center; margin-bottom: 30px;">
-                <h1 style="font-size: 2.5rem; background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+            <div class="auth-header">
+                <h1 class="auth-title">
                     <i class="fas fa-fire"></i> PrimeMar
                 </h1>
+                <p class="auth-subtitle">Connect with the world around you</p>
             </div>
             
             <div id="loginForm">
                 <div class="auth-form">
-                    <input type="email" class="form-input" id="loginEmail" placeholder="Email">
-                    <input type="password" class="form-input" id="loginPassword" placeholder="Password">
-                    <button class="auth-btn" id="loginBtn">Sign In</button>
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-input" id="loginEmail" placeholder="Enter your email">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-input" id="loginPassword" placeholder="Enter your password">
+                    </div>
+                    <button class="auth-btn" id="loginBtn">
+                        <i class="fas fa-sign-in-alt"></i> Sign In
+                    </button>
                 </div>
-                <div style="text-align: center; margin-top: 20px; color: var(--text-secondary);">
-                    Don't have an account? 
-                    <span style="color: var(--primary); cursor: pointer;" id="showSignup">Sign Up</span>
+                <div class="auth-switch">
+                    Don't have an account?
+                    <span class="auth-link" id="showSignup">Sign Up</span>
                 </div>
             </div>
             
             <div id="signupForm" style="display: none;">
                 <div class="auth-form">
-                    <input type="text" class="form-input" id="signupName" placeholder="Full Name">
-                    <input type="text" class="form-input" id="signupUsername" placeholder="Username">
-                    <input type="email" class="form-input" id="signupEmail" placeholder="Email">
-                    <input type="password" class="form-input" id="signupPassword" placeholder="Password">
-                    <button class="auth-btn" id="signupBtn">Create Account</button>
+                    <div class="form-group">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" class="form-input" id="signupName" placeholder="Enter your full name">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Username</label>
+                        <input type="text" class="form-input" id="signupUsername" placeholder="Choose a username">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-input" id="signupEmail" placeholder="Enter your email">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-input" id="signupPassword" placeholder="Create a password">
+                    </div>
+                    <button class="auth-btn" id="signupBtn">
+                        <i class="fas fa-user-plus"></i> Create Account
+                    </button>
                 </div>
-                <div style="text-align: center; margin-top: 20px; color: var(--text-secondary);">
-                    Already have an account? 
-                    <span style="color: var(--primary); cursor: pointer;" id="showLogin">Sign In</span>
+                <div class="auth-switch">
+                    Already have an account?
+                    <span class="auth-link" id="showLogin">Sign In</span>
                 </div>
             </div>
         </div>
@@ -551,10 +1743,26 @@
         <header class="header">
             <div class="logo">
                 <i class="fas fa-fire"></i> PrimeMar
+                <span class="online-status"></span>
             </div>
-            <div style="display: flex; gap: 10px;">
+            
+            <div class="search-container">
+                <div class="search-wrapper">
+                    <input type="text" class="search-input" id="searchInput" placeholder="Search users, groups, posts...">
+                    <div class="search-icon">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <div class="search-results" id="searchResults"></div>
+                </div>
+            </div>
+            
+            <div class="header-actions">
                 <button class="header-btn" id="notificationsBtn">
                     <i class="fas fa-bell"></i>
+                    <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
+                </button>
+                <button class="header-btn" id="settingsBtn">
+                    <i class="fas fa-cog"></i>
                 </button>
                 <button class="header-btn" id="profileBtn">
                     <i class="fas fa-user"></i>
@@ -563,12 +1771,12 @@
         </header>
 
         <!-- Main Content -->
-        <main class="main-content">
+        <main class="main-content" id="mainContent">
             <!-- Home Page -->
             <section id="homePage" class="page active">
                 <!-- Stories -->
                 <div class="stories-container" id="storiesContainer">
-                    <div class="story" onclick="app.createStory()">
+                    <div class="story story-add" onclick="app.createStory()">
                         <div class="story-avatar">
                             <div class="story-avatar-inner">
                                 <i class="fas fa-plus"></i>
@@ -582,56 +1790,96 @@
                 <div class="post-composer">
                     <div class="composer-header">
                         <div class="avatar" id="userAvatar">U</div>
-                        <textarea class="composer-textarea" placeholder="What's happening?" id="postTextarea"></textarea>
+                        <textarea class="composer-textarea" placeholder="What's happening?" id="postTextarea" maxlength="1000"></textarea>
                     </div>
                     <div class="composer-actions">
-                        <div style="display: flex; gap: 10px;">
-                            <button class="header-btn" onclick="app.attachImage()">
+                        <div class="composer-buttons">
+                            <button class="composer-btn" onclick="app.attachImage()">
                                 <i class="fas fa-image"></i>
                             </button>
-                            <button class="header-btn" onclick="app.addEmoji()">
+                            <button class="composer-btn" onclick="app.toggleEmojiPicker()">
                                 <i class="fas fa-smile"></i>
                             </button>
+                            <button class="composer-btn" onclick="app.attachLocation()">
+                                <i class="fas fa-map-marker-alt"></i>
+                            </button>
+                            <button class="composer-btn" onclick="app.attachPoll()">
+                                <i class="fas fa-chart-bar"></i>
+                            </button>
                         </div>
-                        <button class="post-btn" id="postBtn" disabled>Post</button>
+                        <button class="post-btn" id="postBtn" disabled>
+                            Post
+                        </button>
                     </div>
                 </div>
 
                 <!-- Feed -->
                 <div class="feed" id="feedContainer">
-                    <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
-                        <div class="loading-spinner" style="margin: 0 auto 20px;"></div>
-                        Loading posts...
+                    <div class="loading-state">
+                        <div class="loading-spinner-small"></div>
+                        <div>Loading posts...</div>
                     </div>
                 </div>
             </section>
 
             <!-- Messages Page -->
             <section id="messagesPage" class="page">
-                <div style="padding: 20px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                        <h2>Messages</h2>
-                        <button class="post-btn" onclick="app.startNewChat()">
-                            <i class="fas fa-plus"></i> New Chat
-                        </button>
+                <div class="messages-container">
+                    <div class="conversations-sidebar">
+                        <div class="conversations-header">
+                            <h2 class="conversations-title">Messages</h2>
+                            <button class="new-chat-btn" onclick="app.startNewChat()">
+                                <i class="fas fa-plus"></i> New Chat
+                            </button>
+                        </div>
+                        <div class="conversations-list" id="conversationsList">
+                            <div class="loading-state">
+                                <div class="loading-spinner-small"></div>
+                                <div>Loading conversations...</div>
+                            </div>
+                        </div>
                     </div>
-                    <div id="conversationsList">
-                        <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
-                            <div class="loading-spinner" style="margin: 0 auto 20px;"></div>
-                            Loading conversations...
+                    <div class="chat-container" id="chatContainer">
+                        <div class="chat-header" id="chatHeader">
+                            <div class="chat-partner-info" id="chatPartnerInfo">
+                                <!-- Dynamic content -->
+                            </div>
+                            <div class="chat-call-buttons" id="chatCallButtons">
+                                <!-- Dynamic content -->
+                            </div>
+                        </div>
+                        <div class="chat-messages" id="chatMessages">
+                            <div class="empty-state">
+                                <div class="empty-state-icon">
+                                    <i class="fas fa-comments"></i>
+                                </div>
+                                <h3>Select a conversation</h3>
+                                <p>Choose a chat from the sidebar to start messaging</p>
+                            </div>
+                        </div>
+                        <div class="chat-input-container" style="display: none;">
+                            <input type="text" class="chat-input" id="chatInput" placeholder="Type a message...">
+                            <button class="send-btn" id="sendBtn">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- Notifications Page -->
-            <section id="notificationsPage" class="page">
-                <div style="padding: 20px;">
-                    <h2 style="margin-bottom: 20px;">Notifications</h2>
-                    <div id="notificationsList">
-                        <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
-                            <div class="loading-spinner" style="margin: 0 auto 20px;"></div>
-                            Loading notifications...
+            <!-- Groups Page -->
+            <section id="groupsPage" class="page">
+                <div class="groups-container">
+                    <div class="groups-header">
+                        <h1 class="groups-title">Groups & Channels</h1>
+                        <button class="create-group-btn" onclick="app.showCreateGroupModal()">
+                            <i class="fas fa-plus"></i> Create Group
+                        </button>
+                    </div>
+                    <div class="groups-grid" id="groupsList">
+                        <div class="loading-state">
+                            <div class="loading-spinner-small"></div>
+                            <div>Loading groups...</div>
                         </div>
                     </div>
                 </div>
@@ -640,15 +1888,24 @@
             <!-- Profile Page -->
             <section id="profilePage" class="page">
                 <div class="profile-header">
-                    <div class="profile-avatar" id="profileAvatar">U</div>
-                    <button class="header-btn" style="position: absolute; top: 20px; right: 20px;" onclick="app.editProfile()">
-                        <i class="fas fa-edit"></i>
-                    </button>
+                    <img src="" class="profile-cover" id="profileCover" alt="Cover">
+                    <div class="profile-avatar-container">
+                        <div class="profile-avatar" id="profileAvatar">U</div>
+                        <div class="online-badge" id="profileOnlineBadge"></div>
+                    </div>
+                    <div class="profile-actions">
+                        <button class="header-btn" onclick="app.editProfile()">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="header-btn" onclick="app.showSettings()">
+                            <i class="fas fa-cog"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="profile-info">
                     <h1 class="profile-name" id="profileName">Loading...</h1>
                     <p class="profile-handle" id="profileHandle">@username</p>
-                    <p id="profileBio" style="margin-bottom: 20px;">No bio yet</p>
+                    <p class="profile-bio" id="profileBio">No bio yet</p>
                     
                     <div class="profile-stats">
                         <div class="stat" onclick="app.showUserPosts()">
@@ -665,17 +1922,105 @@
                         </div>
                     </div>
                     
-                    <div style="display: flex; gap: 10px; margin-top: 20px;">
-                        <button class="post-btn" id="followBtn" style="flex: 1;">Follow</button>
-                        <button class="header-btn" onclick="app.messageUser()">
-                            <i class="fas fa-envelope"></i>
+                    <div class="profile-tabs">
+                        <button class="profile-tab active" onclick="app.showProfileTab('posts')">
+                            Posts
+                        </button>
+                        <button class="profile-tab" onclick="app.showProfileTab('media')">
+                            Media
+                        </button>
+                        <button class="profile-tab" onclick="app.showProfileTab('likes')">
+                            Likes
                         </button>
                     </div>
+                    
+                    <div id="profileContent">
+                        <div class="loading-state">
+                            <div class="loading-spinner-small"></div>
+                            <div>Loading profile content...</div>
+                        </div>
+                    </div>
                 </div>
-                <div id="profileContent" style="padding: 20px;">
-                    <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
-                        <div class="loading-spinner" style="margin: 0 auto 20px;"></div>
-                        Loading profile content...
+            </section>
+
+            <!-- Settings Page -->
+            <section id="settingsPage" class="page">
+                <div class="settings-container">
+                    <div class="settings-section">
+                        <div class="settings-header">Account</div>
+                        <div class="settings-item" onclick="app.editProfile()">
+                            <div class="settings-item-label">
+                                <div class="settings-item-title">Edit Profile</div>
+                                <div class="settings-item-description">Change your profile information</div>
+                            </div>
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                        <div class="settings-item" onclick="app.changePassword()">
+                            <div class="settings-item-label">
+                                <div class="settings-item-title">Change Password</div>
+                                <div class="settings-item-description">Update your account password</div>
+                            </div>
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                        <div class="settings-item" onclick="app.privacySettings()">
+                            <div class="settings-item-label">
+                                <div class="settings-item-title">Privacy & Security</div>
+                                <div class="settings-item-description">Manage your privacy settings</div>
+                            </div>
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="settings-section">
+                        <div class="settings-header">Preferences</div>
+                        <div class="settings-item">
+                            <div class="settings-item-label">
+                                <div class="settings-item-title">Dark Mode</div>
+                                <div class="settings-item-description">Toggle dark/light theme</div>
+                            </div>
+                            <label class="settings-switch">
+                                <input type="checkbox" id="themeToggle" checked>
+                                <span class="settings-slider"></span>
+                            </label>
+                        </div>
+                        <div class="settings-item" onclick="app.notificationSettings()">
+                            <div class="settings-item-label">
+                                <div class="settings-item-title">Notifications</div>
+                                <div class="settings-item-description">Configure notification preferences</div>
+                            </div>
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                        <div class="settings-item">
+                            <div class="settings-item-label">
+                                <div class="settings-item-title">Language</div>
+                                <div class="settings-item-description">English</div>
+                            </div>
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="settings-section">
+                        <div class="settings-header">About</div>
+                        <div class="settings-item">
+                            <div class="settings-item-label">
+                                <div class="settings-item-title">Version</div>
+                                <div class="settings-item-description">PrimeMar v1.0.0</div>
+                            </div>
+                        </div>
+                        <div class="settings-item" onclick="app.helpCenter()">
+                            <div class="settings-item-label">
+                                <div class="settings-item-title">Help & Support</div>
+                                <div class="settings-item-description">Get help and contact support</div>
+                            </div>
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                        <div class="settings-item" onclick="app.logout()" style="color: var(--accent);">
+                            <div class="settings-item-label">
+                                <div class="settings-item-title">Logout</div>
+                                <div class="settings-item-description">Sign out of your account</div>
+                            </div>
+                            <i class="fas fa-sign-out-alt" style="color: var(--accent);"></i>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -684,76 +2029,69 @@
         <!-- Bottom Navigation -->
         <nav class="bottom-nav">
             <div class="nav-item active" data-page="homePage">
-                <i class="fas fa-home"></i>
-                <div style="font-size: 11px; margin-top: 4px;">Home</div>
+                <div class="nav-icon"><i class="fas fa-home"></i></div>
+                <div class="nav-label">Home</div>
             </div>
             <div class="nav-item" data-page="messagesPage">
-                <i class="fas fa-comments"></i>
-                <div style="font-size: 11px; margin-top: 4px;">Messages</div>
+                <div class="nav-icon"><i class="fas fa-comments"></i></div>
+                <div class="nav-label">Messages</div>
+                <span class="nav-badge" id="messagesBadge" style="display: none;">0</span>
             </div>
-            <div class="nav-item" data-page="notificationsPage">
-                <i class="fas fa-bell"></i>
-                <div style="font-size: 11px; margin-top: 4px;">Alerts</div>
+            <div class="nav-item" data-page="groupsPage">
+                <div class="nav-icon"><i class="fas fa-users"></i></div>
+                <div class="nav-label">Groups</div>
             </div>
             <div class="nav-item" data-page="profilePage">
-                <i class="fas fa-user"></i>
-                <div style="font-size: 11px; margin-top: 4px;">Profile</div>
+                <div class="nav-icon"><i class="fas fa-user"></i></div>
+                <div class="nav-label">Profile</div>
             </div>
         </nav>
     </div>
 
-    <!-- Chat Modal -->
-    <div id="chatModal" class="modal-overlay" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="chatTitle">Chat</h3>
-                <button class="header-btn" onclick="app.closeChat()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div id="chatMessages" class="chat-messages"></div>
-                <div style="display: flex; gap: 10px; margin-top: 20px;">
-                    <input type="text" style="flex: 1; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--dark-border); border-radius: 20px; color: var(--text-dark);" id="chatInput" placeholder="Type a message...">
-                    <button class="post-btn" onclick="app.sendMessage()">
-                        <i class="fas fa-paper-plane"></i>
-                    </button>
-                </div>
-            </div>
+    <!-- Call Interface -->
+    <div class="call-container" id="callContainer">
+        <div class="call-header" id="callHeader">
+            Calling...
+        </div>
+        <div class="call-videos">
+            <video class="remote-video" id="remoteVideo" autoplay playsinline></video>
+            <video class="local-video" id="localVideo" autoplay playsinline muted></video>
+        </div>
+        <div class="call-controls">
+            <button class="call-btn call-mute" id="muteBtn">
+                <i class="fas fa-microphone"></i>
+            </button>
+            <button class="call-btn call-end" id="endCallBtn">
+                <i class="fas fa-phone"></i>
+            </button>
+            <button class="call-btn call-video" id="videoToggleBtn">
+                <i class="fas fa-video"></i>
+            </button>
         </div>
     </div>
 
-    <!-- Followers/Following Modal -->
-    <div id="followModal" class="modal-overlay" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="followModalTitle">Followers</h3>
-                <button class="header-btn" onclick="app.closeFollowModal()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div id="followList"></div>
-            </div>
-        </div>
-    </div>
+    <!-- Modals Container -->
+    <div id="modalsContainer"></div>
 
-    <!-- Story Viewer -->
-    <div id="storyViewer" class="modal-overlay" style="display: none;">
-        <div class="modal-content" style="background: transparent; border: none;">
-            <div style="position: absolute; top: 20px; right: 20px;">
-                <button class="header-btn" onclick="app.closeStory()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div id="storyContent" style="width: 100%; height: 70vh; background: black; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
-                <!-- Story content will be displayed here -->
-            </div>
-        </div>
-    </div>
+    <!-- Notifications Container -->
+    <div id="notificationsContainer"></div>
 
+    <!-- Service Worker Registration -->
     <script>
-    // ========== COMPLETE PRIMEMAR APP - EVERYTHING WORKS ==========
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js')
+                .then(registration => {
+                    console.log('Service Worker registered:', registration);
+                })
+                .catch(error => {
+                    console.error('Service Worker registration failed:', error);
+                });
+        }
+    </script>
+
+    <!-- Main Application Script -->
+    <script>
+    // ========== COMPLETE PRIMEMAR APPLICATION ==========
     class PrimeMar {
         constructor() {
             // Supabase Configuration
@@ -764,17 +2102,20 @@
             this.supabase = null;
             this.currentUser = null;
             this.userProfile = null;
-            this.isLoggedIn = false;
+            this.peer = null;
+            this.activeCall = null;
+            this.currentChat = null;
+            this.encryptionKey = null;
+            this.isDarkMode = true;
             
             // Data Stores
             this.posts = [];
             this.conversations = [];
+            this.groups = [];
             this.notifications = [];
             this.stories = [];
             this.followers = [];
             this.following = [];
-            this.currentChat = null;
-            this.currentStory = null;
             
             // Initialize
             this.init();
@@ -782,65 +2123,230 @@
 
         async init() {
             try {
+                this.updateLoadingText('Initializing application...');
+                
                 // Initialize Supabase
                 this.supabase = window.supabase.createClient(this.supabaseUrl, this.supabaseKey);
+                console.log('✓ Supabase initialized');
                 
-                // Check for existing session
-                const { data: { session } } = await this.supabase.auth.getSession();
+                // Setup encryption
+                await this.setupEncryption();
+                console.log('✓ Encryption setup complete');
                 
-                if (session) {
-                    this.currentUser = session.user;
-                    await this.loadUserProfile();
-                    this.showApp();
-                    await this.loadAllData();
-                } else {
-                    this.showAuth();
-                }
+                // Check authentication
+                await this.checkAuth();
+                
+                // Setup real-time subscriptions
+                this.setupRealtime();
+                console.log('✓ Real-time setup complete');
                 
                 // Setup event listeners
                 this.setupEventListeners();
+                console.log('✓ Event listeners setup complete');
                 
                 // Hide loading screen
-                document.getElementById('loadingScreen').style.display = 'none';
+                setTimeout(() => {
+                    document.getElementById('loadingScreen').style.opacity = '0';
+                    setTimeout(() => {
+                        document.getElementById('loadingScreen').style.display = 'none';
+                    }, 300);
+                }, 500);
                 
             } catch (error) {
                 console.error('Initialization error:', error);
+                this.showNotification('Failed to initialize application', 'error');
+            }
+        }
+
+        updateLoadingText(text) {
+            const element = document.getElementById('loadingText');
+            if (element) {
+                element.textContent = text;
+            }
+        }
+
+        async setupEncryption() {
+            const userId = localStorage.getItem('primemar-user-id') || 'default-key';
+            this.encryptionKey = CryptoJS.SHA256(userId + 'prime-mar-encryption-2024').toString();
+        }
+
+        encryptMessage(text) {
+            return CryptoJS.AES.encrypt(text, this.encryptionKey).toString();
+        }
+
+        decryptMessage(encrypted) {
+            try {
+                const bytes = CryptoJS.AES.decrypt(encrypted, this.encryptionKey);
+                return bytes.toString(CryptoJS.enc.Utf8);
+            } catch (error) {
+                return encrypted;
+            }
+        }
+
+        async checkAuth() {
+            const { data: { session }, error } = await this.supabase.auth.getSession();
+            
+            if (error) {
+                console.error('Session check error:', error);
+                this.showAuth();
+                return;
+            }
+            
+            if (session) {
+                this.currentUser = session.user;
+                await this.loadUserProfile();
+                this.showApp();
+                await this.loadAllData();
+            } else {
                 this.showAuth();
             }
+            
+            // Listen for auth changes
+            this.supabase.auth.onAuthStateChange((event, session) => {
+                console.log('Auth state changed:', event);
+                
+                if (event === 'SIGNED_IN' && session) {
+                    this.currentUser = session.user;
+                    this.loadUserProfile().then(() => {
+                        this.showApp();
+                        this.loadAllData();
+                    });
+                } else if (event === 'SIGNED_OUT') {
+                    this.currentUser = null;
+                    this.userProfile = null;
+                    this.showAuth();
+                }
+            });
         }
 
         async loadUserProfile() {
             if (!this.currentUser) return;
             
             try {
-                // Create or get user profile
-                const profileData = {
-                    id: this.currentUser.id,
-                    name: this.currentUser.user_metadata?.full_name || 'User',
-                    username: this.currentUser.user_metadata?.username || 'user_' + Date.now(),
-                    email: this.currentUser.email,
-                    bio: 'Welcome to my profile!',
-                    avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(this.currentUser.user_metadata?.full_name || 'User')}&background=ff9800&color=fff&size=256`
-                };
+                let { data: profile, error } = await this.supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', this.currentUser.id)
+                    .single();
+
+                if (error || !profile) {
+                    // Create new profile
+                    profile = {
+                        id: this.currentUser.id,
+                        name: this.currentUser.user_metadata?.full_name || 'New User',
+                        username: this.currentUser.user_metadata?.username || 
+                                 'user_' + Math.random().toString(36).substr(2, 8),
+                        email: this.currentUser.email,
+                        bio: 'Welcome to my PrimeMar profile!',
+                        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(this.currentUser.user_metadata?.full_name || 'User')}&background=ff9800&color=fff&size=256`,
+                        cover_image: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?ixlib=rb-4.0.3&auto=format&fit=crop&w=1350&q=80',
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString(),
+                        is_online: true,
+                        last_seen: new Date().toISOString()
+                    };
+                    
+                    const { error: insertError } = await this.supabase
+                        .from('profiles')
+                        .insert([profile]);
+                    
+                    if (insertError) throw insertError;
+                }
                 
-                // Try to insert profile, ignore if already exists
+                this.userProfile = profile;
+                this.updateProfileUI();
+                
+                // Update online status
                 await this.supabase
                     .from('profiles')
-                    .upsert([profileData], { onConflict: 'id' });
-                
-                this.userProfile = profileData;
-                this.updateProfileUI();
-                
+                    .update({ 
+                        is_online: true,
+                        last_seen: new Date().toISOString()
+                    })
+                    .eq('id', this.currentUser.id);
+                    
             } catch (error) {
                 console.error('Profile load error:', error);
-                this.userProfile = {
-                    id: this.currentUser.id,
-                    name: this.currentUser.user_metadata?.full_name || 'User',
-                    username: this.currentUser.user_metadata?.username || 'user_' + Date.now(),
-                    email: this.currentUser.email,
-                    bio: 'Welcome to my profile!'
-                };
-                this.updateProfileUI();
+                this.showNotification('Failed to load profile', 'error');
+            }
+        }
+
+        setupRealtime() {
+            // Setup real-time subscriptions for posts
+            const postsChannel = this.supabase
+                .channel('posts-channel')
+                .on('postgres_changes', 
+                    { event: 'INSERT', schema: 'public', table: 'posts' },
+                    payload => {
+                        this.handleNewPost(payload.new);
+                    }
+                )
+                .subscribe();
+
+            // Setup real-time for messages
+            const messagesChannel = this.supabase
+                .channel('messages-channel')
+                .on('postgres_changes',
+                    { event: 'INSERT', schema: 'public', table: 'messages' },
+                    payload => {
+                        this.handleNewMessage(payload.new);
+                    }
+                )
+                .subscribe();
+
+            // Setup presence for online status
+            const presenceChannel = this.supabase.channel('presence-channel')
+                .on('presence', { event: 'sync' }, () => {
+                    const state = presenceChannel.presenceState();
+                    this.handlePresenceState(state);
+                })
+                .subscribe(async (status) => {
+                    if (status === 'SUBSCRIBED') {
+                        await presenceChannel.track({
+                            user_id: this.currentUser?.id,
+                            online_at: new Date().toISOString(),
+                            user_name: this.userProfile?.name
+                        });
+                    }
+                });
+        }
+
+        handleNewPost(post) {
+            if (post.author_id !== this.currentUser.id) {
+                this.posts.unshift(post);
+                this.renderPosts();
+                this.showNotification(`New post from ${post.author_name || 'Someone'}`, 'info');
+            }
+        }
+
+        handleNewMessage(message) {
+            if (message.conversation_id === this.currentChat?.id) {
+                this.loadMessages(this.currentChat.id);
+            } else if (message.sender_id !== this.currentUser.id) {
+                this.showNotification(`New message from ${message.sender_name}`, 'info');
+                this.updateMessageBadge();
+            }
+        }
+
+        handlePresenceState(state) {
+            // Update online status for users
+            const onlineUsers = new Set();
+            Object.values(state).forEach(presences => {
+                presences.forEach(presence => {
+                    onlineUsers.add(presence.user_id);
+                });
+            });
+            
+            // Update UI for current chat user if online
+            if (this.currentChat) {
+                const otherUserId = this.currentChat.user1_id === this.currentUser.id ? 
+                    this.currentChat.user2_id : this.currentChat.user1_id;
+                
+                const isOnline = onlineUsers.has(otherUserId);
+                const onlineBadge = document.querySelector('.online-badge');
+                if (onlineBadge) {
+                    onlineBadge.style.background = isOnline ? 'var(--success)' : 'var(--dark-secondary)';
+                }
             }
         }
 
@@ -848,55 +2354,33 @@
             await Promise.all([
                 this.loadPosts(),
                 this.loadConversations(),
+                this.loadGroups(),
                 this.loadNotifications(),
                 this.loadStories(),
-                this.loadFollowStats(),
-                this.loadFollowers(),
-                this.loadFollowing()
+                this.loadFollowStats()
             ]);
         }
 
         async loadPosts() {
             try {
-                // Create sample posts for demo
-                const samplePosts = [
-                    {
-                        id: '1',
-                        author_id: this.currentUser.id,
-                        author_name: this.userProfile.name,
-                        author_username: this.userProfile.username,
-                        content: 'Welcome to PrimeMar! This is your first post. 🎉',
-                        created_at: new Date().toISOString(),
-                        likes: 5,
-                        comments: 2,
-                        is_liked: false
-                    },
-                    {
-                        id: '2',
-                        author_id: 'other1',
-                        author_name: 'John Doe',
-                        author_username: 'johndoe',
-                        content: 'Building amazing social experiences with PrimeMar! 🚀 #socialmedia',
-                        created_at: new Date(Date.now() - 3600000).toISOString(),
-                        likes: 42,
-                        comments: 8,
-                        is_liked: true
-                    },
-                    {
-                        id: '3',
-                        author_id: 'other2',
-                        author_name: 'Jane Smith',
-                        author_username: 'janesmith',
-                        content: 'Just posted my first story! Check it out! 📸',
-                        created_at: new Date(Date.now() - 7200000).toISOString(),
-                        likes: 28,
-                        comments: 3,
-                        is_liked: false
-                    }
-                ];
+                this.updateLoadingText('Loading posts...');
                 
-                this.posts = samplePosts;
+                const { data: posts, error } = await this.supabase
+                    .from('posts')
+                    .select(`
+                        *,
+                        author:profiles(name, username, avatar),
+                        likes:post_likes(count),
+                        comments:post_comments(count)
+                    `)
+                    .order('created_at', { ascending: false })
+                    .limit(20);
+
+                if (error) throw error;
+                
+                this.posts = posts || [];
                 this.renderPosts();
+                console.log('✓ Posts loaded:', this.posts.length);
                 
             } catch (error) {
                 console.error('Posts load error:', error);
@@ -907,39 +2391,24 @@
 
         async loadConversations() {
             try {
-                // Create sample conversations
-                const sampleConversations = [
-                    {
-                        id: '1',
-                        user_id: 'other1',
-                        user_name: 'John Doe',
-                        user_username: 'johndoe',
-                        last_message: 'Hey, how are you doing?',
-                        last_message_time: new Date(Date.now() - 300000).toISOString(),
-                        unread: 2
-                    },
-                    {
-                        id: '2',
-                        user_id: 'other2',
-                        user_name: 'Jane Smith',
-                        user_username: 'janesmith',
-                        last_message: 'Thanks for your help yesterday!',
-                        last_message_time: new Date(Date.now() - 1800000).toISOString(),
-                        unread: 0
-                    },
-                    {
-                        id: '3',
-                        user_id: 'other3',
-                        user_name: 'Support Team',
-                        user_username: 'support',
-                        last_message: 'Welcome to PrimeMar! How can we help?',
-                        last_message_time: new Date(Date.now() - 3600000).toISOString(),
-                        unread: 0
-                    }
-                ];
+                this.updateLoadingText('Loading conversations...');
                 
-                this.conversations = sampleConversations;
+                const { data: conversations, error } = await this.supabase
+                    .from('conversations')
+                    .select(`
+                        *,
+                        participant1:profiles!conversations_user1_id_fkey(name, username, avatar, is_online),
+                        participant2:profiles!conversations_user2_id_fkey(name, username, avatar, is_online)
+                    `)
+                    .or(`user1_id.eq.${this.currentUser.id},user2_id.eq.${this.currentUser.id}`)
+                    .order('updated_at', { ascending: false });
+
+                if (error) throw error;
+                
+                this.conversations = conversations || [];
                 this.renderConversations();
+                this.updateMessageBadge();
+                console.log('✓ Conversations loaded:', this.conversations.length);
                 
             } catch (error) {
                 console.error('Conversations load error:', error);
@@ -948,166 +2417,108 @@
             }
         }
 
+        async loadGroups() {
+            try {
+                this.updateLoadingText('Loading groups...');
+                
+                const { data: groups, error } = await this.supabase
+                    .from('groups')
+                    .select(`
+                        *,
+                        members:group_members(count),
+                        owner:profiles(name, username)
+                    `)
+                    .contains('members', [this.currentUser.id])
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+                
+                this.groups = groups || [];
+                this.renderGroups();
+                console.log('✓ Groups loaded:', this.groups.length);
+                
+            } catch (error) {
+                console.error('Groups load error:', error);
+                this.groups = [];
+                this.renderGroups();
+            }
+        }
+
         async loadNotifications() {
             try {
-                // Create sample notifications
-                const sampleNotifications = [
-                    {
-                        id: '1',
-                        type: 'like',
-                        message: 'John Doe liked your post',
-                        time: new Date(Date.now() - 300000).toISOString(),
-                        read: false
-                    },
-                    {
-                        id: '2',
-                        type: 'follow',
-                        message: 'Jane Smith started following you',
-                        time: new Date(Date.now() - 600000).toISOString(),
-                        read: false
-                    },
-                    {
-                        id: '3',
-                        type: 'comment',
-                        message: 'Mike commented on your photo: "Great shot!"',
-                        time: new Date(Date.now() - 900000).toISOString(),
-                        read: true
-                    },
-                    {
-                        id: '4',
-                        type: 'mention',
-                        message: 'You were mentioned in a post by Sarah',
-                        time: new Date(Date.now() - 1200000).toISOString(),
-                        read: true
-                    }
-                ];
+                const { data: notifications, error } = await this.supabase
+                    .from('notifications')
+                    .select('*')
+                    .eq('user_id', this.currentUser.id)
+                    .eq('read', false)
+                    .order('created_at', { ascending: false })
+                    .limit(20);
+
+                if (error) throw error;
                 
-                this.notifications = sampleNotifications;
-                this.renderNotifications();
+                this.notifications = notifications || [];
+                this.updateNotificationBadge();
+                console.log('✓ Notifications loaded:', this.notifications.length);
                 
             } catch (error) {
                 console.error('Notifications load error:', error);
-                this.notifications = [];
-                this.renderNotifications();
             }
         }
 
         async loadStories() {
             try {
-                // Create sample stories
-                const sampleStories = [
-                    {
-                        id: '1',
-                        user_id: 'other1',
-                        user_name: 'John Doe',
-                        user_username: 'johndoe',
-                        media_url: 'https://images.unsplash.com/photo-1579546929662-711aa81148cf?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80',
-                        created_at: new Date(Date.now() - 7200000).toISOString()
-                    },
-                    {
-                        id: '2',
-                        user_id: 'other2',
-                        user_name: 'Jane Smith',
-                        user_username: 'janesmith',
-                        media_url: 'https://images.unsplash.com/photo-1557683316-973673baf926?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80',
-                        created_at: new Date(Date.now() - 3600000).toISOString()
-                    },
-                    {
-                        id: '3',
-                        user_id: 'other3',
-                        user_name: 'Alex Johnson',
-                        user_username: 'alexj',
-                        media_url: 'https://images.unsplash.com/photo-1518709268805-4e9042af2176?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80',
-                        created_at: new Date(Date.now() - 1800000).toISOString()
-                    }
-                ];
+                const { data: stories, error } = await this.supabase
+                    .from('stories')
+                    .select(`
+                        *,
+                        user:profiles(name, username, avatar)
+                    `)
+                    .gt('expires_at', new Date().toISOString())
+                    .order('created_at', { ascending: false })
+                    .limit(10);
+
+                if (error) throw error;
                 
-                this.stories = sampleStories;
+                this.stories = stories || [];
                 this.renderStories();
+                console.log('✓ Stories loaded:', this.stories.length);
                 
             } catch (error) {
                 console.error('Stories load error:', error);
-                this.stories = [];
-                this.renderStories();
             }
         }
 
         async loadFollowStats() {
             try {
                 // Get followers count
-                const followersCount = this.followers.length;
+                const { count: followersCount } = await this.supabase
+                    .from('follows')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('following_id', this.currentUser.id)
+                    .eq('status', 'accepted');
                 
                 // Get following count
-                const followingCount = this.following.length;
+                const { count: followingCount } = await this.supabase
+                    .from('follows')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('follower_id', this.currentUser.id)
+                    .eq('status', 'accepted');
                 
                 // Get posts count
-                const postsCount = this.posts.filter(p => p.author_id === this.currentUser.id).length;
+                const { count: postsCount } = await this.supabase
+                    .from('posts')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('author_id', this.currentUser.id);
                 
                 // Update UI
-                document.getElementById('followersCount').textContent = followersCount;
-                document.getElementById('followingCount').textContent = followingCount;
-                document.getElementById('postsCount').textContent = postsCount;
+                document.getElementById('followersCount').textContent = followersCount || 0;
+                document.getElementById('followingCount').textContent = followingCount || 0;
+                document.getElementById('postsCount').textContent = postsCount || 0;
+                
+                console.log('✓ Follow stats loaded');
                 
             } catch (error) {
                 console.error('Follow stats load error:', error);
-            }
-        }
-
-        async loadFollowers() {
-            try {
-                // Create sample followers
-                const sampleFollowers = [
-                    {
-                        id: 'f1',
-                        name: 'John Doe',
-                        username: 'johndoe',
-                        avatar: 'J'
-                    },
-                    {
-                        id: 'f2',
-                        name: 'Jane Smith',
-                        username: 'janesmith',
-                        avatar: 'J'
-                    },
-                    {
-                        id: 'f3',
-                        name: 'Mike Johnson',
-                        username: 'mikej',
-                        avatar: 'M'
-                    }
-                ];
-                
-                this.followers = sampleFollowers;
-                
-            } catch (error) {
-                console.error('Followers load error:', error);
-                this.followers = [];
-            }
-        }
-
-        async loadFollowing() {
-            try {
-                // Create sample following
-                const sampleFollowing = [
-                    {
-                        id: 'f1',
-                        name: 'Tech News',
-                        username: 'technews',
-                        avatar: 'T'
-                    },
-                    {
-                        id: 'f2',
-                        name: 'Design Daily',
-                        username: 'designdaily',
-                        avatar: 'D'
-                    }
-                ];
-                
-                this.following = sampleFollowing;
-                
-            } catch (error) {
-                console.error('Following load error:', error);
-                this.following = [];
             }
         }
 
@@ -1115,14 +2526,22 @@
         updateProfileUI() {
             if (!this.userProfile) return;
             
-            document.getElementById('userAvatar').textContent = this.userProfile.name.charAt(0);
-            document.getElementById('profileAvatar').textContent = this.userProfile.name.charAt(0);
+            // Update avatar
+            const avatar = document.getElementById('userAvatar');
+            const profileAvatar = document.getElementById('profileAvatar');
+            if (avatar) avatar.textContent = this.userProfile.name.charAt(0);
+            if (profileAvatar) profileAvatar.textContent = this.userProfile.name.charAt(0);
+            
+            // Update profile info
             document.getElementById('profileName').textContent = this.userProfile.name;
             document.getElementById('profileHandle').textContent = '@' + this.userProfile.username;
-            document.getElementById('profileBio').textContent = this.userProfile.bio;
+            document.getElementById('profileBio').textContent = this.userProfile.bio || 'No bio yet';
             
-            // Hide follow button on own profile
-            document.getElementById('followBtn').style.display = 'none';
+            // Update cover image
+            const cover = document.getElementById('profileCover');
+            if (cover && this.userProfile.cover_image) {
+                cover.src = this.userProfile.cover_image;
+            }
         }
 
         renderPosts() {
@@ -1130,8 +2549,10 @@
             
             if (!this.posts.length) {
                 container.innerHTML = `
-                    <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
-                        <i class="fas fa-feather-alt" style="font-size: 48px; margin-bottom: 20px; opacity: 0.5;"></i>
+                    <div class="empty-state">
+                        <div class="empty-state-icon">
+                            <i class="fas fa-feather-alt"></i>
+                        </div>
                         <h3>No posts yet</h3>
                         <p>Be the first to share something!</p>
                     </div>
@@ -1139,33 +2560,48 @@
                 return;
             }
 
-            container.innerHTML = this.posts.map(post => `
-                <div class="post" data-post-id="${post.id}">
-                    <div class="post-header">
-                        <div class="avatar">${post.author_name.charAt(0)}</div>
-                        <div style="flex: 1;">
-                            <div style="font-weight: 600; font-size: 15px;">${post.author_name}</div>
-                            <div style="font-size: 13px; color: var(--text-secondary);">
-                                @${post.author_username} • ${this.formatTime(post.created_at)}
+            container.innerHTML = this.posts.map(post => {
+                const author = post.author || {};
+                const likesCount = post.likes?.[0]?.count || 0;
+                const commentsCount = post.comments?.[0]?.count || 0;
+                const isLiked = false; // Would check in real implementation
+                
+                return `
+                    <div class="post" data-post-id="${post.id}">
+                        <div class="post-header">
+                            <div class="avatar">${author.name?.charAt(0) || 'U'}</div>
+                            <div class="post-user-info">
+                                <div class="post-user-name" onclick="app.viewUserProfile('${post.author_id}')">
+                                    ${author.name || 'User'}
+                                </div>
+                                <div class="post-user-handle" onclick="app.viewUserProfile('${post.author_id}')">
+                                    @${author.username || 'user'}
+                                </div>
                             </div>
+                            <div class="post-time">${this.formatTime(post.created_at)}</div>
+                        </div>
+                        <div class="post-content">${this.formatPostContent(post.content)}</div>
+                        ${post.media_url ? `
+                            <div class="post-media">
+                                <img src="${post.media_url}" alt="Post image" onerror="this.style.display='none'">
+                            </div>
+                        ` : ''}
+                        <div class="post-actions">
+                            <button class="post-action ${isLiked ? 'liked' : ''}" onclick="app.likePost('${post.id}')">
+                                <i class="fas fa-heart"></i>
+                                <span class="post-action-count">${likesCount}</span>
+                            </button>
+                            <button class="post-action" onclick="app.showComments('${post.id}')">
+                                <i class="fas fa-comment"></i>
+                                <span class="post-action-count">${commentsCount}</span>
+                            </button>
+                            <button class="post-action" onclick="app.sharePost('${post.id}')">
+                                <i class="fas fa-share-alt"></i>
+                            </button>
                         </div>
                     </div>
-                    <div class="post-content">${this.formatPostContent(post.content)}</div>
-                    <div class="post-actions">
-                        <button class="post-action ${post.is_liked ? 'liked' : ''}" onclick="app.likePost('${post.id}')">
-                            <i class="fas fa-heart"></i>
-                            <span>${post.likes}</span>
-                        </button>
-                        <button class="post-action" onclick="app.commentOnPost('${post.id}')">
-                            <i class="fas fa-comment"></i>
-                            <span>${post.comments}</span>
-                        </button>
-                        <button class="post-action" onclick="app.sharePost('${post.id}')">
-                            <i class="fas fa-share-alt"></i>
-                        </button>
-                    </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
         renderConversations() {
@@ -1173,8 +2609,10 @@
             
             if (!this.conversations.length) {
                 container.innerHTML = `
-                    <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
-                        <i class="fas fa-comments" style="font-size: 48px; margin-bottom: 20px; opacity: 0.5;"></i>
+                    <div class="empty-state">
+                        <div class="empty-state-icon">
+                            <i class="fas fa-comments"></i>
+                        </div>
                         <h3>No conversations</h3>
                         <p>Start a conversation with someone!</p>
                     </div>
@@ -1182,53 +2620,64 @@
                 return;
             }
 
-            container.innerHTML = this.conversations.map(conv => `
-                <div class="conversation-item" onclick="app.openChat('${conv.id}')">
-                    <div class="avatar">${conv.user_name.charAt(0)}</div>
-                    <div style="flex: 1; margin-left: 12px;">
-                        <div style="display: flex; justify-content: space-between;">
-                            <div style="font-weight: 600;">${conv.user_name}</div>
-                            <div style="font-size: 12px; color: var(--text-secondary);">
-                                ${this.formatTime(conv.last_message_time)}
+            container.innerHTML = this.conversations.map(conv => {
+                const otherUser = conv.user1_id === this.currentUser.id ? 
+                    conv.participant2 : conv.participant1;
+                const isOnline = otherUser?.is_online || false;
+                
+                return `
+                    <div class="conversation-item" data-conv-id="${conv.id}" onclick="app.openConversation('${conv.id}')">
+                        <div class="avatar" style="position: relative;">
+                            ${otherUser?.name?.charAt(0) || 'U'}
+                            <div style="position: absolute; bottom: 0; right: 0; width: 10px; height: 10px; background: ${isOnline ? 'var(--success)' : 'var(--dark-secondary)'}; border-radius: 50%; border: 2px solid var(--dark-card);"></div>
+                        </div>
+                        <div style="flex: 1; margin-left: 1rem;">
+                            <div style="font-weight: 700; font-size: 1rem;">${otherUser?.name || 'User'}</div>
+                            <div style="font-size: 0.85rem; color: var(--dark-secondary); margin-top: 0.25rem;">
+                                @${otherUser?.username || 'user'}
                             </div>
                         </div>
-                        <div style="font-size: 14px; color: var(--text-secondary); margin-top: 4px;">
-                            ${conv.last_message}
-                        </div>
+                        <div class="conversation-unread" style="display: none;"></div>
                     </div>
-                    ${conv.unread > 0 ? `
-                        <div style="background: var(--primary); color: white; font-size: 12px; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">
-                            ${conv.unread}
-                        </div>
-                    ` : ''}
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
-        renderNotifications() {
-            const container = document.getElementById('notificationsList');
+        renderGroups() {
+            const container = document.getElementById('groupsList');
             
-            if (!this.notifications.length) {
+            if (!this.groups.length) {
                 container.innerHTML = `
-                    <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
-                        <i class="fas fa-bell-slash" style="font-size: 48px; margin-bottom: 20px; opacity: 0.5;"></i>
-                        <h3>No notifications</h3>
-                        <p>You're all caught up!</p>
+                    <div class="empty-state">
+                        <div class="empty-state-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <h3>No groups yet</h3>
+                        <p>Join or create a group to get started!</p>
                     </div>
                 `;
                 return;
             }
 
-            container.innerHTML = this.notifications.map(notif => `
-                <div class="notification-item ${!notif.read ? 'unread' : ''}">
-                    <div class="avatar" style="background: ${this.getNotificationColor(notif.type)};">
-                        <i class="fas fa-${this.getNotificationIcon(notif.type)}"></i>
-                    </div>
-                    <div style="flex: 1;">
-                        <div>${notif.message}</div>
-                        <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
-                            ${this.formatTime(notif.time)}
+            container.innerHTML = this.groups.map(group => `
+                <div class="group-card" onclick="app.openGroup('${group.id}')">
+                    <div class="group-header">
+                        <div class="group-avatar">
+                            <i class="fas fa-users"></i>
                         </div>
+                        <div class="group-info">
+                            <div class="group-name">${group.name}</div>
+                            <div class="group-members">
+                                ${group.members?.[0]?.count || 0} members • ${group.owner?.name || 'Unknown'}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="group-description">
+                        ${group.description || 'No description available'}
+                    </div>
+                    <div class="group-stats">
+                        <span><i class="fas fa-comment"></i> Active</span>
+                        <span><i class="fas fa-user-friends"></i> Members</span>
                     </div>
                 </div>
             `).join('');
@@ -1237,9 +2686,9 @@
         renderStories() {
             const container = document.getElementById('storiesContainer');
             
-            // Add "Add Story" button
+            // Add "Add Story" button first
             let html = `
-                <div class="story" onclick="app.createStory()">
+                <div class="story story-add" onclick="app.createStory()">
                     <div class="story-avatar">
                         <div class="story-avatar-inner">
                             <i class="fas fa-plus"></i>
@@ -1249,18 +2698,142 @@
                 </div>
             `;
             
+            // Add existing stories
             if (this.stories.length > 0) {
                 html += this.stories.map(story => `
                     <div class="story" onclick="app.viewStory('${story.id}')">
-                        <div class="story-avatar">
-                            <div class="story-avatar-inner">${story.user_name.charAt(0)}</div>
+                        <div class="story-avatar has-story">
+                            <div class="story-avatar-inner">
+                                ${story.user?.name?.charAt(0) || 'U'}
+                            </div>
                         </div>
-                        <div>${story.user_username}</div>
+                        <div>${story.user?.username || 'user'}</div>
                     </div>
                 `).join('');
             }
             
             container.innerHTML = html;
+        }
+
+        // ========== AUTHENTICATION METHODS ==========
+        async handleLogin() {
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            
+            if (!email || !password) {
+                this.showNotification('Please enter email and password', 'error');
+                return;
+            }
+            
+            try {
+                const { data, error } = await this.supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+                
+                if (error) throw error;
+                
+                this.currentUser = data.user;
+                await this.loadUserProfile();
+                this.showApp();
+                await this.loadAllData();
+                this.showNotification('Welcome back!', 'success');
+                
+            } catch (error) {
+                console.error('Login error:', error);
+                this.showNotification(error.message || 'Login failed. Please check your credentials.', 'error');
+            }
+        }
+
+        async handleSignup() {
+            const name = document.getElementById('signupName').value.trim();
+            const username = document.getElementById('signupUsername').value.trim();
+            const email = document.getElementById('signupEmail').value.trim();
+            const password = document.getElementById('signupPassword').value.trim();
+            
+            if (!name || !username || !email || !password) {
+                this.showNotification('Please fill all fields', 'error');
+                return;
+            }
+            
+            if (password.length < 6) {
+                this.showNotification('Password must be at least 6 characters', 'error');
+                return;
+            }
+            
+            if (username.length < 3) {
+                this.showNotification('Username must be at least 3 characters', 'error');
+                return;
+            }
+            
+            try {
+                // Check if username exists
+                const { data: existingUser } = await this.supabase
+                    .from('profiles')
+                    .select('username')
+                    .eq('username', username)
+                    .single();
+                
+                if (existingUser) {
+                    this.showNotification('Username already taken', 'error');
+                    return;
+                }
+                
+                // Create account
+                const { data, error } = await this.supabase.auth.signUp({
+                    email: email,
+                    password: password,
+                    options: {
+                        data: {
+                            full_name: name,
+                            username: username
+                        }
+                    }
+                });
+                
+                if (error) throw error;
+                
+                this.showNotification('Account created successfully!', 'success');
+                this.showLoginForm();
+                
+            } catch (error) {
+                console.error('Signup error:', error);
+                this.showNotification(error.message || 'Signup failed. Please try again.', 'error');
+            }
+        }
+
+        async logout() {
+            try {
+                // Update online status
+                if (this.currentUser) {
+                    await this.supabase
+                        .from('profiles')
+                        .update({ 
+                            is_online: false,
+                            last_seen: new Date().toISOString()
+                        })
+                        .eq('id', this.currentUser.id);
+                }
+                
+                // Sign out
+                await this.supabase.auth.signOut();
+                
+                // Reset app state
+                this.currentUser = null;
+                this.userProfile = null;
+                this.posts = [];
+                this.conversations = [];
+                this.groups = [];
+                this.notifications = [];
+                
+                // Show auth screen
+                this.showAuth();
+                this.showNotification('Logged out successfully', 'info');
+                
+            } catch (error) {
+                console.error('Logout error:', error);
+                this.showNotification('Logout failed', 'error');
+            }
         }
 
         // ========== POST METHODS ==========
@@ -1270,294 +2843,242 @@
             
             try {
                 const post = {
-                    id: 'post_' + Date.now(),
                     author_id: this.currentUser.id,
                     author_name: this.userProfile.name,
-                    author_username: this.userProfile.username,
                     content: content,
                     created_at: new Date().toISOString(),
-                    likes: 0,
-                    comments: 0,
-                    is_liked: false
+                    updated_at: new Date().toISOString()
                 };
                 
-                // Add to posts array
-                this.posts.unshift(post);
-                this.renderPosts();
+                const { error } = await this.supabase
+                    .from('posts')
+                    .insert([post]);
+                
+                if (error) throw error;
                 
                 // Clear composer
                 document.getElementById('postTextarea').value = '';
                 document.getElementById('postBtn').disabled = true;
                 
-                // Show success message
-                this.showToast('Post created successfully!', 'success');
+                // Add to local posts and re-render
+                post.author = {
+                    name: this.userProfile.name,
+                    username: this.userProfile.username,
+                    avatar: this.userProfile.avatar
+                };
+                post.likes = [{ count: 0 }];
+                post.comments = [{ count: 0 }];
                 
-                // Update posts count
-                await this.loadFollowStats();
+                this.posts.unshift(post);
+                this.renderPosts();
+                
+                this.showNotification('Post created successfully!', 'success');
                 
             } catch (error) {
                 console.error('Post creation error:', error);
-                this.showToast('Failed to create post', 'error');
+                this.showNotification('Failed to create post', 'error');
             }
         }
 
         async likePost(postId) {
             try {
-                const post = this.posts.find(p => p.id === postId);
-                if (!post) return;
+                const { error } = await this.supabase
+                    .from('post_likes')
+                    .insert([{
+                        post_id: postId,
+                        user_id: this.currentUser.id,
+                        created_at: new Date().toISOString()
+                    }]);
                 
-                if (post.is_liked) {
-                    // Unlike
-                    post.is_liked = false;
-                    post.likes = Math.max(0, post.likes - 1);
-                } else {
-                    // Like
-                    post.is_liked = true;
-                    post.likes += 1;
+                if (error) throw error;
+                
+                // Update local post likes count
+                const postElement = document.querySelector(`[data-post-id="${postId}"]`);
+                if (postElement) {
+                    const likeBtn = postElement.querySelector('.post-action');
+                    const countSpan = likeBtn.querySelector('.post-action-count');
                     
-                    // Create notification for post owner (if not own post)
-                    if (post.author_id !== this.currentUser.id) {
-                        const notification = {
-                            id: 'notif_' + Date.now(),
-                            type: 'like',
-                            message: `${this.userProfile.name} liked your post`,
-                            time: new Date().toISOString(),
-                            read: false
-                        };
-                        
-                        this.notifications.unshift(notification);
-                        this.renderNotifications();
-                    }
+                    likeBtn.classList.add('liked');
+                    countSpan.textContent = (parseInt(countSpan.textContent) || 0) + 1;
                 }
                 
-                // Re-render posts
-                this.renderPosts();
-                
-                this.showToast(post.is_liked ? 'Post liked!' : 'Post unliked', 'info');
+                this.showNotification('Post liked!', 'success');
                 
             } catch (error) {
                 console.error('Like error:', error);
             }
         }
 
-        async commentOnPost(postId) {
-            const comment = prompt('Enter your comment:');
-            if (!comment) return;
-            
-            try {
-                const post = this.posts.find(p => p.id === postId);
-                if (!post) return;
-                
-                // Increment comment count
-                post.comments += 1;
-                
-                // Create notification for post owner (if not own post)
-                if (post.author_id !== this.currentUser.id) {
-                    const notification = {
-                        id: 'notif_' + Date.now(),
-                        type: 'comment',
-                        message: `${this.userProfile.name} commented on your post: "${comment.substring(0, 50)}${comment.length > 50 ? '...' : ''}"`,
-                        time: new Date().toISOString(),
-                        read: false
-                    };
-                    
-                    this.notifications.unshift(notification);
-                    this.renderNotifications();
-                }
-                
-                // Re-render posts
-                this.renderPosts();
-                
-                this.showToast('Comment added!', 'success');
-                
-            } catch (error) {
-                console.error('Comment error:', error);
-                this.showToast('Failed to add comment', 'error');
-            }
-        }
-
-        async sharePost(postId) {
-            const post = this.posts.find(p => p.id === postId);
-            if (!post) return;
-            
-            try {
-                // Create notification for post owner (if not own post)
-                if (post.author_id !== this.currentUser.id) {
-                    const notification = {
-                        id: 'notif_' + Date.now(),
-                        type: 'share',
-                        message: `${this.userProfile.name} shared your post`,
-                        time: new Date().toISOString(),
-                        read: false
-                    };
-                    
-                    this.notifications.unshift(notification);
-                    this.renderNotifications();
-                }
-                
-                // Copy post link to clipboard
-                const link = `${window.location.origin}/post/${postId}`;
-                await navigator.clipboard.writeText(link);
-                
-                this.showToast('Post link copied to clipboard!', 'success');
-                
-            } catch (error) {
-                console.error('Share error:', error);
-                this.showToast('Failed to share post', 'error');
-            }
-        }
-
-        // ========== STORY METHODS ==========
-        async createStory() {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = 'image/*,video/*';
-            
-            input.onchange = async (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                
-                try {
-                    // Create story object
-                    const story = {
-                        id: 'story_' + Date.now(),
-                        user_id: this.currentUser.id,
-                        user_name: this.userProfile.name,
-                        user_username: this.userProfile.username,
-                        media_url: URL.createObjectURL(file),
-                        created_at: new Date().toISOString()
-                    };
-                    
-                    // Add to stories array
-                    this.stories.unshift(story);
-                    this.renderStories();
-                    
-                    this.showToast('Story created! It will expire in 24 hours.', 'success');
-                    
-                } catch (error) {
-                    console.error('Story creation error:', error);
-                    this.showToast('Failed to create story', 'error');
-                }
-            };
-            
-            input.click();
-        }
-
-        async viewStory(storyId) {
-            const story = this.stories.find(s => s.id === storyId);
-            if (!story) return;
-            
-            this.currentStory = story;
-            
-            // Show story viewer
-            const viewer = document.getElementById('storyViewer');
-            const content = document.getElementById('storyContent');
-            
-            content.innerHTML = `
-                <img src="${story.media_url}" style="max-width: 100%; max-height: 100%; object-fit: contain;" alt="Story">
-                <div style="position: absolute; bottom: 20px; left: 20px; right: 20px; color: white; text-align: center;">
-                    <div style="font-weight: 600;">${story.user_name}</div>
-                    <div style="font-size: 14px; opacity: 0.8;">@${story.user_username}</div>
-                </div>
-            `;
-            
-            viewer.style.display = 'flex';
-        }
-
-        closeStory() {
-            document.getElementById('storyViewer').style.display = 'none';
-            this.currentStory = null;
-        }
-
         // ========== MESSAGING METHODS ==========
-        async openChat(conversationId) {
+        async startNewChat() {
+            const username = prompt('Enter username to start chat with:');
+            if (!username) return;
+            
+            try {
+                // Find user by username
+                const { data: user, error } = await this.supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('username', username)
+                    .single();
+                
+                if (error || !user) {
+                    this.showNotification('User not found', 'error');
+                    return;
+                }
+                
+                if (user.id === this.currentUser.id) {
+                    this.showNotification('You cannot chat with yourself', 'error');
+                    return;
+                }
+                
+                // Check if conversation already exists
+                const existingConv = this.conversations.find(conv => 
+                    (conv.user1_id === this.currentUser.id && conv.user2_id === user.id) ||
+                    (conv.user1_id === user.id && conv.user2_id === this.currentUser.id)
+                );
+                
+                if (existingConv) {
+                    this.openConversation(existingConv.id);
+                    return;
+                }
+                
+                // Create new conversation
+                const conversation = {
+                    user1_id: this.currentUser.id,
+                    user2_id: user.id,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                };
+                
+                const { data: newConv, error: convError } = await this.supabase
+                    .from('conversations')
+                    .insert([conversation])
+                    .select(`
+                        *,
+                        participant1:profiles!conversations_user1_id_fkey(name, username, avatar),
+                        participant2:profiles!conversations_user2_id_fkey(name, username, avatar)
+                    `)
+                    .single();
+                
+                if (convError) throw convError;
+                
+                // Add to conversations list
+                this.conversations.unshift(newConv);
+                this.renderConversations();
+                
+                // Open the conversation
+                this.openConversation(newConv.id);
+                
+                this.showNotification(`Started chat with ${user.name}`, 'success');
+                
+            } catch (error) {
+                console.error('New chat error:', error);
+                this.showNotification('Failed to start chat', 'error');
+            }
+        }
+
+        async openConversation(conversationId) {
             const conversation = this.conversations.find(c => c.id === conversationId);
             if (!conversation) return;
             
             this.currentChat = conversation;
+            const otherUser = conversation.user1_id === this.currentUser.id ? 
+                conversation.participant2 : conversation.participant1;
             
-            // Update chat modal
-            document.getElementById('chatTitle').textContent = conversation.user_name;
-            document.getElementById('chatModal').style.display = 'flex';
+            // Update chat header
+            document.getElementById('chatPartnerInfo').innerHTML = `
+                <div class="avatar">${otherUser?.name?.charAt(0) || 'U'}</div>
+                <div>
+                    <div style="font-weight: 700;">${otherUser?.name || 'User'}</div>
+                    <div style="font-size: 0.85rem; color: var(--dark-secondary);">
+                        @${otherUser?.username || 'user'}
+                    </div>
+                </div>
+            `;
             
-            // Load chat messages
-            await this.loadChatMessages(conversationId);
+            // Update call buttons
+            document.getElementById('chatCallButtons').innerHTML = `
+                <button class="call-header-btn" onclick="app.startVoiceCall('${otherUser.id}')">
+                    <i class="fas fa-phone"></i>
+                </button>
+                <button class="call-header-btn" onclick="app.startVideoCall('${otherUser.id}')">
+                    <i class="fas fa-video"></i>
+                </button>
+            `;
             
-            // Clear unread count
-            conversation.unread = 0;
-            this.renderConversations();
+            // Show chat input
+            document.querySelector('.chat-input-container').style.display = 'flex';
+            
+            // Load messages
+            await this.loadMessages(conversationId);
+            
+            // Scroll to bottom
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            // Focus input
+            document.getElementById('chatInput').focus();
         }
 
-        async loadChatMessages(conversationId) {
+        async loadMessages(conversationId) {
             try {
-                // Create sample messages
-                const sampleMessages = [
-                    {
-                        id: '1',
-                        sender_id: 'other1',
-                        sender_name: 'John Doe',
-                        content: 'Hey, how are you doing?',
-                        time: new Date(Date.now() - 3600000).toISOString(),
-                        is_own: false
-                    },
-                    {
-                        id: '2',
-                        sender_id: this.currentUser.id,
-                        sender_name: this.userProfile.name,
-                        content: 'I\'m doing great! Thanks for asking.',
-                        time: new Date(Date.now() - 1800000).toISOString(),
-                        is_own: true
-                    },
-                    {
-                        id: '3',
-                        sender_id: 'other1',
-                        sender_name: 'John Doe',
-                        content: 'Want to catch up sometime this week?',
-                        time: new Date(Date.now() - 900000).toISOString(),
-                        is_own: false
-                    }
-                ];
+                const { data: messages, error } = await this.supabase
+                    .from('messages')
+                    .select('*')
+                    .eq('conversation_id', conversationId)
+                    .order('created_at', { ascending: true })
+                    .limit(100);
                 
-                this.renderChatMessages(sampleMessages);
+                if (error) throw error;
+                
+                this.renderMessages(messages || []);
                 
             } catch (error) {
-                console.error('Chat messages load error:', error);
+                console.error('Messages load error:', error);
             }
         }
 
-        renderChatMessages(messages) {
+        renderMessages(messages) {
             const container = document.getElementById('chatMessages');
             
             if (!messages.length) {
                 container.innerHTML = `
-                    <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
-                        <i class="fas fa-comment-slash" style="font-size: 48px; margin-bottom: 20px; opacity: 0.5;"></i>
+                    <div class="empty-state" style="padding: 2rem;">
+                        <div class="empty-state-icon">
+                            <i class="fas fa-comment-slash"></i>
+                        </div>
                         <h3>No messages yet</h3>
                         <p>Start the conversation!</p>
                     </div>
                 `;
                 return;
             }
-
-            container.innerHTML = messages.map(msg => `
-                <div class="message ${msg.is_own ? 'own' : ''}">
-                    ${!msg.is_own ? `<div class="avatar">${msg.sender_name.charAt(0)}</div>` : ''}
-                    <div>
-                        <div class="message-content">${msg.content}</div>
-                        <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px; text-align: ${msg.is_own ? 'right' : 'left'};">
-                            ${this.formatTime(msg.time)}
-                        </div>
-                    </div>
-                    ${msg.is_own ? `<div class="avatar">${msg.sender_name.charAt(0)}</div>` : ''}
-                </div>
-            `).join('');
             
-            // Scroll to bottom
-            container.scrollTop = container.scrollHeight;
+            container.innerHTML = messages.map(msg => {
+                const isOwn = msg.sender_id === this.currentUser.id;
+                const decryptedContent = this.decryptMessage(msg.content);
+                
+                return `
+                    <div class="message ${isOwn ? 'own' : ''}">
+                        ${!isOwn ? '<div class="avatar" style="width: 36px; height: 36px; font-size: 0.9rem;">' + 
+                            (msg.sender_name?.charAt(0) || 'U') + '</div>' : ''}
+                        <div>
+                            <div class="message-content">${decryptedContent}</div>
+                            <div class="message-time">${this.formatTime(msg.created_at)}</div>
+                        </div>
+                        ${isOwn ? '<div class="avatar" style="width: 36px; height: 36px; font-size: 0.9rem;">' + 
+                            this.userProfile.name.charAt(0) + '</div>' : ''}
+                    </div>
+                `;
+            }).join('');
         }
 
         async sendMessage() {
-            if (!this.currentChat) return;
+            if (!this.currentChat) {
+                this.showNotification('No conversation selected', 'error');
+                return;
+            }
             
             const input = document.getElementById('chatInput');
             const content = input.value.trim();
@@ -1565,307 +3086,303 @@
             if (!content) return;
             
             try {
-                // Create message object
+                const encryptedContent = this.encryptMessage(content);
+                
                 const message = {
-                    id: 'msg_' + Date.now(),
+                    conversation_id: this.currentChat.id,
                     sender_id: this.currentUser.id,
                     sender_name: this.userProfile.name,
-                    content: content,
-                    time: new Date().toISOString(),
-                    is_own: true
+                    content: encryptedContent,
+                    created_at: new Date().toISOString()
                 };
                 
-                // Add to chat
-                const container = document.getElementById('chatMessages');
-                const messageDiv = document.createElement('div');
-                messageDiv.className = 'message own';
-                messageDiv.innerHTML = `
-                    <div class="avatar">${message.sender_name.charAt(0)}</div>
-                    <div>
-                        <div class="message-content">${message.content}</div>
-                        <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px; text-align: right;">
-                            just now
-                        </div>
-                    </div>
-                `;
-                container.appendChild(messageDiv);
+                const { error } = await this.supabase
+                    .from('messages')
+                    .insert([message]);
+                
+                if (error) throw error;
                 
                 // Clear input
                 input.value = '';
                 
-                // Update conversation last message
-                this.currentChat.last_message = content;
-                this.currentChat.last_message_time = new Date().toISOString();
-                this.currentChat.unread = 0;
+                // Reload messages
+                await this.loadMessages(this.currentChat.id);
                 
-                // Re-render conversations
-                this.renderConversations();
+                // Update conversation timestamp
+                await this.supabase
+                    .from('conversations')
+                    .update({ updated_at: new Date().toISOString() })
+                    .eq('id', this.currentChat.id);
                 
                 // Scroll to bottom
-                container.scrollTop = container.scrollHeight;
+                const chatMessages = document.getElementById('chatMessages');
+                chatMessages.scrollTop = chatMessages.scrollHeight;
                 
             } catch (error) {
                 console.error('Send message error:', error);
-                this.showToast('Failed to send message', 'error');
+                this.showNotification('Failed to send message', 'error');
             }
         }
 
-        closeChat() {
-            document.getElementById('chatModal').style.display = 'none';
-            document.getElementById('chatInput').value = '';
-            this.currentChat = null;
-        }
-
-        // ========== FOLLOW METHODS ==========
-        async showFollowers() {
-            document.getElementById('followModalTitle').textContent = 'Followers';
-            document.getElementById('followModal').style.display = 'flex';
-            
-            const container = document.getElementById('followList');
-            
-            if (!this.followers.length) {
-                container.innerHTML = `
-                    <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
-                        <i class="fas fa-user-friends" style="font-size: 48px; margin-bottom: 20px; opacity: 0.5;"></i>
-                        <h3>No followers yet</h3>
-                        <p>Share your profile to get followers!</p>
-                    </div>
-                `;
-                return;
+        // ========== CALL METHODS ==========
+        async startVoiceCall(userId) {
+            try {
+                this.showNotification('Starting voice call...', 'info');
+                
+                if (!this.peer) {
+                    this.peer = new Peer(this.currentUser.id);
+                    this.setupPeerListeners();
+                }
+                
+                // Get audio stream
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: true, 
+                    video: false 
+                });
+                
+                // Setup local video element for audio-only call
+                const localVideo = document.getElementById('localVideo');
+                localVideo.srcObject = stream;
+                
+                // Make call
+                const call = this.peer.call(userId, stream, {
+                    metadata: {
+                        type: 'voice',
+                        callerName: this.userProfile.name,
+                        callerId: this.currentUser.id
+                    }
+                });
+                
+                this.setupCall(call);
+                
+                // Show call interface
+                document.getElementById('callContainer').classList.add('active');
+                document.getElementById('callHeader').textContent = 'Calling...';
+                
+            } catch (error) {
+                console.error('Voice call error:', error);
+                this.showNotification('Failed to start call', 'error');
             }
-            
-            container.innerHTML = this.followers.map(follower => `
-                <div style="display: flex; align-items: center; padding: 15px; border-bottom: 1px solid var(--dark-border);">
-                    <div class="avatar">${follower.avatar}</div>
-                    <div style="flex: 1; margin-left: 12px;">
-                        <div style="font-weight: 600;">${follower.name}</div>
-                        <div style="font-size: 14px; color: var(--text-secondary);">@${follower.username}</div>
-                    </div>
-                    <button class="post-btn" style="padding: 8px 16px;" onclick="app.followUser('${follower.id}')">
-                        Follow
-                    </button>
-                </div>
-            `).join('');
         }
 
-        async showFollowing() {
-            document.getElementById('followModalTitle').textContent = 'Following';
-            document.getElementById('followModal').style.display = 'flex';
-            
-            const container = document.getElementById('followList');
-            
-            if (!this.following.length) {
-                container.innerHTML = `
-                    <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
-                        <i class="fas fa-user-friends" style="font-size: 48px; margin-bottom: 20px; opacity: 0.5;"></i>
-                        <h3>Not following anyone</h3>
-                        <p>Follow people to see their posts here!</p>
-                    </div>
-                `;
-                return;
+        async startVideoCall(userId) {
+            try {
+                this.showNotification('Starting video call...', 'info');
+                
+                if (!this.peer) {
+                    this.peer = new Peer(this.currentUser.id);
+                    this.setupPeerListeners();
+                }
+                
+                // Get audio and video stream
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: true, 
+                    video: true 
+                });
+                
+                // Setup local video
+                const localVideo = document.getElementById('localVideo');
+                localVideo.srcObject = stream;
+                
+                // Make call
+                const call = this.peer.call(userId, stream, {
+                    metadata: {
+                        type: 'video',
+                        callerName: this.userProfile.name,
+                        callerId: this.currentUser.id
+                    }
+                });
+                
+                this.setupCall(call);
+                
+                // Show call interface
+                document.getElementById('callContainer').classList.add('active');
+                document.getElementById('callHeader').textContent = 'Calling...';
+                
+            } catch (error) {
+                console.error('Video call error:', error);
+                this.showNotification('Failed to start video call', 'error');
             }
-            
-            container.innerHTML = this.following.map(following => `
-                <div style="display: flex; align-items: center; padding: 15px; border-bottom: 1px solid var(--dark-border);">
-                    <div class="avatar">${following.avatar}</div>
-                    <div style="flex: 1; margin-left: 12px;">
-                        <div style="font-weight: 600;">${following.name}</div>
-                        <div style="font-size: 14px; color: var(--text-secondary);">@${following.username}</div>
-                    </div>
-                    <button class="post-btn" style="padding: 8px 16px; background: var(--accent);" onclick="app.unfollowUser('${following.id}')">
-                        Unfollow
-                    </button>
-                </div>
-            `).join('');
         }
 
-        async followUser(userId) {
-            // In a real app, you would make an API call here
-            this.showToast('User followed successfully!', 'success');
+        setupPeerListeners() {
+            this.peer.on('call', call => {
+                // Show incoming call notification
+                const callerName = call.metadata.callerName || 'Someone';
+                const callType = call.metadata.type === 'video' ? 'video' : 'voice';
+                
+                if (confirm(`Incoming ${callType} call from ${callerName}. Accept?`)) {
+                    // Get media stream based on call type
+                    const mediaConstraints = {
+                        audio: true,
+                        video: callType === 'video'
+                    };
+                    
+                    navigator.mediaDevices.getUserMedia(mediaConstraints)
+                        .then(stream => {
+                            // Setup local video
+                            const localVideo = document.getElementById('localVideo');
+                            localVideo.srcObject = stream;
+                            
+                            // Answer call
+                            call.answer(stream);
+                            
+                            // Setup call
+                            this.setupCall(call);
+                            
+                            // Show call interface
+                            document.getElementById('callContainer').classList.add('active');
+                            document.getElementById('callHeader').textContent = `In call with ${callerName}`;
+                            
+                            this.showNotification('Call connected', 'success');
+                        })
+                        .catch(error => {
+                            console.error('Error getting media for call:', error);
+                            this.showNotification('Failed to answer call', 'error');
+                        });
+                } else {
+                    // Reject call
+                    this.showNotification('Call declined', 'info');
+                }
+            });
+        }
+
+        setupCall(call) {
+            this.activeCall = call;
             
-            // Update follow stats
-            this.followers.push({
-                id: userId,
-                name: 'New Follower',
-                username: 'newfollower',
-                avatar: 'N'
+            call.on('stream', remoteStream => {
+                // Setup remote video
+                const remoteVideo = document.getElementById('remoteVideo');
+                remoteVideo.srcObject = remoteStream;
+                
+                // Update call header
+                const callerName = call.metadata.callerName || 'User';
+                document.getElementById('callHeader').textContent = `In call with ${callerName}`;
             });
             
-            await this.loadFollowStats();
-            this.closeFollowModal();
+            call.on('close', () => {
+                this.endCall();
+                this.showNotification('Call ended', 'info');
+            });
+            
+            call.on('error', error => {
+                console.error('Call error:', error);
+                this.endCall();
+                this.showNotification('Call failed', 'error');
+            });
         }
 
-        async unfollowUser(userId) {
-            // In a real app, you would make an API call here
-            this.showToast('User unfollowed', 'info');
-            
-            // Update follow stats
-            this.following = this.following.filter(f => f.id !== userId);
-            
-            await this.loadFollowStats();
-            this.closeFollowModal();
-        }
-
-        closeFollowModal() {
-            document.getElementById('followModal').style.display = 'none';
-        }
-
-        // ========== PROFILE METHODS ==========
-        async editProfile() {
-            const name = prompt('Enter your name:', this.userProfile.name);
-            if (name === null) return;
-            
-            const username = prompt('Enter username:', this.userProfile.username);
-            if (username === null) return;
-            
-            const bio = prompt('Enter bio:', this.userProfile.bio);
-            
-            try {
-                // Update user profile
-                this.userProfile.name = name;
-                this.userProfile.username = username;
-                this.userProfile.bio = bio || this.userProfile.bio;
-                
-                // Update UI
-                this.updateProfileUI();
-                
-                this.showToast('Profile updated successfully!', 'success');
-                
-            } catch (error) {
-                console.error('Profile update error:', error);
-                this.showToast('Failed to update profile', 'error');
+        endCall() {
+            if (this.activeCall) {
+                this.activeCall.close();
+                this.activeCall = null;
             }
+            
+            // Stop all media tracks
+            const localVideo = document.getElementById('localVideo');
+            const remoteVideo = document.getElementById('remoteVideo');
+            
+            [localVideo, remoteVideo].forEach(video => {
+                if (video.srcObject) {
+                    video.srcObject.getTracks().forEach(track => track.stop());
+                    video.srcObject = null;
+                }
+            });
+            
+            // Hide call interface
+            document.getElementById('callContainer').classList.remove('active');
         }
 
-        async showUserPosts() {
-            const userPosts = this.posts.filter(p => p.author_id === this.currentUser.id);
-            
-            const container = document.getElementById('profileContent');
-            
-            if (!userPosts.length) {
-                container.innerHTML = `
-                    <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
-                        <i class="fas fa-feather-alt" style="font-size: 48px; margin-bottom: 20px; opacity: 0.5;"></i>
-                        <h3>No posts yet</h3>
-                        <p>Create your first post!</p>
+        // ========== GROUP METHODS ==========
+        async showCreateGroupModal() {
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2 class="modal-title">Create New Group</h2>
+                        <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">
+                            &times;
+                        </button>
                     </div>
-                `;
-                return;
-            }
-            
-            container.innerHTML = userPosts.map(post => `
-                <div class="post" style="margin-bottom: 15px;">
-                    <div class="post-content">${post.content}</div>
-                    <div style="font-size: 12px; color: var(--text-secondary); margin-top: 8px;">
-                        ${this.formatTime(post.created_at)} • ${post.likes} likes • ${post.comments} comments
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label class="form-label">Group Name</label>
+                            <input type="text" class="form-input" id="groupNameInput" placeholder="Enter group name">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Description</label>
+                            <textarea class="form-input" id="groupDescInput" placeholder="Enter group description" rows="3"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Privacy</label>
+                            <select class="form-input" id="groupPrivacySelect">
+                                <option value="public">Public (Anyone can join)</option>
+                                <option value="private">Private (Invite only)</option>
+                            </select>
+                        </div>
+                        <button class="auth-btn" style="width: 100%; margin-top: 1rem;" onclick="app.createGroup()">
+                            <i class="fas fa-plus"></i> Create Group
+                        </button>
                     </div>
                 </div>
-            `).join('');
+            `;
+            
+            document.getElementById('modalsContainer').appendChild(modal);
         }
 
-        async messageUser() {
-            // Create a new conversation
-            const conversation = {
-                id: 'conv_' + Date.now(),
-                user_id: this.userProfile.id,
-                user_name: this.userProfile.name,
-                user_username: this.userProfile.username,
-                last_message: 'Hello!',
-                last_message_time: new Date().toISOString(),
-                unread: 0
-            };
+        async createGroup() {
+            const name = document.getElementById('groupNameInput')?.value.trim();
+            const description = document.getElementById('groupDescInput')?.value.trim();
+            const privacy = document.getElementById('groupPrivacySelect')?.value;
             
-            this.conversations.unshift(conversation);
-            this.renderConversations();
-            
-            // Open chat
-            this.openChat(conversation.id);
-            
-            this.showToast('Started new conversation', 'info');
-        }
-
-        // ========== AUTHENTICATION METHODS ==========
-        async handleLogin() {
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
-            
-            if (!email || !password) {
-                this.showToast('Please enter email and password', 'error');
+            if (!name) {
+                this.showNotification('Please enter group name', 'error');
                 return;
             }
             
             try {
-                // For demo purposes, accept any email/password
-                // In production, you would use Supabase auth
-                this.currentUser = {
-                    id: 'user_' + Date.now(),
-                    email: email,
-                    user_metadata: {
-                        full_name: email.split('@')[0],
-                        username: email.split('@')[0].toLowerCase()
-                    }
+                const group = {
+                    name: name,
+                    description: description,
+                    owner_id: this.currentUser.id,
+                    is_private: privacy === 'private',
+                    members: [this.currentUser.id],
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
                 };
                 
-                await this.loadUserProfile();
-                this.showApp();
-                await this.loadAllData();
+                const { data: newGroup, error } = await this.supabase
+                    .from('groups')
+                    .insert([group])
+                    .select(`
+                        *,
+                        members:group_members(count),
+                        owner:profiles(name)
+                    `)
+                    .single();
                 
-                this.showToast('Welcome to PrimeMar!', 'success');
+                if (error) throw error;
                 
-            } catch (error) {
-                console.error('Login error:', error);
-                this.showToast('Login failed', 'error');
-            }
-        }
-
-        async handleSignup() {
-            const name = document.getElementById('signupName').value;
-            const username = document.getElementById('signupUsername').value;
-            const email = document.getElementById('signupEmail').value;
-            const password = document.getElementById('signupPassword').value;
-            
-            if (!name || !username || !email || !password) {
-                this.showToast('Please fill all fields', 'error');
-                return;
-            }
-            
-            try {
-                // For demo purposes, create user
-                this.currentUser = {
-                    id: 'user_' + Date.now(),
-                    email: email,
-                    user_metadata: {
-                        full_name: name,
-                        username: username.toLowerCase()
-                    }
-                };
+                // Add to groups list
+                this.groups.unshift(newGroup);
+                this.renderGroups();
                 
-                await this.loadUserProfile();
-                this.showApp();
-                await this.loadAllData();
+                // Close modal
+                document.querySelector('.modal-overlay')?.remove();
                 
-                this.showToast('Account created successfully!', 'success');
+                this.showNotification(`Group "${name}" created successfully!`, 'success');
                 
             } catch (error) {
-                console.error('Signup error:', error);
-                this.showToast('Signup failed', 'error');
+                console.error('Group creation error:', error);
+                this.showNotification('Failed to create group', 'error');
             }
-        }
-
-        async logout() {
-            this.currentUser = null;
-            this.userProfile = null;
-            this.posts = [];
-            this.conversations = [];
-            this.notifications = [];
-            this.stories = [];
-            
-            this.showAuth();
-            this.showToast('Logged out successfully', 'info');
         }
 
         // ========== UTILITY METHODS ==========
         formatTime(timestamp) {
+            if (!timestamp) return 'just now';
+            
             const now = new Date();
             const time = new Date(timestamp);
             const diff = now - time;
@@ -1874,88 +3391,86 @@
             const minutes = Math.floor(seconds / 60);
             const hours = Math.floor(minutes / 60);
             const days = Math.floor(hours / 24);
+            const weeks = Math.floor(days / 7);
+            const months = Math.floor(days / 30);
+            const years = Math.floor(days / 365);
             
             if (seconds < 60) return 'just now';
             if (minutes < 60) return `${minutes}m ago`;
             if (hours < 24) return `${hours}h ago`;
             if (days < 7) return `${days}d ago`;
-            return time.toLocaleDateString();
+            if (weeks < 4) return `${weeks}w ago`;
+            if (months < 12) return `${months}mo ago`;
+            return `${years}y ago`;
         }
 
         formatPostContent(content) {
+            if (!content) return '';
+            
             return content
                 .replace(/&/g, '&amp;')
                 .replace(/</g, '&lt;')
                 .replace(/>/g, '&gt;')
                 .replace(/\n/g, '<br>')
-                .replace(/#(\w+)/g, '<span style="color: var(--primary);">#$1</span>')
-                .replace(/@(\w+)/g, '<span style="color: var(--secondary);">@$1</span>');
+                .replace(/#(\w+)/g, '<span style="color: var(--primary); cursor: pointer;" onclick="app.searchHashtag(\'$1\')">#$1</span>')
+                .replace(/@(\w+)/g, '<span style="color: var(--secondary); cursor: pointer;" onclick="app.searchUser(\'$1\')">@$1</span>');
         }
 
-        getNotificationColor(type) {
-            switch(type) {
-                case 'like': return 'var(--accent)';
-                case 'comment': return 'var(--info)';
-                case 'follow': return 'var(--success)';
-                case 'mention': return 'var(--primary)';
-                default: return 'var(--primary)';
-            }
-        }
-
-        getNotificationIcon(type) {
-            switch(type) {
-                case 'like': return 'heart';
-                case 'comment': return 'comment';
-                case 'follow': return 'user-plus';
-                case 'mention': return 'at';
-                default: return 'bell';
-            }
-        }
-
-        showToast(message, type = 'info') {
-            // Create toast element
-            const toast = document.createElement('div');
-            toast.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                background: ${type === 'error' ? 'var(--accent)' : type === 'success' ? 'var(--success)' : 'var(--primary)'};
-                color: white;
-                padding: 15px 20px;
-                border-radius: 10px;
-                font-weight: 600;
-                z-index: 3000;
-                animation: slideIn 0.3s ease;
+        showNotification(message, type = 'info') {
+            const container = document.getElementById('notificationsContainer');
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            
+            const icons = {
+                success: 'fas fa-check-circle',
+                error: 'fas fa-exclamation-circle',
+                info: 'fas fa-info-circle',
+                warning: 'fas fa-exclamation-triangle'
+            };
+            
+            notification.innerHTML = `
+                <div class="notification-icon">
+                    <i class="${icons[type] || icons.info}"></i>
+                </div>
+                <div class="notification-content">
+                    <div class="notification-title">${message}</div>
+                    <div class="notification-message">${new Date().toLocaleTimeString()}</div>
+                </div>
+                <button class="notification-close" onclick="this.parentElement.remove()">
+                    <i class="fas fa-times"></i>
+                </button>
             `;
             
-            toast.textContent = message;
-            document.body.appendChild(toast);
+            container.appendChild(notification);
             
-            // Remove after 3 seconds
+            // Show notification
+            setTimeout(() => notification.classList.add('show'), 10);
+            
+            // Auto-remove after 5 seconds
             setTimeout(() => {
-                toast.style.animation = 'slideOut 0.3s ease';
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
-            
-            // Add CSS for animations
-            if (!document.querySelector('#toast-styles')) {
-                const style = document.createElement('style');
-                style.id = 'toast-styles';
-                style.textContent = `
-                    @keyframes slideIn {
-                        from { transform: translateX(100%); opacity: 0; }
-                        to { transform: translateX(0); opacity: 1; }
-                    }
-                    @keyframes slideOut {
-                        from { transform: translateX(0); opacity: 1; }
-                        to { transform: translateX(100%); opacity: 0; }
-                    }
-                `;
-                document.head.appendChild(style);
+                notification.classList.remove('show');
+                setTimeout(() => notification.remove(), 300);
+            }, 5000);
+        }
+
+        updateMessageBadge() {
+            const badge = document.getElementById('messagesBadge');
+            if (badge) {
+                const unreadCount = this.conversations.filter(c => c.unread_count > 0).length;
+                badge.textContent = unreadCount > 9 ? '9+' : unreadCount;
+                badge.style.display = unreadCount > 0 ? 'flex' : 'none';
             }
         }
 
-        // ========== UI NAVIGATION ==========
+        updateNotificationBadge() {
+            const badge = document.getElementById('notificationBadge');
+            if (badge) {
+                const count = this.notifications.length;
+                badge.textContent = count > 9 ? '9+' : count;
+                badge.style.display = count > 0 ? 'flex' : 'none';
+            }
+        }
+
         showAuth() {
             document.getElementById('authScreen').style.display = 'flex';
             document.getElementById('appContainer').classList.remove('active');
@@ -1970,28 +3485,45 @@
         showLoginForm() {
             document.getElementById('loginForm').style.display = 'block';
             document.getElementById('signupForm').style.display = 'none';
+            
+            // Clear form fields
+            document.getElementById('loginEmail').value = '';
+            document.getElementById('loginPassword').value = '';
         }
 
         showSignupForm() {
             document.getElementById('loginForm').style.display = 'none';
             document.getElementById('signupForm').style.display = 'block';
+            
+            // Clear form fields
+            document.getElementById('signupName').value = '';
+            document.getElementById('signupUsername').value = '';
+            document.getElementById('signupEmail').value = '';
+            document.getElementById('signupPassword').value = '';
         }
 
         showPage(pageId) {
+            // Hide all pages
             document.querySelectorAll('.page').forEach(page => {
                 page.classList.remove('active');
             });
+            
+            // Show selected page
             document.getElementById(pageId).classList.add('active');
             
+            // Update navigation
             document.querySelectorAll('.nav-item').forEach(nav => {
                 nav.classList.remove('active');
                 if (nav.getAttribute('data-page') === pageId) {
                     nav.classList.add('active');
                 }
             });
+            
+            // Hide search results
+            document.getElementById('searchResults').classList.remove('active');
         }
 
-        // ========== EVENT LISTENERS ==========
+        // ========== EVENT LISTENERS SETUP ==========
         setupEventListeners() {
             // Auth buttons
             document.getElementById('loginBtn').addEventListener('click', () => this.handleLogin());
@@ -2009,26 +3541,52 @@
             
             // Header buttons
             document.getElementById('profileBtn').addEventListener('click', () => this.showPage('profilePage'));
-            document.getElementById('notificationsBtn').addEventListener('click', () => this.showPage('notificationsPage'));
-            
-            // Post composer
-            document.getElementById('postTextarea').addEventListener('input', (e) => {
-                document.getElementById('postBtn').disabled = !e.target.value.trim();
+            document.getElementById('settingsBtn').addEventListener('click', () => this.showPage('settingsPage'));
+            document.getElementById('notificationsBtn').addEventListener('click', () => {
+                this.showNotification('Notifications feature coming soon', 'info');
             });
             
-            document.getElementById('postBtn').addEventListener('click', () => this.createPost());
+            // Post composer
+            const postTextarea = document.getElementById('postTextarea');
+            const postBtn = document.getElementById('postBtn');
+            
+            postTextarea.addEventListener('input', () => {
+                postBtn.disabled = !postTextarea.value.trim();
+            });
+            
+            postBtn.addEventListener('click', () => this.createPost());
             
             // Enter key for post
-            document.getElementById('postTextarea').addEventListener('keydown', (e) => {
+            postTextarea.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
-                    if (!document.getElementById('postBtn').disabled) {
+                    if (!postBtn.disabled) {
                         this.createPost();
                     }
                 }
             });
             
-            // Enter key for chat
+            // Search
+            const searchInput = document.getElementById('searchInput');
+            let searchTimeout;
+            
+            searchInput.addEventListener('input', (e) => {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    this.performSearch(e.target.value);
+                }, 300);
+            });
+            
+            // Click outside to close search results
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.search-container')) {
+                    document.getElementById('searchResults').classList.remove('active');
+                }
+            });
+            
+            // Chat
+            document.getElementById('sendBtn').addEventListener('click', () => this.sendMessage());
+            
             document.getElementById('chatInput').addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
                     e.preventDefault();
@@ -2036,64 +3594,256 @@
                 }
             });
             
-            // Demo features
-            document.getElementById('postTextarea').addEventListener('focus', () => {
-                if (!document.getElementById('postTextarea').value) {
-                    document.getElementById('postTextarea').value = "I'm excited to share my thoughts on PrimeMar! This platform is amazing! 🚀 #socialmedia #tech";
-                    document.getElementById('postBtn').disabled = false;
+            // Call controls
+            document.getElementById('endCallBtn').addEventListener('click', () => this.endCall());
+            
+            document.getElementById('muteBtn').addEventListener('click', function() {
+                const icon = this.querySelector('i');
+                if (icon.classList.contains('fa-microphone')) {
+                    icon.classList.replace('fa-microphone', 'fa-microphone-slash');
+                } else {
+                    icon.classList.replace('fa-microphone-slash', 'fa-microphone');
                 }
+            });
+            
+            document.getElementById('videoToggleBtn').addEventListener('click', function() {
+                const icon = this.querySelector('i');
+                if (icon.classList.contains('fa-video')) {
+                    icon.classList.replace('fa-video', 'fa-video-slash');
+                } else {
+                    icon.classList.replace('fa-video-slash', 'fa-video');
+                }
+            });
+            
+            // Theme toggle
+            document.getElementById('themeToggle').addEventListener('change', (e) => {
+                this.toggleTheme(e.target.checked);
+            });
+            
+            // Load saved theme
+            const savedTheme = localStorage.getItem('primemar-theme');
+            if (savedTheme === 'light') {
+                this.toggleTheme(false);
+                document.getElementById('themeToggle').checked = false;
+            }
+            
+            // Enter key for auth forms
+            document.getElementById('loginPassword').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') this.handleLogin();
+            });
+            
+            document.getElementById('signupPassword').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') this.handleSignup();
             });
         }
 
-        // ========== DEMO FEATURES ==========
-        startNewChat() {
-            const username = prompt('Enter username to chat with:');
-            if (!username) return;
+        // ========== FEATURE METHODS ==========
+        async performSearch(query) {
+            if (!query.trim()) {
+                document.getElementById('searchResults').classList.remove('active');
+                return;
+            }
             
-            // Create new conversation
-            const conversation = {
-                id: 'new_' + Date.now(),
-                user_id: 'user_' + Date.now(),
-                user_name: username.charAt(0).toUpperCase() + username.slice(1),
-                user_username: username.toLowerCase(),
-                last_message: `Started conversation with ${username}`,
-                last_message_time: new Date().toISOString(),
-                unread: 0
-            };
-            
-            this.conversations.unshift(conversation);
-            this.renderConversations();
-            
-            // Open chat
-            this.openChat(conversation.id);
-            
-            this.showToast(`Started chat with ${username}`, 'success');
-        }
-
-        attachImage() {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = 'image/*';
-            
-            input.onchange = (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    this.showToast('Image attached successfully!', 'success');
+            try {
+                // Search users
+                const { data: users } = await this.supabase
+                    .from('profiles')
+                    .select('*')
+                    .or(`username.ilike.%${query}%,name.ilike.%${query}%`)
+                    .limit(5);
+                
+                // Search posts
+                const { data: posts } = await this.supabase
+                    .from('posts')
+                    .select('*, author:profiles(name, username)')
+                    .ilike('content', `%${query}%`)
+                    .limit(5);
+                
+                // Search groups
+                const { data: groups } = await this.supabase
+                    .from('groups')
+                    .select('*, members:group_members(count)')
+                    .ilike('name', `%${query}%`)
+                    .limit(5);
+                
+                let html = '';
+                
+                if (users?.length) {
+                    html += `
+                        <div class="search-section">
+                            <div class="search-section-title">
+                                <i class="fas fa-users"></i> USERS
+                            </div>
+                            ${users.map(user => `
+                                <div class="search-item" onclick="app.viewUserProfile('${user.id}')">
+                                    <div class="search-item-avatar">${user.name.charAt(0)}</div>
+                                    <div class="search-item-info">
+                                        <div class="search-item-name">${user.name}</div>
+                                        <div class="search-item-details">@${user.username}</div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
                 }
-            };
-            
-            input.click();
+                
+                if (groups?.length) {
+                    html += `
+                        <div class="search-section">
+                            <div class="search-section-title">
+                                <i class="fas fa-users"></i> GROUPS
+                            </div>
+                            ${groups.map(group => `
+                                <div class="search-item" onclick="app.openGroup('${group.id}')">
+                                    <div class="search-item-avatar">
+                                        <i class="fas fa-users"></i>
+                                    </div>
+                                    <div class="search-item-info">
+                                        <div class="search-item-name">${group.name}</div>
+                                        <div class="search-item-details">${group.members?.[0]?.count || 0} members</div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+                
+                if (posts?.length) {
+                    html += `
+                        <div class="search-section">
+                            <div class="search-section-title">
+                                <i class="fas fa-newspaper"></i> POSTS
+                            </div>
+                            ${posts.map(post => `
+                                <div class="search-item" onclick="app.viewPost('${post.id}')">
+                                    <div class="search-item-avatar">${post.author?.name?.charAt(0) || 'U'}</div>
+                                    <div class="search-item-info">
+                                        <div class="search-item-name">${post.content.substring(0, 50)}...</div>
+                                        <div class="search-item-details">by @${post.author?.username || 'user'}</div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+                
+                if (!html) {
+                    html = '<div class="search-section"><div style="padding: 2rem; text-align: center; color: var(--dark-secondary);">No results found</div></div>';
+                }
+                
+                document.getElementById('searchResults').innerHTML = html;
+                document.getElementById('searchResults').classList.add('active');
+                
+            } catch (error) {
+                console.error('Search error:', error);
+            }
         }
 
-        addEmoji() {
-            const emojis = ['😊', '😂', '❤️', '🔥', '👍', '🎉', '😍', '🙏', '😎', '💯'];
-            const emoji = emojis[Math.floor(Math.random() * emojis.length)];
+        toggleTheme(isDark) {
+            this.isDarkMode = isDark;
             
-            const textarea = document.getElementById('postTextarea');
-            textarea.value += emoji;
-            textarea.focus();
-            
-            document.getElementById('postBtn').disabled = false;
+            if (isDark) {
+                document.body.classList.remove('light-mode');
+                localStorage.setItem('primemar-theme', 'dark');
+            } else {
+                document.body.classList.add('light-mode');
+                localStorage.setItem('primemar-theme', 'light');
+            }
+        }
+
+        // ========== DEMO METHODS ==========
+        attachImage() {
+            this.showNotification('Image attachment feature', 'info');
+        }
+
+        toggleEmojiPicker() {
+            this.showNotification('Emoji picker feature', 'info');
+        }
+
+        attachLocation() {
+            this.showNotification('Location attachment feature', 'info');
+        }
+
+        attachPoll() {
+            this.showNotification('Poll attachment feature', 'info');
+        }
+
+        createStory() {
+            this.showNotification('Story creation feature', 'info');
+        }
+
+        viewStory(storyId) {
+            this.showNotification(`Viewing story ${storyId}`, 'info');
+        }
+
+        showComments(postId) {
+            this.showNotification(`Comments for post ${postId}`, 'info');
+        }
+
+        sharePost(postId) {
+            this.showNotification(`Sharing post ${postId}`, 'info');
+        }
+
+        showUserPosts() {
+            this.showNotification('Showing user posts', 'info');
+        }
+
+        showFollowing() {
+            this.showNotification('Showing following list', 'info');
+        }
+
+        showFollowers() {
+            this.showNotification('Showing followers list', 'info');
+        }
+
+        viewUserProfile(userId) {
+            this.showNotification(`Viewing profile ${userId}`, 'info');
+        }
+
+        viewPost(postId) {
+            this.showNotification(`Viewing post ${postId}`, 'info');
+        }
+
+        openGroup(groupId) {
+            this.showNotification(`Opening group ${groupId}`, 'info');
+        }
+
+        editProfile() {
+            this.showNotification('Edit profile feature', 'info');
+        }
+
+        changePassword() {
+            this.showNotification('Change password feature', 'info');
+        }
+
+        privacySettings() {
+            this.showNotification('Privacy settings feature', 'info');
+        }
+
+        notificationSettings() {
+            this.showNotification('Notification settings feature', 'info');
+        }
+
+        helpCenter() {
+            this.showNotification('Help center feature', 'info');
+        }
+
+        showSettings() {
+            this.showPage('settingsPage');
+        }
+
+        showProfileTab(tab) {
+            this.showNotification(`Showing ${tab} tab`, 'info');
+        }
+
+        searchHashtag(tag) {
+            document.getElementById('searchInput').value = '#' + tag;
+            this.performSearch(tag);
+        }
+
+        searchUser(username) {
+            document.getElementById('searchInput').value = '@' + username;
+            this.performSearch(username);
         }
     }
 
