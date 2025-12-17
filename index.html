@@ -2,653 +2,676 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PrimeMar Pro - Complete Social Platform</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PrimeMar - Advanced Social Media</title>
+    <meta name="theme-color" content="#ff9800">
+    <meta name="description" content="Advanced social media platform with real-time messaging, voice/video calls, groups, and encryption">
+    <link rel="manifest" href="/manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/markdown-it@13/dist/markdown-it.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <style>
+        /* COMPLETE STYLES WITH ALL FEATURES */
+        :root {
+            --primary-color: #ff9800;
+            --secondary-color: #fdc500;
+            --accent-color: #ff3333;
+            --success-color: #4CAF50;
+            --info-color: #2196F3;
+            --dark-bg: #0a0a0a;
+            --darker-bg: #050505;
+            --card-bg-dark: rgba(20, 20, 25, 0.95);
+            --card-border-dark: rgba(255, 255, 255, 0.1);
+            --text-dark: #ffffff;
+            --text-secondary: #a0a0a0;
+            --light-bg: #ffffff;
+            --card-bg-light: rgba(255, 255, 255, 0.98);
+            --card-border-light: rgba(0, 0, 0, 0.1);
+            --text-light: #1a1a1a;
+            --text-secondary-light: #666666;
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', system-ui, sans-serif;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        :root {
-            --primary: #ff6b35;
-            --secondary: #f7c948;
-            --accent: #ff3864;
-            --success: #2ecc71;
-            --info: #3498db;
-            --dark: #0f0f23;
-            --darker: #0a0a1a;
-            --light: #ffffff;
-            --card-bg: rgba(25, 25, 40, 0.95);
-            --text: #ffffff;
-            --border: rgba(255, 255, 255, 0.1);
-            --shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            --gradient: linear-gradient(135deg, var(--primary), var(--accent));
-            --radius: 12px;
-            --header-h: 70px;
-            --nav-h: 65px;
+        html {
+            scroll-behavior: smooth;
+            height: 100%;
+            overflow: hidden;
         }
 
         body {
-            background: var(--dark);
-            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: var(--dark-bg);
+            color: var(--text-dark);
             min-height: 100vh;
-            overflow-x: hidden;
+            height: 100vh;
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body.light-mode {
+            background: var(--light-bg);
+            color: var(--text-light);
+        }
+
+        /* PWA Install Prompt */
+        .pwa-install-prompt {
+            position: fixed;
+            bottom: 80px;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin: 10px;
+            z-index: 9999;
+            display: none;
+            animation: slideUp 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .pwa-install-prompt.show {
+            display: block;
+        }
+
+        .install-prompt-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .install-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .install-btn, .later-btn {
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .install-btn {
+            background: white;
+            color: var(--primary-color);
+        }
+
+        .later-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
         }
 
         /* Loading Screen */
-        #loadingScreen {
+        .loading-screen {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: var(--darker);
+            background: var(--dark-bg);
             display: flex;
             flex-direction: column;
-            justify-content: center;
             align-items: center;
-            z-index: 9999;
+            justify-content: center;
+            z-index: 10000;
             transition: opacity 0.3s;
-        }
-
-        #loadingScreen.hidden {
-            opacity: 0;
-            pointer-events: none;
         }
 
         .loading-logo {
             font-size: 3rem;
-            font-weight: 800;
-            background: var(--gradient);
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin-bottom: 30px;
+            animation: pulse 2s infinite;
         }
 
-        .loading-bar {
-            width: 300px;
+        .loading-progress {
+            width: 200px;
             height: 4px;
             background: rgba(255,255,255,0.1);
             border-radius: 2px;
             overflow: hidden;
+            margin-top: 20px;
         }
 
-        #loadingProgress {
+        .loading-progress-bar {
             height: 100%;
-            background: var(--gradient);
+            background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
             width: 0%;
             transition: width 0.3s;
         }
 
-        /* Toast Container */
-        #toastContainer {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 9998;
-        }
-
-        .toast {
-            background: var(--card-bg);
-            color: white;
-            padding: 12px 20px;
-            border-radius: var(--radius);
-            margin-bottom: 10px;
-            box-shadow: var(--shadow);
-            border-left: 4px solid var(--primary);
-            animation: slideIn 0.3s;
-        }
-
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-
-        /* App Container */
+        /* Main App Container */
         #appContainer {
+            height: 100vh;
             display: none;
+            flex-direction: column;
+            background: var(--dark-bg);
         }
 
         #appContainer.active {
-            display: block;
+            display: flex;
         }
 
-        /* Header */
+        /* Enhanced Header */
         .header {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: var(--header-h);
-            background: rgba(15, 15, 35, 0.9);
-            backdrop-filter: blur(10px);
+            background: rgba(10, 10, 10, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 12px 20px;
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            padding: 0 20px;
-            z-index: 1000;
-            border-bottom: 1px solid var(--border);
+            gap: 15px;
+            border-bottom: 1px solid var(--card-border-dark);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            min-height: 60px;
+        }
+
+        body.light-mode .header {
+            background: rgba(255, 255, 255, 0.95);
+            border-bottom: 1px solid var(--card-border-light);
         }
 
         .logo {
-            font-size: 2rem;
+            font-size: 24px;
             font-weight: 800;
-            background: var(--gradient);
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
-        .search-box {
+        .online-indicator {
+            width: 8px;
+            height: 8px;
+            background: var(--success-color);
+            border-radius: 50%;
+            margin-left: 5px;
+            animation: pulse 2s infinite;
+        }
+
+        /* Enhanced Search with Visual Results */
+        .search-container {
             flex: 1;
-            max-width: 500px;
-            margin: 0 20px;
             position: relative;
+            max-width: 500px;
+        }
+
+        .search-wrapper {
+            position: relative;
+            background: rgba(255,255,255,0.08);
+            border-radius: 25px;
+            padding: 8px 15px;
+            transition: all 0.3s;
+            border: 1px solid transparent;
+        }
+
+        .search-wrapper:focus-within {
+            background: rgba(255,255,255,0.12);
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(255,152,0,0.1);
+        }
+
+        body.light-mode .search-wrapper {
+            background: rgba(0,0,0,0.05);
         }
 
         .search-input {
             width: 100%;
-            padding: 10px 20px;
-            padding-left: 45px;
-            border-radius: 25px;
-            border: 1px solid var(--border);
-            background: rgba(255,255,255,0.1);
-            color: white;
+            background: none;
+            border: none;
+            color: inherit;
             font-size: 14px;
+            outline: none;
+        }
+
+        .search-input::placeholder {
+            color: var(--text-secondary);
+        }
+
+        body.light-mode .search-input::placeholder {
+            color: var(--text-secondary-light);
         }
 
         .search-icon {
             position: absolute;
-            left: 15px;
+            right: 15px;
             top: 50%;
             transform: translateY(-50%);
-            color: var(--secondary);
+            color: var(--text-secondary);
         }
 
-        .header-actions {
+        .search-results {
+            position: absolute;
+            top: calc(100% + 10px);
+            left: 0;
+            right: 0;
+            background: var(--card-bg-dark);
+            border-radius: 15px;
+            border: 1px solid var(--card-border-dark);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            max-height: 500px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            backdrop-filter: blur(20px);
+        }
+
+        .search-results.active {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        .search-results-section {
+            margin-bottom: 15px;
+        }
+
+        .section-title {
+            padding: 15px 20px 10px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 1px solid var(--card-border-dark);
             display: flex;
-            gap: 15px;
             align-items: center;
+            gap: 8px;
         }
 
-        .icon-btn {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.1);
-            border: none;
-            color: var(--text);
-            font-size: 18px;
+        .search-result-item {
+            display: flex;
+            align-items: center;
+            padding: 15px 20px;
             cursor: pointer;
+            transition: background 0.2s;
+            border-bottom: 1px solid var(--card-border-dark);
+        }
+
+        .search-result-item:last-child {
+            border-bottom: none;
+        }
+
+        .search-result-item:hover {
+            background: rgba(255,255,255,0.05);
+        }
+
+        .result-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
             display: flex;
             align-items: center;
             justify-content: center;
+            font-weight: bold;
+            color: white;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .result-info {
+            flex: 1;
+            margin-left: 15px;
+            overflow: hidden;
+        }
+
+        .result-name {
+            font-weight: 600;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .result-details {
+            color: var(--text-secondary);
+            font-size: 13px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .result-badge {
+            background: var(--primary-color);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .result-stats {
+            display: flex;
+            gap: 15px;
+            margin-top: 8px;
+        }
+
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        /* Enhanced Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(10, 10, 10, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            display: flex;
+            padding: 10px 0;
+            border-top: 1px solid var(--card-border-dark);
+            z-index: 100;
+        }
+
+        body.light-mode .bottom-nav {
+            background: rgba(255, 255, 255, 0.95);
+            border-top: 1px solid var(--card-border-light);
+        }
+
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 8px 0;
+            position: relative;
             transition: all 0.3s;
         }
 
-        .icon-btn:hover {
-            background: rgba(255,107,53,0.2);
-            transform: translateY(-2px);
+        .nav-item.active {
+            color: var(--primary-color);
         }
 
-        .notification-badge {
+        .nav-icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+            position: relative;
+        }
+
+        .nav-badge {
             position: absolute;
             top: -5px;
             right: -5px;
-            background: var(--accent);
+            background: var(--accent-color);
             color: white;
-            border-radius: 50%;
-            width: 18px;
-            height: 18px;
             font-size: 10px;
+            min-width: 16px;
+            height: 16px;
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
         }
 
-        /* Main Content */
+        .nav-label {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        /* Main Content Area */
         .main-content {
-            padding-top: var(--header-h);
-            padding-bottom: var(--nav-h);
-            min-height: 100vh;
+            flex: 1;
+            overflow-y: auto;
+            padding-bottom: 70px;
         }
 
         .page {
             display: none;
-            padding: 20px;
-            max-width: 1200px;
-            margin: 0 auto;
+            height: 100%;
+            overflow-y: auto;
         }
 
         .page.active {
             display: block;
         }
 
-        /* Bottom Navigation */
-        .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: var(--nav-h);
-            background: rgba(15, 15, 35, 0.9);
-            backdrop-filter: blur(10px);
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            border-top: 1px solid var(--border);
-            z-index: 1000;
-        }
-
-        .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px;
-            color: var(--secondary);
-            cursor: pointer;
-            padding: 10px;
-            border-radius: 10px;
-            transition: all 0.3s;
-            flex: 1;
-            max-width: 80px;
-        }
-
-        .nav-item.active {
-            color: var(--primary);
-            background: rgba(255,107,53,0.1);
-            transform: translateY(-5px);
-        }
-
-        .nav-icon {
-            font-size: 20px;
-        }
-
-        .nav-label {
-            font-size: 12px;
-            font-weight: 600;
-        }
-
-        /* Post Composer */
-        .post-composer {
-            background: var(--card-bg);
-            border-radius: var(--radius);
-            padding: 20px;
-            margin-bottom: 20px;
-            border: 1px solid var(--border);
-        }
-
-        .composer-header {
+        /* Home Page - Enhanced Feed */
+        .stories-container {
             display: flex;
             gap: 15px;
-            margin-bottom: 15px;
+            padding: 20px 15px;
+            overflow-x: auto;
+            scrollbar-width: none;
+            background: rgba(255,255,255,0.02);
+            border-bottom: 1px solid var(--card-border-dark);
         }
 
-        .avatar {
-            width: 50px;
-            height: 50px;
+        .story {
+            flex-shrink: 0;
+            text-align: center;
+            cursor: pointer;
+            width: 80px;
+        }
+
+        .story-avatar {
+            width: 60px;
+            height: 60px;
             border-radius: 50%;
-            background: var(--gradient);
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color), var(--accent-color));
+            padding: 3px;
+            margin: 0 auto 8px;
+        }
+
+        .story-avatar-inner {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: var(--card-bg-dark);
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            font-size: 20px;
-            color: white;
+            color: var(--primary-color);
         }
 
-        .composer-input {
-            flex: 1;
-            background: transparent;
-            border: none;
+        body.light-mode .story-avatar-inner {
+            background: var(--card-bg-light);
+        }
+
+        .post-composer {
+            padding: 20px;
+            border-bottom: 1px solid var(--card-border-dark);
+        }
+
+        .composer-header {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
             color: white;
+            flex-shrink: 0;
+            font-size: 18px;
+        }
+
+        .composer-textarea {
+            flex: 1;
+            background: none;
+            border: none;
+            color: inherit;
             font-size: 16px;
             resize: none;
             min-height: 60px;
-            outline: none;
             font-family: inherit;
+            outline: none;
+            line-height: 1.5;
         }
 
-        .composer-actions {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding-left: 65px;
+        .composer-textarea::placeholder {
+            color: var(--text-secondary);
         }
 
-        .action-buttons {
-            display: flex;
-            gap: 10px;
-        }
-
-        .action-btn {
-            background: none;
-            border: none;
-            color: var(--primary);
-            font-size: 18px;
-            cursor: pointer;
-            padding: 8px;
-            border-radius: 8px;
-            transition: all 0.3s;
-        }
-
-        .action-btn:hover {
-            background: rgba(255,255,255,0.1);
-        }
-
-        .post-btn {
-            background: var(--gradient);
-            color: white;
-            border: none;
-            padding: 10px 25px;
-            border-radius: 25px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .post-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(255,107,53,0.3);
-        }
-
-        .post-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-
-        /* Feed */
         .feed {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
+            padding: 15px;
         }
 
-        .post-card {
-            background: var(--card-bg);
-            border-radius: var(--radius);
-            padding: 20px;
-            border: 1px solid var(--border);
-            transition: all 0.3s;
-        }
-
-        .post-card:hover {
-            transform: translateY(-3px);
-            box-shadow: var(--shadow);
-        }
-
-        .post-header {
-            display: flex;
-            align-items: center;
-            gap: 15px;
+        /* Enhanced Post Design */
+        .post {
+            background: var(--card-bg-dark);
+            border: 1px solid var(--card-border-dark);
+            border-radius: 16px;
             margin-bottom: 15px;
-        }
-
-        .post-user-info {
-            flex: 1;
-        }
-
-        .post-user-name {
-            font-weight: bold;
-            font-size: 16px;
-            cursor: pointer;
-        }
-
-        .post-user-handle {
-            color: var(--secondary);
-            font-size: 14px;
-        }
-
-        .post-time {
-            color: var(--secondary);
-            font-size: 12px;
-        }
-
-        .post-content {
-            margin-bottom: 15px;
-            line-height: 1.6;
-        }
-
-        .post-media {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 10px;
-            margin: 15px 0;
-        }
-
-        .media-item {
-            border-radius: 8px;
             overflow: hidden;
-            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
         }
 
-        .media-item img {
-            width: 100%;
-            height: 150px;
-            object-fit: cover;
+        .post:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
 
-        .post-actions {
-            display: flex;
-            justify-content: space-around;
-            border-top: 1px solid var(--border);
-            padding-top: 15px;
-            margin-top: 15px;
+        body.light-mode .post {
+            background: var(--card-bg-light);
+            border: 1px solid var(--card-border-light);
         }
 
-        .post-action {
-            background: none;
-            border: none;
-            color: var(--secondary);
-            cursor: pointer;
-            padding: 8px 15px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-weight: 600;
-            transition: all 0.3s;
-        }
-
-        .post-action:hover {
-            background: rgba(255,255,255,0.1);
-        }
-
-        .post-action.liked {
-            color: var(--accent);
-        }
-
-        /* Profile Page */
+        /* Profile Page - Enhanced */
         .profile-header {
-            background: var(--card-bg);
-            border-radius: var(--radius);
+            position: relative;
+            height: 200px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color), #ff6b6b);
             overflow: hidden;
-            margin-bottom: 20px;
-            border: 1px solid var(--border);
         }
 
-        .profile-banner {
-            height: 200px;
-            background: var(--gradient);
+        .profile-cover {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.8;
+        }
+
+        .profile-info {
+            padding: 20px;
+            margin-top: -40px;
             position: relative;
         }
 
         .profile-avatar-container {
-            position: absolute;
-            top: 150px;
-            left: 30px;
+            display: flex;
+            align-items: flex-end;
+            margin-bottom: 20px;
         }
 
         .profile-avatar {
             width: 100px;
             height: 100px;
             border-radius: 50%;
-            background: linear-gradient(135deg, var(--secondary), var(--primary));
+            border: 4px solid var(--card-bg-dark);
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 40px;
+            font-size: 36px;
             font-weight: bold;
             color: white;
-            border: 4px solid var(--card-bg);
+            position: relative;
         }
 
-        .profile-info {
-            padding: 80px 30px 30px;
+        .online-status {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            width: 12px;
+            height: 12px;
+            background: var(--success-color);
+            border: 2px solid var(--card-bg-dark);
+            border-radius: 50%;
         }
 
-        .profile-name {
-            font-size: 1.8rem;
-            margin-bottom: 5px;
-        }
-
-        .profile-handle {
-            color: var(--secondary);
-            margin-bottom: 15px;
-        }
-
-        .profile-bio {
-            margin-bottom: 20px;
-        }
-
-        .profile-stats {
+        /* Messages Page - Complete */
+        .messages-page {
             display: flex;
-            gap: 30px;
-            margin: 20px 0;
-        }
-
-        .stat {
-            text-align: center;
-            cursor: pointer;
-        }
-
-        .stat-number {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: var(--primary);
-        }
-
-        .stat-label {
-            font-size: 0.9rem;
-            color: var(--secondary);
-        }
-
-        .profile-actions {
-            display: flex;
-            gap: 15px;
-            margin-top: 25px;
-        }
-
-        .profile-btn {
-            flex: 1;
-            padding: 10px;
-            border-radius: 25px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .btn-primary {
-            background: var(--gradient);
-            color: white;
-            border: none;
-        }
-
-        .btn-secondary {
-            background: transparent;
-            border: 2px solid var(--primary);
-            color: var(--primary);
-        }
-
-        /* Chat Page */
-        .chat-container {
-            background: var(--card-bg);
-            border-radius: var(--radius);
-            height: calc(100vh - 180px);
-            display: flex;
-            overflow: hidden;
-            border: 1px solid var(--border);
+            height: 100%;
         }
 
         .conversations-list {
-            width: 300px;
-            border-right: 1px solid var(--border);
-            overflow-y: auto;
+            width: 350px;
+            border-right: 1px solid var(--card-border-dark);
+            display: flex;
+            flex-direction: column;
+            background: rgba(255,255,255,0.02);
+        }
+
+        .conversations-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--card-border-dark);
         }
 
         .conversation-item {
-            padding: 15px;
             display: flex;
             align-items: center;
-            gap: 15px;
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--card-border-dark);
             cursor: pointer;
-            border-bottom: 1px solid var(--border);
-            transition: all 0.3s;
+            transition: background 0.2s;
         }
 
-        .conversation-item:hover {
+        .conversation-item.active, .conversation-item:hover {
             background: rgba(255,255,255,0.05);
         }
 
-        .conversation-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: var(--gradient);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            color: white;
-        }
-
-        .conversation-info {
-            flex: 1;
-        }
-
-        .conversation-name {
-            font-weight: bold;
-        }
-
-        .conversation-last {
-            color: var(--secondary);
-            font-size: 12px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .chat-area {
+        .chat-container {
             flex: 1;
             display: flex;
             flex-direction: column;
+            background: var(--dark-bg);
         }
 
         .chat-header {
-            padding: 20px;
-            border-bottom: 1px solid var(--border);
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--card-border-dark);
             display: flex;
             align-items: center;
             justify-content: space-between;
+            background: rgba(255,255,255,0.02);
         }
 
         .chat-messages {
             flex: 1;
-            padding: 20px;
             overflow-y: auto;
+            padding: 20px;
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 10px;
         }
 
         .message {
@@ -657,1845 +680,1730 @@
             max-width: 70%;
         }
 
-        .message.outgoing {
+        .message.own {
             align-self: flex-end;
             flex-direction: row-reverse;
         }
 
-        .message-bubble {
+        .message-content {
             background: rgba(255,255,255,0.1);
-            padding: 10px 15px;
+            padding: 12px 16px;
             border-radius: 18px;
-            word-break: break-word;
+            word-wrap: break-word;
+            max-width: 100%;
         }
 
-        .message.outgoing .message-bubble {
-            background: var(--gradient);
+        .message.own .message-content {
+            background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
             color: white;
         }
 
-        .chat-input-container {
-            padding: 20px;
-            border-top: 1px solid var(--border);
-            display: flex;
-            gap: 10px;
-            align-items: center;
+        .message-status {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+            text-align: right;
         }
 
-        .chat-input {
-            flex: 1;
-            padding: 12px 20px;
-            border-radius: 25px;
-            border: 1px solid var(--border);
-            background: rgba(255,255,255,0.1);
-            color: white;
-            outline: none;
-        }
-
-        .send-btn {
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            background: var(--gradient);
-            border: none;
-            color: white;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-        }
-
-        /* Modal System */
-        .modal {
+        /* Voice/Video Call Interface */
+        .call-container {
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.8);
-            backdrop-filter: blur(10px);
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.9);
+            z-index: 1000;
             display: none;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            z-index: 2000;
-            padding: 20px;
         }
 
-        .modal.active {
+        .call-container.active {
             display: flex;
         }
 
-        .modal-content {
-            background: var(--card-bg);
-            border-radius: var(--radius);
-            max-width: 500px;
+        .call-video-container {
             width: 100%;
-            max-height: 90vh;
-            overflow: hidden;
-            border: 1px solid var(--border);
+            height: 100%;
+            position: relative;
         }
 
-        .modal-header {
-            padding: 20px;
-            border-bottom: 1px solid var(--border);
+        .remote-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .local-video {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 120px;
+            height: 160px;
+            border-radius: 10px;
+            border: 2px solid white;
+            object-fit: cover;
+        }
+
+        .call-controls {
+            position: absolute;
+            bottom: 30px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .call-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: none;
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: center;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
         }
 
-        .modal-body {
+        .end-call {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .mute-btn, .video-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        /* Groups & Channels */
+        .groups-container, .channels-container {
             padding: 20px;
-            overflow-y: auto;
-            max-height: calc(90vh - 80px);
         }
 
-        .close-btn {
-            background: none;
-            border: none;
-            color: var(--secondary);
-            font-size: 24px;
-            cursor: pointer;
-            padding: 5px;
-        }
-
-        /* Forms */
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-label {
-            display: block;
-            margin-bottom: 8px;
-            color: var(--secondary);
-            font-weight: 600;
-        }
-
-        .form-input {
-            width: 100%;
-            padding: 12px;
-            border-radius: 8px;
-            border: 1px solid var(--border);
-            background: rgba(255,255,255,0.1);
-            color: white;
-            font-size: 16px;
-            outline: none;
-            transition: all 0.3s;
-        }
-
-        .form-input:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(255,107,53,0.1);
-        }
-
-        /* Auth Modal */
-        #authModal .modal-content {
-            max-width: 450px;
-        }
-
-        .auth-header {
-            background: var(--gradient);
-            padding: 40px;
-            text-align: center;
-            color: white;
-        }
-
-        .auth-body {
-            padding: 40px;
-        }
-
-        .auth-tabs {
-            display: flex;
-            margin-bottom: 30px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .auth-tab {
-            flex: 1;
+        .group-card, .channel-card {
+            background: var(--card-bg-dark);
+            border: 1px solid var(--card-border-dark);
+            border-radius: 12px;
             padding: 15px;
-            text-align: center;
-            background: none;
-            border: none;
-            color: var(--secondary);
-            font-weight: 600;
-            cursor: pointer;
-            border-bottom: 3px solid transparent;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
         }
 
-        .auth-tab.active {
-            color: var(--primary);
-            border-bottom-color: var(--primary);
+        .group-info, .channel-info {
+            flex: 1;
         }
 
-        .auth-form {
-            display: none;
+        .member-count {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 13px;
+            color: var(--text-secondary);
         }
 
-        .auth-form.active {
-            display: block;
+        /* Settings Page */
+        .settings-container {
+            padding: 20px;
         }
 
-        .auth-btn {
-            width: 100%;
-            padding: 14px;
-            background: var(--gradient);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 16px;
-            cursor: pointer;
-            margin-top: 10px;
-            transition: all 0.3s;
-        }
-
-        .auth-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(255,107,53,0.3);
-        }
-
-        .error-message {
-            color: var(--accent);
-            padding: 10px;
-            background: rgba(255,56,100,0.1);
-            border-radius: 8px;
+        .settings-section {
+            background: var(--card-bg-dark);
+            border: 1px solid var(--card-border-dark);
+            border-radius: 12px;
             margin-bottom: 20px;
-            display: none;
+            overflow: hidden;
         }
 
-        .error-message.show {
-            display: block;
+        .settings-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--card-border-dark);
+            font-weight: 600;
+        }
+
+        .settings-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--card-border-dark);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .settings-item:last-child {
+            border-bottom: none;
+        }
+
+        .settings-item:hover {
+            background: rgba(255,255,255,0.05);
+        }
+
+        .switch {
+            position: relative;
+            width: 50px;
+            height: 26px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255,255,255,0.1);
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 4px;
+            bottom: 4px;
+            background: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background: var(--primary-color);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(24px);
+        }
+
+        /* Notifications */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--card-bg-dark);
+            border: 1px solid var(--card-border-dark);
+            border-radius: 10px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            max-width: 350px;
+            z-index: 1001;
+            transform: translateX(200%);
+            transition: transform 0.3s;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+        }
+
+        /* Animations */
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
         }
 
         /* Responsive Design */
         @media (max-width: 768px) {
-            .search-box {
-                display: none;
-            }
-            
             .conversations-list {
                 width: 100%;
             }
             
-            .chat-area {
-                display: none;
+            .messages-page {
+                flex-direction: column;
             }
             
-            .chat-area.active {
-                display: flex;
+            .search-results {
+                max-height: 400px;
             }
             
-            .profile-avatar-container {
-                left: 50%;
-                transform: translateX(-50%);
-                top: 140px;
-            }
-            
-            .profile-info {
-                padding-top: 60px;
-                text-align: center;
-            }
-            
-            .profile-stats {
-                justify-content: center;
+            .local-video {
+                width: 80px;
+                height: 120px;
             }
         }
 
-        @media (max-width: 480px) {
-            .header {
-                padding: 0 10px;
-            }
-            
-            .page {
-                padding: 10px;
-            }
-            
-            .post-actions {
-                flex-wrap: wrap;
-            }
-            
-            .post-action {
-                flex: 1;
-                justify-content: center;
-            }
+        /* Enhanced Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
         }
 
-        /* FAB Button */
-        .fab {
-            position: fixed;
-            bottom: 80px;
-            right: 20px;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: var(--gradient);
-            border: none;
-            color: white;
-            font-size: 24px;
-            cursor: pointer;
-            box-shadow: var(--shadow);
-            z-index: 100;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s;
-        }
-
-        .fab:hover {
-            transform: scale(1.1);
-        }
-
-        /* Quick Actions */
-        .quick-actions {
-            position: fixed;
-            bottom: 150px;
-            right: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            z-index: 99;
-        }
-
-        .quick-action {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background: var(--card-bg);
-            border: none;
-            color: var(--primary);
-            font-size: 18px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: var(--shadow);
-            transition: all 0.3s;
-        }
-
-        .quick-action:hover {
-            transform: translateY(-3px);
-            background: var(--gradient);
-            color: white;
-        }
-
-        /* Stories */
-        .stories-container {
-            display: flex;
-            gap: 15px;
-            overflow-x: auto;
-            padding: 20px 0;
-            margin-bottom: 20px;
-            scrollbar-width: none;
-        }
-
-        .stories-container::-webkit-scrollbar {
-            display: none;
-        }
-
-        .story-item {
-            min-width: 80px;
-            text-align: center;
-            cursor: pointer;
-        }
-
-        .story-avatar {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            background: var(--gradient);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            color: white;
-            margin: 0 auto 10px;
-            padding: 3px;
-        }
-
-        .story-avatar::before {
-            content: '';
-            position: absolute;
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            background: transparent;
-            border: 2px solid transparent;
-            background-clip: padding-box;
-        }
-
-        .story-avatar.active::before {
-            background: linear-gradient(45deg, #ff6b35, #ff3864);
-            -webkit-mask: 
-                linear-gradient(#fff 0 0) content-box, 
-                linear-gradient(#fff 0 0);
-            -webkit-mask-composite: xor;
-        }
-
-        .story-username {
-            font-size: 12px;
-            color: var(--secondary);
-        }
-
-        /* Emoji Picker */
-        .emoji-picker {
-            display: grid;
-            grid-template-columns: repeat(8, 1fr);
-            gap: 5px;
-            background: var(--card-bg);
-            border-radius: var(--radius);
-            padding: 15px;
-            border: 1px solid var(--border);
-            position: absolute;
-            bottom: 80px;
-            right: 20px;
-            z-index: 101;
-            display: none;
-        }
-
-        .emoji-picker.active {
-            display: grid;
-        }
-
-        .emoji {
-            padding: 5px;
-            text-align: center;
-            cursor: pointer;
-            border-radius: 5px;
-            font-size: 20px;
-        }
-
-        .emoji:hover {
-            background: rgba(255,255,255,0.1);
-        }
-
-        /* Poll */
-        .poll-container {
+        ::-webkit-scrollbar-track {
             background: rgba(255,255,255,0.05);
-            border-radius: var(--radius);
-            padding: 20px;
-            margin: 15px 0;
+            border-radius: 3px;
         }
 
-        .poll-question {
-            font-weight: bold;
-            margin-bottom: 15px;
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border-radius: 3px;
         }
 
-        .poll-option {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px;
-            margin-bottom: 10px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .poll-option:hover {
-            background: rgba(255,255,255,0.15);
-        }
-
-        .poll-bar {
-            height: 8px;
-            background: var(--gradient);
-            border-radius: 4px;
-            margin-top: 5px;
-        }
-
-        /* Progress Bar */
-        .progress-bar {
-            height: 4px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 2px;
-            overflow: hidden;
-            margin: 10px 0;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: var(--gradient);
-            width: 0%;
-            transition: width 0.3s;
+        /* Selection */
+        ::selection {
+            background: var(--primary-color);
+            color: white;
         }
     </style>
 </head>
 <body>
+    <!-- PWA Install Prompt -->
+    <div class="pwa-install-prompt" id="installPrompt">
+        <div class="install-prompt-content">
+            <div>
+                <strong>Install PrimeMar</strong>
+                <p style="font-size: 12px; margin-top: 5px; opacity: 0.9;">Get the app experience</p>
+            </div>
+            <div class="install-buttons">
+                <button class="later-btn" onclick="primeMar.hideInstallPrompt()">Later</button>
+                <button class="install-btn" onclick="primeMar.installApp()">Install</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Loading Screen -->
-    <div id="loadingScreen">
+    <div class="loading-screen" id="loadingScreen">
         <div class="loading-logo">
-            <i class="fas fa-fire"></i> PrimeMar Pro
+            <i class="fas fa-fire"></i> PrimeMar
         </div>
-        <div class="loading-bar">
-            <div id="loadingProgress"></div>
+        <div class="loading-progress">
+            <div class="loading-progress-bar" id="loadingProgress"></div>
         </div>
-        <p style="margin-top: 20px; opacity: 0.7;">Loading social experience...</p>
-    </div>
-
-    <!-- Toast Container -->
-    <div id="toastContainer"></div>
-
-    <!-- Auth Modal -->
-    <div id="authModal" class="modal">
-        <div class="modal-content">
-            <div class="auth-header">
-                <h1 style="font-size: 2.5rem; margin-bottom: 10px;">
-                    <i class="fas fa-fire"></i> PrimeMar Pro
-                </h1>
-                <p style="font-weight: 600;">Next Generation Social Experience</p>
-            </div>
-            <div class="auth-body">
-                <div class="auth-tabs">
-                    <button class="auth-tab active" onclick="showAuthForm('login')">Login</button>
-                    <button class="auth-tab" onclick="showAuthForm('signup')">Sign Up</button>
-                </div>
-                
-                <div id="loginForm" class="auth-form active">
-                    <div id="loginError" class="error-message"></div>
-                    <div class="form-group">
-                        <label class="form-label">Email</label>
-                        <input type="email" class="form-input" id="loginEmail" placeholder="Enter your email">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Password</label>
-                        <input type="password" class="form-input" id="loginPassword" placeholder="Enter your password">
-                    </div>
-                    <button class="auth-btn" onclick="login()">Sign In</button>
-                </div>
-                
-                <div id="signupForm" class="auth-form">
-                    <div id="signupError" class="error-message"></div>
-                    <div class="form-group">
-                        <label class="form-label">Full Name</label>
-                        <input type="text" class="form-input" id="signupName" placeholder="Enter your full name">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Email</label>
-                        <input type="email" class="form-input" id="signupEmail" placeholder="Enter your email">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Password</label>
-                        <input type="password" class="form-input" id="signupPassword" placeholder="Create a password">
-                    </div>
-                    <button class="auth-btn" onclick="signup()">Create Account</button>
-                </div>
-            </div>
+        <div style="margin-top: 20px; color: var(--text-secondary); font-size: 14px;">
+            <span id="loadingStatus">Initializing...</span>
         </div>
     </div>
 
-    <!-- Main App -->
+    <!-- App Container -->
     <div id="appContainer">
-        <!-- Header -->
+        <!-- Enhanced Header -->
         <header class="header">
             <div class="logo">
                 <i class="fas fa-fire"></i> PrimeMar
+                <span class="online-indicator" id="onlineStatus"></span>
             </div>
             
-            <div class="search-box">
-                <input type="text" class="search-input" placeholder="Search users, posts...">
-                <i class="fas fa-search search-icon"></i>
+            <div class="search-container">
+                <div class="search-wrapper">
+                    <input type="text" class="search-input" id="searchInput" placeholder="Search users, groups, posts...">
+                    <div class="search-icon">
+                        <i class="fas fa-search"></i>
+                    </div>
+                </div>
+                <div class="search-results" id="searchResults">
+                    <!-- Search results populated dynamically -->
+                </div>
             </div>
             
             <div class="header-actions">
-                <button class="icon-btn" onclick="showPage('homePage')">
-                    <i class="fas fa-home"></i>
-                </button>
-                <button class="icon-btn" onclick="showPage('chatPage')">
-                    <i class="fas fa-comments"></i>
-                    <span class="notification-badge" id="messageBadge" style="display: none;">0</span>
-                </button>
-                <button class="icon-btn" onclick="showPage('notificationsPage')">
-                    <i class="fas fa-bell"></i>
-                    <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
-                </button>
-                <button class="icon-btn" onclick="toggleProfileMenu()">
-                    <i class="fas fa-user"></i>
-                </button>
+                <!-- Will be populated by JS -->
             </div>
         </header>
 
-        <!-- Profile Menu -->
-        <div id="profileMenu" style="display: none; position: fixed; top: 70px; right: 20px; background: var(--card-bg); border-radius: var(--radius); padding: 15px; min-width: 200px; box-shadow: var(--shadow); border: 1px solid var(--border); z-index: 1000;">
-            <div style="padding: 10px 0; border-bottom: 1px solid var(--border);">
-                <div style="font-weight: bold;" id="menuUserName">User Name</div>
-                <div style="font-size: 12px; color: var(--secondary);" id="menuUserEmail">user@email.com</div>
-            </div>
-            <button class="post-action" style="width: 100%; justify-content: flex-start; border: none;" onclick="showPage('profilePage'); toggleProfileMenu()">
-                <i class="fas fa-user"></i> Profile
-            </button>
-            <button class="post-action" style="width: 100%; justify-content: flex-start; border: none;" onclick="showSettings()">
-                <i class="fas fa-cog"></i> Settings
-            </button>
-            <button class="post-action" style="width: 100%; justify-content: flex-start; border: none;" onclick="logout()">
-                <i class="fas fa-sign-out-alt"></i> Logout
-            </button>
-        </div>
-
         <!-- Main Content -->
-        <main class="main-content">
+        <main class="main-content" id="mainContent">
             <!-- Home Page -->
             <section id="homePage" class="page active">
                 <!-- Stories -->
                 <div class="stories-container" id="storiesContainer">
-                    <!-- Stories will be loaded here -->
+                    <!-- Stories populated dynamically -->
                 </div>
 
                 <!-- Post Composer -->
                 <div class="post-composer">
                     <div class="composer-header">
-                        <div class="avatar" id="composerAvatar">U</div>
-                        <textarea class="composer-input" id="postInput" placeholder="What's on your mind?" rows="3"></textarea>
+                        <div class="avatar" id="userAvatar">U</div>
+                        <textarea class="composer-textarea" placeholder="What's happening?" id="postTextarea" maxlength="1000"></textarea>
                     </div>
-                    <div class="composer-actions">
-                        <div class="action-buttons">
-                            <button class="action-btn" onclick="attachMedia()">
-                                <i class="fas fa-image"></i>
-                            </button>
-                            <button class="action-btn" onclick="showEmojiPicker()">
-                                <i class="fas fa-smile"></i>
-                            </button>
-                            <button class="action-btn" onclick="createPoll()">
-                                <i class="fas fa-poll"></i>
-                            </button>
-                        </div>
-                        <button class="post-btn" id="postBtn" onclick="createPost()" disabled>Post</button>
-                    </div>
-                    
-                    <!-- Media Preview -->
-                    <div id="mediaPreview" class="post-media" style="display: none;"></div>
-                    
-                    <!-- Poll Editor -->
-                    <div id="pollEditor" class="poll-container" style="display: none;">
-                        <input type="text" class="form-input" id="pollQuestion" placeholder="Ask a question..." style="margin-bottom: 15px;">
-                        <div id="pollOptions">
-                            <div class="poll-option">
-                                <input type="text" class="form-input" placeholder="Option 1" style="background: transparent; border: none; padding: 0;">
-                            </div>
-                            <div class="poll-option">
-                                <input type="text" class="form-input" placeholder="Option 2" style="background: transparent; border: none; padding: 0;">
-                            </div>
-                        </div>
-                        <button class="post-action" onclick="addPollOption()" style="border: none;">
-                            <i class="fas fa-plus"></i> Add Option
-                        </button>
-                    </div>
+                    <!-- Media upload and actions -->
                 </div>
-
-                <!-- Emoji Picker -->
-                <div id="emojiPicker" class="emoji-picker"></div>
 
                 <!-- Feed -->
                 <div class="feed" id="feedContainer">
-                    <!-- Posts will be loaded here -->
+                    <!-- Posts loaded dynamically -->
                 </div>
             </section>
 
-            <!-- Chat Page -->
-            <section id="chatPage" class="page">
-                <div class="chat-container">
-                    <div class="conversations-list">
-                        <div id="conversationsList">
-                            <!-- Conversations will be loaded here -->
+            <!-- Search Page -->
+            <section id="searchPage" class="page">
+                <div class="search-results-full" id="searchResultsFull">
+                    <!-- Full search results -->
+                </div>
+            </section>
+
+            <!-- Messages Page -->
+            <section id="messagesPage" class="page">
+                <div class="messages-page">
+                    <div class="conversations-list" id="conversationsList">
+                        <div class="conversations-header">
+                            <h3>Messages</h3>
                         </div>
+                        <!-- Conversations loaded dynamically -->
                     </div>
-                    <div class="chat-area" id="chatArea">
-                        <div class="chat-header">
-                            <div style="display: flex; align-items: center; gap: 15px;">
-                                <div class="avatar" id="chatAvatar">U</div>
-                                <div>
-                                    <div id="chatUserName">Select a conversation</div>
-                                    <div id="chatUserStatus" style="font-size: 12px; color: var(--secondary);">Online</div>
-                                </div>
-                            </div>
+                    <div class="chat-container" id="chatContainer">
+                        <div class="chat-header" id="chatHeader">
+                            <div id="chatInfo"></div>
+                            <div class="call-buttons" id="callButtons"></div>
                         </div>
-                        <div class="chat-messages" id="chatMessages">
-                            <!-- Messages will be loaded here -->
-                        </div>
-                        <div class="chat-input-container">
-                            <input type="text" class="chat-input" id="messageInput" placeholder="Type a message..." disabled>
-                            <button class="send-btn" onclick="sendMessage()" disabled>
-                                <i class="fas fa-paper-plane"></i>
-                            </button>
-                        </div>
+                        <div class="chat-messages" id="chatMessages"></div>
+                        <div class="chat-input-container" id="chatInputContainer"></div>
                     </div>
+                </div>
+            </section>
+
+            <!-- Groups Page -->
+            <section id="groupsPage" class="page">
+                <div class="groups-container" id="groupsContainer">
+                    <!-- Groups and channels -->
                 </div>
             </section>
 
             <!-- Profile Page -->
             <section id="profilePage" class="page">
                 <div class="profile-header">
-                    <div class="profile-banner">
-                        <button class="icon-btn" style="position: absolute; top: 20px; right: 20px;" onclick="editBanner()">
-                            <i class="fas fa-camera"></i>
-                        </button>
-                    </div>
-                    <div class="profile-avatar-container">
-                        <div class="profile-avatar" id="profileAvatar">U</div>
-                        <button class="icon-btn" style="position: absolute; bottom: 0; right: 0;" onclick="editAvatar()">
-                            <i class="fas fa-camera"></i>
-                        </button>
-                    </div>
-                    <div class="profile-info">
-                        <h1 class="profile-name" id="profileName">Loading...</h1>
-                        <div class="profile-handle" id="profileHandle">@username</div>
-                        <div class="profile-bio" id="profileBio">Welcome to my profile!</div>
-                        
-                        <div class="profile-stats">
-                            <div class="stat" onclick="showUserPosts()">
-                                <div class="stat-number" id="postCount">0</div>
-                                <div class="stat-label">Posts</div>
-                            </div>
-                            <div class="stat" onclick="showFollowers()">
-                                <div class="stat-number" id="followerCount">0</div>
-                                <div class="stat-label">Followers</div>
-                            </div>
-                            <div class="stat" onclick="showFollowing()">
-                                <div class="stat-number" id="followingCount">0</div>
-                                <div class="stat-label">Following</div>
-                            </div>
-                        </div>
-                        
-                        <div class="profile-actions">
-                            <button class="profile-btn btn-primary" onclick="editProfile()">
-                                <i class="fas fa-edit"></i> Edit Profile
-                            </button>
-                            <button class="profile-btn btn-secondary" onclick="logout()">
-                                <i class="fas fa-sign-out-alt"></i> Logout
-                            </button>
-                        </div>
+                    <img src="" class="profile-cover" id="profileCover" alt="Cover">
+                    <div class="profile-actions">
+                        <!-- Edit profile button -->
                     </div>
                 </div>
-                
-                <div class="feed" id="profileFeed">
-                    <!-- User's posts will be loaded here -->
+                <div class="profile-info">
+                    <div class="profile-avatar-container">
+                        <div class="profile-avatar" id="profileAvatar">U</div>
+                        <div class="online-status" id="profileOnlineStatus"></div>
+                    </div>
+                    <h1 class="profile-name" id="profileName">Loading...</h1>
+                    <p class="profile-handle" id="profileHandle">@username</p>
+                    <p class="profile-bio" id="profileBio">No bio yet</p>
+                    
+                    <div class="profile-stats" id="profileStats">
+                        <!-- Stats populated dynamically -->
+                    </div>
+                    
+                    <div class="profile-actions" id="profileActions">
+                        <!-- Follow/Message buttons -->
+                    </div>
+                </div>
+                <div id="profileContent">
+                    <!-- User's posts or other content -->
                 </div>
             </section>
 
-            <!-- Notifications Page -->
-            <section id="notificationsPage" class="page">
-                <div style="background: var(--card-bg); border-radius: var(--radius); padding: 20px; border: 1px solid var(--border);">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                        <h2>Notifications</h2>
-                        <button class="post-action" onclick="markAllAsRead()">
-                            <i class="fas fa-check-double"></i> Mark all read
-                        </button>
-                    </div>
-                    <div id="notificationsList">
-                        <!-- Notifications will be loaded here -->
-                    </div>
+            <!-- Settings Page -->
+            <section id="settingsPage" class="page">
+                <div class="settings-container">
+                    <!-- Settings sections -->
                 </div>
             </section>
         </main>
 
         <!-- Bottom Navigation -->
         <nav class="bottom-nav">
-            <div class="nav-item active" onclick="showPage('homePage')">
+            <div class="nav-item active" data-page="homePage">
                 <div class="nav-icon"><i class="fas fa-home"></i></div>
                 <div class="nav-label">Home</div>
             </div>
-            <div class="nav-item" onclick="showPage('chatPage')">
+            <div class="nav-item" data-page="searchPage">
+                <div class="nav-icon"><i class="fas fa-search"></i></div>
+                <div class="nav-label">Explore</div>
+            </div>
+            <div class="nav-item" data-page="messagesPage">
                 <div class="nav-icon"><i class="fas fa-comments"></i></div>
-                <div class="nav-label">Chats</div>
+                <div class="nav-label">Chat</div>
             </div>
-            <div class="nav-item" onclick="showCreatePost()">
-                <div class="nav-icon"><i class="fas fa-plus"></i></div>
-                <div class="nav-label">Create</div>
+            <div class="nav-item" data-page="groupsPage">
+                <div class="nav-icon"><i class="fas fa-users"></i></div>
+                <div class="nav-label">Groups</div>
             </div>
-            <div class="nav-item" onclick="showPage('notificationsPage')">
-                <div class="nav-icon"><i class="fas fa-bell"></i></div>
-                <div class="nav-label">Alerts</div>
-            </div>
-            <div class="nav-item" onclick="showPage('profilePage')">
+            <div class="nav-item" data-page="profilePage">
                 <div class="nav-icon"><i class="fas fa-user"></i></div>
                 <div class="nav-label">Profile</div>
             </div>
         </nav>
-
-        <!-- FAB Button -->
-        <button class="fab" onclick="showCreatePost()">
-            <i class="fas fa-plus"></i>
-        </button>
-
-        <!-- Quick Actions -->
-        <div class="quick-actions" id="quickActions" style="display: none;">
-            <button class="quick-action" onclick="createStory()">
-                <i class="fas fa-camera"></i>
-            </button>
-            <button class="quick-action" onclick="goLive()">
-                <i class="fas fa-video"></i>
-            </button>
-            <button class="quick-action" onclick="createPoll()">
-                <i class="fas fa-poll"></i>
-            </button>
-        </div>
     </div>
 
-    <!-- Settings Modal -->
-    <div id="settingsModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Settings</h3>
-                <button class="close-btn" onclick="closeModal('settingsModal')">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label class="form-label">Theme</label>
-                    <select class="form-input" id="themeSelect">
-                        <option value="dark">Dark</option>
-                        <option value="light">Light</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Notifications</label>
-                    <div style="display: flex; flex-direction: column; gap: 10px;">
-                        <label style="display: flex; align-items: center; gap: 10px;">
-                            <input type="checkbox" id="notifyPosts" checked> Post notifications
-                        </label>
-                        <label style="display: flex; align-items: center; gap: 10px;">
-                            <input type="checkbox" id="notifyMessages" checked> Message notifications
-                        </label>
-                    </div>
-                </div>
-                <button class="auth-btn" onclick="saveSettings()">Save Settings</button>
+    <!-- Call Interface -->
+    <div class="call-container" id="callContainer">
+        <div class="call-video-container">
+            <video class="remote-video" id="remoteVideo" autoplay playsinline></video>
+            <video class="local-video" id="localVideo" autoplay playsinline muted></video>
+            <div class="call-controls">
+                <button class="call-btn mute-btn" id="muteBtn">
+                    <i class="fas fa-microphone"></i>
+                </button>
+                <button class="call-btn end-call" id="endCallBtn">
+                    <i class="fas fa-phone"></i>
+                </button>
+                <button class="call-btn video-btn" id="videoBtn">
+                    <i class="fas fa-video"></i>
+                </button>
             </div>
         </div>
     </div>
 
-    <!-- Edit Profile Modal -->
-    <div id="editProfileModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Edit Profile</h3>
-                <button class="close-btn" onclick="closeModal('editProfileModal')">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label class="form-label">Full Name</label>
-                    <input type="text" class="form-input" id="editName">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Bio</label>
-                    <textarea class="form-input" id="editBio" rows="4"></textarea>
-                </div>
-                <button class="auth-btn" onclick="saveProfile()">Save Changes</button>
-            </div>
-        </div>
-    </div>
+    <!-- Notifications Container -->
+    <div id="notificationsContainer"></div>
 
     <script>
-    // Initialize Supabase
-    const supabaseUrl = 'https://mtqvgnkkzrqctapnxikg.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im10cXZnbmtrenJxY3RhcG54aWtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyMzIwMTYsImV4cCI6MjA4MDgwODAxNn0.lJ9wNxHjvWejFI6q6-sh-CQ_3bKFM1S__6J7WZSG8dY';
-    
-    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
-
-    // App State
-    let currentUser = null;
-    let userProfile = null;
-    let posts = [];
-    let conversations = [];
-    let notifications = [];
-    let stories = [];
-    let currentChat = null;
-    let isTyping = false;
-
-    // DOM Elements
-    const loadingScreen = document.getElementById('loadingScreen');
-    const appContainer = document.getElementById('appContainer');
-    const authModal = document.getElementById('authModal');
-    const loginForm = document.getElementById('loginForm');
-    const signupForm = document.getElementById('signupForm');
-    const loginError = document.getElementById('loginError');
-    const signupError = document.getElementById('signupError');
-    const postInput = document.getElementById('postInput');
-    const postBtn = document.getElementById('postBtn');
-    const feedContainer = document.getElementById('feedContainer');
-    const profileFeed = document.getElementById('profileFeed');
-    const chatArea = document.getElementById('chatArea');
-    const messageInput = document.getElementById('messageInput');
-    const sendBtn = document.querySelector('.send-btn');
-    const conversationsList = document.getElementById('conversationsList');
-    const chatMessages = document.getElementById('chatMessages');
-    const notificationsList = document.getElementById('notificationsList');
-    const storiesContainer = document.getElementById('storiesContainer');
-    const emojiPicker = document.getElementById('emojiPicker');
-    const mediaPreview = document.getElementById('mediaPreview');
-    const pollEditor = document.getElementById('pollEditor');
-    const pollOptions = document.getElementById('pollOptions');
-
-    // Initialize App
-    document.addEventListener('DOMContentLoaded', async () => {
-        updateLoading(30);
-        
-        // Initialize event listeners
-        setupEventListeners();
-        
-        updateLoading(60);
-        
-        // Check for existing session
-        await checkSession();
-        
-        updateLoading(100);
-        
-        setTimeout(() => {
-            loadingScreen.classList.add('hidden');
-        }, 500);
-    });
-
-    function updateLoading(percent) {
-        const progress = document.getElementById('loadingProgress');
-        progress.style.width = percent + '%';
-    }
-
-    function setupEventListeners() {
-        // Post input validation
-        postInput.addEventListener('input', () => {
-            postBtn.disabled = postInput.value.trim() === '';
-        });
-
-        // Message input
-        messageInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage();
-            }
-        });
-
-        // Close modals on escape
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                closeAllModals();
-            }
-        });
-
-        // Close profile menu when clicking outside
-        document.addEventListener('click', (e) => {
-            const profileMenu = document.getElementById('profileMenu');
-            if (profileMenu && !e.target.closest('.icon-btn') && !e.target.closest('#profileMenu')) {
-                profileMenu.style.display = 'none';
-            }
+    // Service Worker Registration
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js').then(reg => {
+            console.log('Service Worker registered:', reg);
+        }).catch(err => {
+            console.error('Service Worker registration failed:', err);
         });
     }
 
-    async function checkSession() {
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (session) {
-            currentUser = session.user;
-            await loadUserProfile();
-            showApp();
-            await loadInitialData();
-        } else {
-            showAuth();
-        }
-    }
-
-    async function login() {
-        const email = document.getElementById('loginEmail').value.trim();
-        const password = document.getElementById('loginPassword').value.trim();
-        
-        if (!email || !password) {
-            showError(loginError, 'Please enter email and password');
-            return;
-        }
-
-        const { data, error } = await supabase.auth.signInWithPassword({
-            email,
-            password
-        });
-
-        if (error) {
-            showError(loginError, error.message);
-            return;
-        }
-
-        currentUser = data.user;
-        await loadUserProfile();
-        showApp();
-        await loadInitialData();
-        showToast('Welcome back!', 'success');
-    }
-
-    async function signup() {
-        const name = document.getElementById('signupName').value.trim();
-        const email = document.getElementById('signupEmail').value.trim();
-        const password = document.getElementById('signupPassword').value.trim();
-        
-        if (!name || !email || !password) {
-            showError(signupError, 'Please fill in all fields');
-            return;
-        }
-
-        if (password.length < 6) {
-            showError(signupError, 'Password must be at least 6 characters');
-            return;
-        }
-
-        const { data, error } = await supabase.auth.signUp({
-            email,
-            password,
-            options: {
-                data: { name }
-            }
-        });
-
-        if (error) {
-            showError(signupError, error.message);
-            return;
-        }
-
-        currentUser = data.user;
-        await createUserProfile(name, email);
-        showToast('Account created successfully!', 'success');
-        showAuthForm('login');
-    }
-
-    async function createUserProfile(name, email) {
-        const { error } = await supabase
-            .from('profiles')
-            .insert([{
-                id: currentUser.id,
-                name,
-                email,
-                avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=ff6b35&color=fff&size=256`,
-                created_at: new Date().toISOString()
-            }]);
-
-        if (error) console.error('Profile creation error:', error);
-    }
-
-    async function loadUserProfile() {
-        const { data, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', currentUser.id)
-            .single();
-
-        if (error) {
-            console.error('Error loading profile:', error);
-            userProfile = {
-                id: currentUser.id,
-                name: currentUser.user_metadata?.name || 'User',
-                email: currentUser.email,
-                avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.user_metadata?.name || 'User')}&background=ff6b35&color=fff&size=256`
-            };
-        } else {
-            userProfile = data;
-        }
-
-        updateProfileUI();
-    }
-
-    function updateProfileUI() {
-        // Update avatar elements
-        const avatars = document.querySelectorAll('.avatar, .profile-avatar');
-        avatars.forEach(avatar => {
-            if (userProfile) {
-                if (avatar.id === 'profileAvatar' || avatar.id === 'composerAvatar') {
-                    avatar.textContent = userProfile.name.charAt(0).toUpperCase();
-                } else if (avatar.classList.contains('avatar')) {
-                    avatar.textContent = userProfile.name.charAt(0).toUpperCase();
-                }
-            }
-        });
-
-        // Update profile page
-        if (userProfile) {
-            document.getElementById('profileName').textContent = userProfile.name;
-            document.getElementById('profileHandle').textContent = '@' + (userProfile.username || userProfile.name.toLowerCase());
-            document.getElementById('profileBio').textContent = userProfile.bio || 'Welcome to my profile!';
+    // COMPLETE ENHANCED SOCIAL MEDIA APP
+    class PrimeMar {
+        constructor() {
+            this.supabaseUrl = 'https://mtqvgnkkzrqctapnxikg.supabase.co';
+            this.supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im10cXZnbmtrenJxY3RhcG54aWtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyMzIwMTYsImV4cCI6MjA4MDgwODAxNn0.lJ9wNxHjvWejFI6q6-sh-CQ_3bKFM1S__6J7WZSG8dY';
+            this.supabase = null;
+            this.currentUser = null;
+            this.userProfile = null;
             
-            // Update menu
-            document.getElementById('menuUserName').textContent = userProfile.name;
-            document.getElementById('menuUserEmail').textContent = userProfile.email;
-        }
-    }
-
-    async function loadInitialData() {
-        await Promise.all([
-            loadPosts(),
-            loadConversations(),
-            loadNotifications(),
-            loadStories(),
-            loadProfileStats()
-        ]);
-    }
-
-    async function loadPosts() {
-        const { data, error } = await supabase
-            .from('posts')
-            .select(`
-                *,
-                profiles:author_id (
-                    name,
-                    avatar
-                )
-            `)
-            .order('created_at', { ascending: false })
-            .limit(20);
-
-        if (error) {
-            console.error('Error loading posts:', error);
-            return;
+            // Enhanced data structures
+            this.posts = new Map();
+            this.conversations = new Map();
+            this.groups = new Map();
+            this.channels = new Map();
+            this.notifications = new Map();
+            this.searchResults = new Map();
+            this.onlineUsers = new Set();
+            
+            // Real-time communication
+            this.peer = null;
+            this.activeCall = null;
+            this.currentChat = null;
+            this.encryptionKey = null;
+            
+            // App state
+            this.isDarkMode = true;
+            this.isOnline = true;
+            this.deferredPrompt = null;
+            
+            // Initialize
+            this.init();
         }
 
-        posts = data || [];
-        renderPosts();
-    }
-
-    function renderPosts(container = feedContainer) {
-        if (!posts.length) {
-            container.innerHTML = `
-                <div style="text-align: center; padding: 40px; color: var(--secondary);">
-                    <i class="fas fa-newspaper" style="font-size: 3em; margin-bottom: 20px; opacity: 0.5;"></i>
-                    <h3>No posts yet</h3>
-                    <p>Be the first to share something!</p>
-                </div>
-            `;
-            return;
-        }
-
-        container.innerHTML = posts.map(post => `
-            <div class="post-card" data-post-id="${post.id}">
-                <div class="post-header">
-                    <div class="avatar">${post.profiles?.name?.charAt(0) || 'U'}</div>
-                    <div class="post-user-info">
-                        <div class="post-user-name">${post.profiles?.name || 'User'}</div>
-                        <div class="post-time">${formatTimeAgo(post.created_at)}</div>
-                    </div>
-                </div>
-                <div class="post-content">${formatPostContent(post.content)}</div>
+        async init() {
+            try {
+                this.updateLoadingStatus('Initializing database...', 10);
                 
-                ${post.media ? `
-                    <div class="post-media">
-                        ${post.media.split(',').map(url => `
-                            <div class="media-item" onclick="viewMedia('${url}')">
-                                <img src="${url}" alt="Post media">
+                // Initialize Supabase with real-time
+                this.supabase = window.supabase.createClient(this.supabaseUrl, this.supabaseKey, {
+                    realtime: {
+                        params: {
+                            eventsPerSecond: 10
+                        }
+                    }
+                });
+                
+                this.updateLoadingStatus('Setting up encryption...', 20);
+                await this.setupEncryption();
+                
+                this.updateLoadingStatus('Checking authentication...', 40);
+                await this.checkAuth();
+                
+                this.updateLoadingStatus('Setting up real-time...', 60);
+                await this.setupRealtime();
+                
+                this.updateLoadingStatus('Loading data...', 80);
+                await this.loadInitialData();
+                
+                this.updateLoadingStatus('Ready!', 100);
+                
+                setTimeout(() => {
+                    document.getElementById('loadingScreen').style.opacity = '0';
+                    setTimeout(() => {
+                        document.getElementById('loadingScreen').style.display = 'none';
+                        this.showApp();
+                        this.setupPWA();
+                    }, 300);
+                }, 500);
+                
+            } catch (error) {
+                console.error('Initialization error:', error);
+                this.showNotification('Failed to initialize app', 'error');
+            }
+        }
+
+        async setupEncryption() {
+            // Generate encryption key from user data
+            const userId = localStorage.getItem('primemar-user-id') || 'default';
+            this.encryptionKey = CryptoJS.SHA256(userId + 'prime-mar-secret').toString();
+        }
+
+        encryptMessage(message) {
+            return CryptoJS.AES.encrypt(message, this.encryptionKey).toString();
+        }
+
+        decryptMessage(encrypted) {
+            try {
+                const bytes = CryptoJS.AES.decrypt(encrypted, this.encryptionKey);
+                return bytes.toString(CryptoJS.enc.Utf8);
+            } catch (error) {
+                console.error('Decryption error:', error);
+                return encrypted;
+            }
+        }
+
+        async checkAuth() {
+            const { data: { session } } = await this.supabase.auth.getSession();
+            
+            if (session) {
+                this.currentUser = session.user;
+                await this.loadUserProfile();
+            } else {
+                await this.showAuthModal();
+            }
+        }
+
+        async showAuthModal() {
+            // Simplified auth for example
+            const email = prompt('Enter email for demo:');
+            const password = prompt('Enter password for demo:');
+            
+            if (email && password) {
+                const { data, error } = await this.supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+                
+                if (error) {
+                    this.showNotification('Auth failed: ' + error.message, 'error');
+                    return this.showAuthModal();
+                }
+                
+                this.currentUser = data.user;
+                await this.loadUserProfile();
+            }
+        }
+
+        async loadUserProfile() {
+            try {
+                let { data: profile, error } = await this.supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', this.currentUser.id)
+                    .single();
+
+                if (error || !profile) {
+                    // Create profile if doesn't exist
+                    profile = {
+                        id: this.currentUser.id,
+                        name: this.currentUser.email.split('@')[0],
+                        username: this.currentUser.email.split('@')[0],
+                        email: this.currentUser.email,
+                        bio: 'Welcome to PrimeMar!',
+                        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(this.currentUser.email.split('@')[0])}&background=ff9800&color=fff&size=256`,
+                        cover_image: 'https://images.unsplash.com/photo-1519681393784-d120267933ba',
+                        created_at: new Date().toISOString(),
+                        is_online: true,
+                        last_seen: new Date().toISOString()
+                    };
+                    
+                    const { error: insertError } = await this.supabase
+                        .from('profiles')
+                        .insert([profile]);
+                    
+                    if (insertError) throw insertError;
+                }
+                
+                this.userProfile = profile;
+                this.updateProfileUI();
+                
+                // Update online status
+                await this.supabase
+                    .from('profiles')
+                    .update({ 
+                        is_online: true,
+                        last_seen: new Date().toISOString() 
+                    })
+                    .eq('id', this.currentUser.id);
+                    
+            } catch (error) {
+                console.error('Profile load error:', error);
+                this.showNotification('Failed to load profile', 'error');
+            }
+        }
+
+        async setupRealtime() {
+            // Setup real-time subscriptions
+            const profilesChannel = this.supabase.channel('profiles')
+                .on('postgres_changes', 
+                    { event: '*', schema: 'public', table: 'profiles' },
+                    payload => {
+                        this.handleProfileUpdate(payload);
+                    }
+                )
+                .subscribe();
+
+            const messagesChannel = this.supabase.channel('messages')
+                .on('postgres_changes',
+                    { event: 'INSERT', schema: 'public', table: 'messages' },
+                    payload => {
+                        this.handleNewMessage(payload.new);
+                    }
+                )
+                .subscribe();
+
+            // Setup presence for online status
+            const presenceChannel = this.supabase.channel('presence')
+                .on('presence', { event: 'sync' }, () => {
+                    const state = presenceChannel.presenceState();
+                    this.updateOnlineUsers(state);
+                })
+                .subscribe(async (status) => {
+                    if (status === 'SUBSCRIBED') {
+                        await presenceChannel.track({
+                            user_id: this.currentUser.id,
+                            online_at: new Date().toISOString()
+                        });
+                    }
+                });
+        }
+
+        handleProfileUpdate(payload) {
+            if (payload.new.id === this.currentUser.id) {
+                this.userProfile = payload.new;
+                this.updateProfileUI();
+            }
+        }
+
+        handleNewMessage(message) {
+            if (message.conversation_id === this.currentChat?.id) {
+                this.addMessageToChat(message);
+            } else {
+                this.showNotification(`New message from ${message.sender_name}`, 'info');
+            }
+        }
+
+        updateOnlineUsers(state) {
+            this.onlineUsers.clear();
+            Object.values(state).forEach(presences => {
+                presences.forEach(presence => {
+                    this.onlineUsers.add(presence.user_id);
+                });
+            });
+            
+            document.getElementById('onlineStatus').style.background = 
+                this.onlineUsers.has(this.currentUser.id) ? 'var(--success-color)' : 'var(--text-secondary)';
+        }
+
+        async loadInitialData() {
+            await Promise.all([
+                this.loadPosts(),
+                this.loadConversations(),
+                this.loadGroups(),
+                this.loadNotifications()
+            ]);
+        }
+
+        async loadPosts() {
+            try {
+                const { data: posts, error } = await this.supabase
+                    .from('posts')
+                    .select(`
+                        *,
+                        author:profiles(name, username, avatar),
+                        likes:post_likes(count),
+                        comments:post_comments(count)
+                    `)
+                    .order('created_at', { ascending: false })
+                    .limit(50);
+
+                if (!error && posts) {
+                    posts.forEach(post => this.posts.set(post.id, post));
+                    this.renderPosts();
+                }
+            } catch (error) {
+                console.error('Posts load error:', error);
+            }
+        }
+
+        async loadConversations() {
+            try {
+                const { data: convs, error } = await this.supabase
+                    .from('conversations')
+                    .select(`
+                        *,
+                        participant1:profiles!conversations_user1_id_fkey(name, username, avatar),
+                        participant2:profiles!conversations_user2_id_fkey(name, username, avatar),
+                        last_message:messages(content, created_at)
+                    `)
+                    .or(`user1_id.eq.${this.currentUser.id},user2_id.eq.${this.currentUser.id}`)
+                    .order('updated_at', { ascending: false });
+
+                if (!error && convs) {
+                    convs.forEach(conv => this.conversations.set(conv.id, conv));
+                    this.renderConversations();
+                }
+            } catch (error) {
+                console.error('Conversations load error:', error);
+            }
+        }
+
+        async loadGroups() {
+            try {
+                const { data: groups, error } = await this.supabase
+                    .from('groups')
+                    .select(`
+                        *,
+                        members:group_members(count),
+                        owner:profiles(name, username)
+                    `)
+                    .contains('members', [this.currentUser.id])
+                    .order('created_at', { ascending: false });
+
+                if (!error && groups) {
+                    groups.forEach(group => this.groups.set(group.id, group));
+                    this.renderGroups();
+                }
+            } catch (error) {
+                console.error('Groups load error:', error);
+            }
+        }
+
+        async createGroup(name, description, isPrivate = false) {
+            try {
+                const group = {
+                    name: name,
+                    description: description,
+                    owner_id: this.currentUser.id,
+                    is_private: isPrivate,
+                    members: [this.currentUser.id],
+                    created_at: new Date().toISOString()
+                };
+
+                const { data, error } = await this.supabase
+                    .from('groups')
+                    .insert([group])
+                    .select()
+                    .single();
+
+                if (error) throw error;
+
+                this.groups.set(data.id, data);
+                this.renderGroups();
+                this.showNotification(`Group "${name}" created!`, 'success');
+                
+                return data;
+            } catch (error) {
+                console.error('Group creation error:', error);
+                this.showNotification('Failed to create group', 'error');
+            }
+        }
+
+        async createChannel(groupId, name, type = 'text') {
+            try {
+                const channel = {
+                    group_id: groupId,
+                    name: name,
+                    type: type,
+                    created_by: this.currentUser.id,
+                    created_at: new Date().toISOString()
+                };
+
+                const { data, error } = await this.supabase
+                    .from('channels')
+                    .insert([channel])
+                    .select()
+                    .single();
+
+                if (error) throw error;
+
+                this.channels.set(data.id, data);
+                this.showNotification(`Channel "${name}" created!`, 'success');
+                
+                return data;
+            } catch (error) {
+                console.error('Channel creation error:', error);
+                this.showNotification('Failed to create channel', 'error');
+            }
+        }
+
+        async sendMessage(conversationId, content, type = 'text') {
+            try {
+                const encryptedContent = this.encryptMessage(content);
+                
+                const message = {
+                    conversation_id: conversationId,
+                    sender_id: this.currentUser.id,
+                    sender_name: this.userProfile.name,
+                    content: encryptedContent,
+                    type: type,
+                    created_at: new Date().toISOString()
+                };
+
+                const { error } = await this.supabase
+                    .from('messages')
+                    .insert([message]);
+
+                if (error) throw error;
+
+                // Update conversation timestamp
+                await this.supabase
+                    .from('conversations')
+                    .update({ updated_at: new Date().toISOString() })
+                    .eq('id', conversationId);
+
+            } catch (error) {
+                console.error('Message send error:', error);
+                this.showNotification('Failed to send message', 'error');
+            }
+        }
+
+        async startVoiceCall(userId) {
+            try {
+                this.showNotification('Starting voice call...', 'info');
+                
+                if (!this.peer) {
+                    this.peer = new Peer(this.currentUser.id);
+                    
+                    this.peer.on('call', call => {
+                        this.handleIncomingCall(call);
+                    });
+                }
+
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: false, 
+                    audio: true 
+                });
+                
+                const call = this.peer.call(userId, stream);
+                this.setupCall(call);
+                
+            } catch (error) {
+                console.error('Voice call error:', error);
+                this.showNotification('Failed to start call', 'error');
+            }
+        }
+
+        async startVideoCall(userId) {
+            try {
+                this.showNotification('Starting video call...', 'info');
+                
+                if (!this.peer) {
+                    this.peer = new Peer(this.currentUser.id);
+                    
+                    this.peer.on('call', call => {
+                        this.handleIncomingCall(call);
+                    });
+                }
+
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: true, 
+                    audio: true 
+                });
+                
+                document.getElementById('localVideo').srcObject = stream;
+                
+                const call = this.peer.call(userId, stream);
+                this.setupCall(call);
+                
+            } catch (error) {
+                console.error('Video call error:', error);
+                this.showNotification('Failed to start video call', 'error');
+            }
+        }
+
+        handleIncomingCall(call) {
+            this.showNotification(`Incoming ${call.metadata.type} call...`, 'info');
+            
+            // For demo, auto-answer
+            if (confirm(`Accept ${call.metadata.type} call?`)) {
+                navigator.mediaDevices.getUserMedia({
+                    video: call.metadata.type === 'video',
+                    audio: true
+                }).then(stream => {
+                    call.answer(stream);
+                    document.getElementById('localVideo').srcObject = stream;
+                    this.setupCall(call);
+                });
+            }
+        }
+
+        setupCall(call) {
+            this.activeCall = call;
+            
+            call.on('stream', remoteStream => {
+                document.getElementById('remoteVideo').srcObject = remoteStream;
+                document.getElementById('callContainer').classList.add('active');
+            });
+            
+            call.on('close', () => {
+                this.endCall();
+            });
+        }
+
+        endCall() {
+            if (this.activeCall) {
+                this.activeCall.close();
+                this.activeCall = null;
+            }
+            
+            ['localVideo', 'remoteVideo'].forEach(id => {
+                const video = document.getElementById(id);
+                if (video.srcObject) {
+                    video.srcObject.getTracks().forEach(track => track.stop());
+                    video.srcObject = null;
+                }
+            });
+            
+            document.getElementById('callContainer').classList.remove('active');
+        }
+
+        async search(query) {
+            if (!query.trim()) {
+                this.hideSearchResults();
+                return;
+            }
+
+            try {
+                // Search users
+                const { data: users } = await this.supabase
+                    .from('profiles')
+                    .select('*')
+                    .or(`username.ilike.%${query}%,name.ilike.%${query}%`)
+                    .limit(5);
+
+                // Search groups
+                const { data: groups } = await this.supabase
+                    .from('groups')
+                    .select('*, members:group_members(count)')
+                    .ilike('name', `%${query}%`)
+                    .limit(5);
+
+                // Search posts
+                const { data: posts } = await this.supabase
+                    .from('posts')
+                    .select('*, author:profiles(name, username)')
+                    .ilike('content', `%${query}%`)
+                    .limit(5);
+
+                this.searchResults.clear();
+                
+                if (users?.length) this.searchResults.set('users', users);
+                if (groups?.length) this.searchResults.set('groups', groups);
+                if (posts?.length) this.searchResults.set('posts', posts);
+
+                this.renderSearchResults();
+                
+            } catch (error) {
+                console.error('Search error:', error);
+            }
+        }
+
+        renderSearchResults() {
+            const container = document.getElementById('searchResults');
+            let html = '';
+            
+            // Users section
+            if (this.searchResults.has('users')) {
+                html += `
+                    <div class="search-results-section">
+                        <div class="section-title">
+                            <i class="fas fa-users"></i> PEOPLE
+                        </div>
+                        ${this.searchResults.get('users').map(user => `
+                            <div class="search-result-item" onclick="primeMar.viewProfile('${user.id}')">
+                                <div class="result-avatar">${user.name.charAt(0)}</div>
+                                <div class="result-info">
+                                    <div class="result-name">
+                                        ${user.name}
+                                        ${user.is_verified ? '<i class="fas fa-check-circle" style="color: var(--primary-color);"></i>' : ''}
+                                    </div>
+                                    <div class="result-details">
+                                        <span>@${user.username}</span>
+                                        ${user.bio ? `<span>• ${user.bio.substring(0, 30)}...</span>` : ''}
+                                    </div>
+                                    <div class="result-stats">
+                                        <div class="stat">
+                                            <i class="fas fa-user-friends"></i>
+                                            <span>${user.followers_count || 0} followers</span>
+                                        </div>
+                                        <div class="stat">
+                                            <i class="fas fa-rss"></i>
+                                            <span>${user.following_count || 0} following</span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         `).join('')}
                     </div>
-                ` : ''}
-                
-                ${post.poll ? renderPoll(post.poll) : ''}
-                
-                <div class="post-actions">
-                    <button class="post-action" onclick="likePost('${post.id}')">
-                        <i class="fas fa-heart"></i>
-                        <span>${post.likes || 0}</span>
-                    </button>
-                    <button class="post-action" onclick="commentOnPost('${post.id}')">
-                        <i class="fas fa-comment"></i>
-                        <span>${post.comments || 0}</span>
-                    </button>
-                    <button class="post-action" onclick="sharePost('${post.id}')">
-                        <i class="fas fa-share"></i>
-                    </button>
-                </div>
-            </div>
-        `).join('');
-    }
+                `;
+            }
 
-    function formatPostContent(content) {
-        if (!content) return '';
-        // Convert URLs to links
-        return content.replace(/https?:\/\/[^\s]+/g, url => 
-            `<a href="${url}" target="_blank" style="color: var(--primary);">${url}</a>`
-        ).replace(/\n/g, '<br>');
-    }
-
-    function renderPoll(pollData) {
-        const poll = typeof pollData === 'string' ? JSON.parse(pollData) : pollData;
-        return `
-            <div class="poll-container">
-                <div class="poll-question">${poll.question}</div>
-                ${poll.options.map((option, index) => `
-                    <div class="poll-option" onclick="voteOnPoll('${poll.id}', ${index})">
-                        <div style="flex: 1;">${option.text}</div>
-                        <div>${option.votes || 0}</div>
+            // Groups section
+            if (this.searchResults.has('groups')) {
+                html += `
+                    <div class="search-results-section">
+                        <div class="section-title">
+                            <i class="fas fa-users"></i> GROUPS
+                        </div>
+                        ${this.searchResults.get('groups').map(group => `
+                            <div class="search-result-item" onclick="primeMar.openGroup('${group.id}')">
+                                <div class="result-avatar">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                                <div class="result-info">
+                                    <div class="result-name">
+                                        ${group.name}
+                                        ${group.is_private ? '<span class="result-badge">Private</span>' : '<span class="result-badge">Public</span>'}
+                                    </div>
+                                    <div class="result-details">
+                                        <span>${group.description || 'No description'}</span>
+                                    </div>
+                                    <div class="result-stats">
+                                        <div class="stat">
+                                            <i class="fas fa-user"></i>
+                                            <span>${group.members?.[0]?.count || 0} members</span>
+                                        </div>
+                                        <div class="stat">
+                                            <i class="fas fa-crown"></i>
+                                            <span>${group.owner?.name || 'Unknown'}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
                     </div>
-                `).join('')}
-            </div>
-        `;
-    }
+                `;
+            }
 
-    async function createPost() {
-        const content = postInput.value.trim();
-        if (!content) return;
+            // Posts section
+            if (this.searchResults.has('posts')) {
+                html += `
+                    <div class="search-results-section">
+                        <div class="section-title">
+                            <i class="fas fa-newspaper"></i> POSTS
+                        </div>
+                        ${this.searchResults.get('posts').map(post => `
+                            <div class="search-result-item" onclick="primeMar.viewPost('${post.id}')">
+                                <div class="result-avatar">${post.author?.name?.charAt(0) || 'U'}</div>
+                                <div class="result-info">
+                                    <div class="result-name">
+                                        ${post.author?.name || 'User'}
+                                        <span class="result-badge">Post</span>
+                                    </div>
+                                    <div class="result-details">
+                                        <span>${post.content.substring(0, 80)}${post.content.length > 80 ? '...' : ''}</span>
+                                    </div>
+                                    <div class="result-stats">
+                                        <div class="stat">
+                                            <i class="fas fa-heart"></i>
+                                            <span>${post.likes?.[0]?.count || 0}</span>
+                                        </div>
+                                        <div class="stat">
+                                            <i class="fas fa-comment"></i>
+                                            <span>${post.comments?.[0]?.count || 0}</span>
+                                        </div>
+                                        <div class="stat">
+                                            <i class="fas fa-clock"></i>
+                                            <span>${this.formatTime(post.created_at)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
 
-        const postData = {
-            author_id: currentUser.id,
-            content,
-            created_at: new Date().toISOString(),
-            likes: 0,
-            comments: 0
-        };
-
-        const { data, error } = await supabase
-            .from('posts')
-            .insert([postData])
-            .select(`
-                *,
-                profiles:author_id (
-                    name,
-                    avatar
-                )
-            `)
-            .single();
-
-        if (error) {
-            showToast('Failed to create post', 'error');
-            console.error('Post creation error:', error);
-            return;
+            container.innerHTML = html || '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">No results found</div>';
+            container.classList.add('active');
         }
 
-        posts.unshift(data);
-        renderPosts();
-        postInput.value = '';
-        postBtn.disabled = true;
-        showToast('Post created successfully!', 'success');
-    }
-
-    async function likePost(postId) {
-        const post = posts.find(p => p.id === postId);
-        if (!post) return;
-
-        post.likes = (post.likes || 0) + 1;
-        
-        const { error } = await supabase
-            .from('posts')
-            .update({ likes: post.likes })
-            .eq('id', postId);
-
-        if (error) {
-            console.error('Like error:', error);
-            return;
+        hideSearchResults() {
+            document.getElementById('searchResults').classList.remove('active');
         }
 
-        renderPosts();
-        showToast('Post liked!', 'success');
-    }
-
-    async function loadConversations() {
-        const { data, error } = await supabase
-            .from('conversations')
-            .select(`
-                *,
-                user1:profiles!conversations_user1_id_fkey(*),
-                user2:profiles!conversations_user2_id_fkey(*)
-            `)
-            .or(`user1_id.eq.${currentUser.id},user2_id.eq.${currentUser.id}`)
-            .order('updated_at', { ascending: false });
-
-        if (error) {
-            console.error('Error loading conversations:', error);
-            return;
+        // UI Update Methods
+        updateProfileUI() {
+            if (!this.userProfile) return;
+            
+            document.getElementById('userAvatar').textContent = this.userProfile.name.charAt(0);
+            document.getElementById('profileAvatar').textContent = this.userProfile.name.charAt(0);
+            document.getElementById('profileName').textContent = this.userProfile.name;
+            document.getElementById('profileHandle').textContent = '@' + this.userProfile.username;
+            document.getElementById('profileBio').textContent = this.userProfile.bio || 'No bio yet';
+            document.getElementById('profileCover').src = this.userProfile.cover_image;
+            
+            // Update stats
+            this.updateProfileStats();
         }
 
-        conversations = data || [];
-        renderConversations();
-    }
-
-    function renderConversations() {
-        if (!conversations.length) {
-            conversationsList.innerHTML = `
-                <div style="text-align: center; padding: 40px; color: var(--secondary);">
-                    <i class="fas fa-comments" style="font-size: 3em; margin-bottom: 20px; opacity: 0.5;"></i>
-                    <h3>No conversations</h3>
-                    <p>Start a conversation with someone!</p>
-                </div>
-            `;
-            return;
+        async updateProfileStats() {
+            try {
+                // Get counts
+                const { count: postsCount } = await this.supabase
+                    .from('posts')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('author_id', this.currentUser.id);
+                
+                const { count: followersCount } = await this.supabase
+                    .from('follows')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('following_id', this.currentUser.id)
+                    .eq('status', 'accepted');
+                
+                const { count: followingCount } = await this.supabase
+                    .from('follows')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('follower_id', this.currentUser.id)
+                    .eq('status', 'accepted');
+                
+                const statsHTML = `
+                    <div class="stat" onclick="primeMar.showUserPosts()">
+                        <span class="stat-number">${postsCount || 0}</span>
+                        <span class="stat-label">Posts</span>
+                    </div>
+                    <div class="stat" onclick="primeMar.showFollowers()">
+                        <span class="stat-number">${followersCount || 0}</span>
+                        <span class="stat-label">Followers</span>
+                    </div>
+                    <div class="stat" onclick="primeMar.showFollowing()">
+                        <span class="stat-number">${followingCount || 0}</span>
+                        <span class="stat-label">Following</span>
+                    </div>
+                `;
+                
+                document.getElementById('profileStats').innerHTML = statsHTML;
+                
+            } catch (error) {
+                console.error('Stats update error:', error);
+            }
         }
 
-        conversationsList.innerHTML = conversations.map(conv => {
-            const otherUser = conv.user1_id === currentUser.id ? conv.user2 : conv.user1;
+        renderPosts() {
+            const container = document.getElementById('feedContainer');
+            const posts = Array.from(this.posts.values());
+            
+            if (!posts.length) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px 20px; color: var(--text-secondary);">
+                        <i class="fas fa-feather-alt" style="font-size: 48px; margin-bottom: 20px; opacity: 0.5;"></i>
+                        <h3>No posts yet</h3>
+                        <p>Be the first to share something!</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = posts.map(post => this.createPostHTML(post)).join('');
+        }
+
+        createPostHTML(post) {
+            const author = post.author || {};
+            const isLiked = false; // Would check in real implementation
+            const likeCount = post.likes?.[0]?.count || 0;
+            const commentCount = post.comments?.[0]?.count || 0;
+            
             return `
-                <div class="conversation-item" onclick="openChat('${conv.id}', '${otherUser.id}')">
-                    <div class="conversation-avatar">${otherUser?.name?.charAt(0) || 'U'}</div>
-                    <div class="conversation-info">
-                        <div class="conversation-name">${otherUser?.name || 'User'}</div>
-                        <div class="conversation-last">${conv.last_message || 'Start a conversation...'}</div>
+                <div class="post" data-post-id="${post.id}">
+                    <div style="padding: 20px;">
+                        <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                            <div class="avatar" style="width: 40px; height: 40px;">${author.name?.charAt(0) || 'U'}</div>
+                            <div style="margin-left: 12px; flex: 1;">
+                                <div style="font-weight: 600; font-size: 15px;">${author.name || 'User'}</div>
+                                <div style="font-size: 13px; color: var(--text-secondary);">
+                                    @${author.username || 'user'} • ${this.formatTime(post.created_at)}
+                                </div>
+                            </div>
+                            <div style="color: var(--text-secondary); cursor: pointer;">
+                                <i class="fas fa-ellipsis-h"></i>
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 15px; font-size: 15px; line-height: 1.5;">
+                            ${this.parseContent(post.content)}
+                        </div>
+                        ${post.media ? `
+                            <div style="margin-bottom: 15px; border-radius: 12px; overflow: hidden;">
+                                <img src="${post.media}" alt="Post media" style="width: 100%; max-height: 400px; object-fit: cover;">
+                            </div>
+                        ` : ''}
+                        <div style="display: flex; justify-content: space-around; padding-top: 15px; border-top: 1px solid var(--card-border-dark);">
+                            <button class="post-action" onclick="primeMar.toggleLike('${post.id}')" style="color: ${isLiked ? 'var(--accent-color)' : 'var(--text-secondary)'}">
+                                <i class="fas fa-heart"></i>
+                                <span style="margin-left: 5px; font-size: 14px;">${likeCount}</span>
+                            </button>
+                            <button class="post-action" onclick="primeMar.toggleComments('${post.id}')" style="color: var(--text-secondary)">
+                                <i class="fas fa-comment"></i>
+                                <span style="margin-left: 5px; font-size: 14px;">${commentCount}</span>
+                            </button>
+                            <button class="post-action" onclick="primeMar.sharePost('${post.id}')" style="color: var(--text-secondary)">
+                                <i class="fas fa-share"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
             `;
-        }).join('');
-    }
-
-    async function openChat(conversationId, userId) {
-        currentChat = conversationId;
-        
-        // Get user info
-        const { data: user } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', userId)
-            .single();
-
-        if (user) {
-            document.getElementById('chatUserName').textContent = user.name;
-            document.getElementById('chatAvatar').textContent = user.name.charAt(0).toUpperCase();
         }
 
-        // Enable chat input
-        messageInput.disabled = false;
-        sendBtn.disabled = false;
-        
-        // Show chat area on mobile
-        chatArea.classList.add('active');
-        
-        // Load messages
-        await loadMessages(conversationId);
-    }
-
-    async function loadMessages(conversationId) {
-        const { data, error } = await supabase
-            .from('messages')
-            .select('*')
-            .eq('conversation_id', conversationId)
-            .order('created_at', { ascending: true });
-
-        if (error) {
-            console.error('Error loading messages:', error);
-            return;
+        renderConversations() {
+            const container = document.getElementById('conversationsList');
+            const convs = Array.from(this.conversations.values());
+            
+            if (!convs.length) {
+                container.innerHTML += `
+                    <div style="padding: 40px 20px; text-align: center; color: var(--text-secondary);">
+                        <i class="fas fa-comments" style="font-size: 48px; margin-bottom: 20px; opacity: 0.5;"></i>
+                        <h4>No conversations</h4>
+                        <p>Start a conversation with someone!</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML += convs.map(conv => this.createConversationHTML(conv)).join('');
         }
 
-        renderMessages(data || []);
-    }
-
-    function renderMessages(messages) {
-        chatMessages.innerHTML = messages.map(msg => `
-            <div class="message ${msg.sender_id === currentUser.id ? 'outgoing' : 'incoming'}">
-                <div class="message-bubble">${msg.content}</div>
-            </div>
-        `).join('');
-        
-        // Scroll to bottom
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
-
-    async function sendMessage() {
-        const content = messageInput.value.trim();
-        if (!content || !currentChat) return;
-
-        const messageData = {
-            conversation_id: currentChat,
-            sender_id: currentUser.id,
-            content,
-            created_at: new Date().toISOString()
-        };
-
-        const { error } = await supabase
-            .from('messages')
-            .insert([messageData]);
-
-        if (error) {
-            console.error('Message error:', error);
-            showToast('Failed to send message', 'error');
-            return;
-        }
-
-        // Add to UI
-        chatMessages.innerHTML += `
-            <div class="message outgoing">
-                <div class="message-bubble">${content}</div>
-            </div>
-        `;
-        
-        messageInput.value = '';
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-        
-        // Update conversation
-        await supabase
-            .from('conversations')
-            .update({ 
-                last_message: content,
-                updated_at: new Date().toISOString()
-            })
-            .eq('id', currentChat);
-    }
-
-    async function loadNotifications() {
-        const { data, error } = await supabase
-            .from('notifications')
-            .select('*')
-            .eq('user_id', currentUser.id)
-            .eq('read', false)
-            .order('created_at', { ascending: false })
-            .limit(20);
-
-        if (error) {
-            console.error('Error loading notifications:', error);
-            return;
-        }
-
-        notifications = data || [];
-        renderNotifications();
-        updateNotificationBadge();
-    }
-
-    function renderNotifications() {
-        if (!notifications.length) {
-            notificationsList.innerHTML = `
-                <div style="text-align: center; padding: 40px; color: var(--secondary);">
-                    <i class="fas fa-bell" style="font-size: 3em; margin-bottom: 20px; opacity: 0.5;"></i>
-                    <h3>No notifications</h3>
-                    <p>You're all caught up!</p>
+        createConversationHTML(conversation) {
+            const otherUser = conversation.user1_id === this.currentUser.id ? 
+                conversation.participant2 : conversation.participant1;
+            const lastMessage = conversation.last_message;
+            
+            return `
+                <div class="conversation-item" data-conv-id="${conversation.id}" onclick="primeMar.openConversation('${conversation.id}')">
+                    <div class="avatar" style="width: 50px; height: 50px;">${otherUser?.name?.charAt(0) || 'U'}</div>
+                    <div style="margin-left: 12px; flex: 1;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <div style="font-weight: 600; font-size: 15px;">${otherUser?.name || 'User'}</div>
+                            <div style="font-size: 12px; color: var(--text-secondary);">
+                                ${lastMessage ? this.formatTime(lastMessage.created_at) : ''}
+                            </div>
+                        </div>
+                        <div style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">
+                            ${lastMessage ? this.decryptMessage(lastMessage.content).substring(0, 40) + '...' : 'Start conversation'}
+                        </div>
+                    </div>
                 </div>
             `;
-            return;
         }
 
-        notificationsList.innerHTML = notifications.map(notif => `
-            <div class="conversation-item">
-                <div class="conversation-avatar" style="background: ${getNotificationColor(notif.type)};">
-                    <i class="fas ${getNotificationIcon(notif.type)}"></i>
-                </div>
-                <div class="conversation-info">
-                    <div class="conversation-name">${notif.title}</div>
-                    <div class="conversation-last">${notif.message}</div>
-                </div>
-            </div>
-        `).join('');
-    }
-
-    function getNotificationColor(type) {
-        switch(type) {
-            case 'like': return 'var(--accent)';
-            case 'comment': return 'var(--info)';
-            case 'follow': return 'var(--success)';
-            default: return 'var(--primary)';
-        }
-    }
-
-    function getNotificationIcon(type) {
-        switch(type) {
-            case 'like': return 'fa-heart';
-            case 'comment': return 'fa-comment';
-            case 'follow': return 'fa-user-plus';
-            default: return 'fa-bell';
-        }
-    }
-
-    function updateNotificationBadge() {
-        const badge = document.getElementById('notificationBadge');
-        if (notifications.length > 0) {
-            badge.textContent = notifications.length;
-            badge.style.display = 'flex';
-        } else {
-            badge.style.display = 'none';
-        }
-    }
-
-    async function loadStories() {
-        // For demo, create fake stories
-        stories = [
-            { id: 1, user_id: '1', user_name: 'John', has_new: true },
-            { id: 2, user_id: '2', user_name: 'Sarah', has_new: false },
-            { id: 3, user_id: '3', user_name: 'Mike', has_new: true },
-            { id: 4, user_id: '4', user_name: 'Emma', has_new: false },
-            { id: 5, user_id: '5', user_name: 'Alex', has_new: true }
-        ];
-        
-        renderStories();
-    }
-
-    function renderStories() {
-        storiesContainer.innerHTML = `
-            <div class="story-item" onclick="createStory()">
-                <div class="story-avatar" style="background: transparent; border: 2px dashed var(--primary);">
-                    <i class="fas fa-plus" style="color: var(--primary);"></i>
-                </div>
-                <div class="story-username">Add Story</div>
-            </div>
-            ${stories.map(story => `
-                <div class="story-item" onclick="viewStory('${story.id}')">
-                    <div class="story-avatar ${story.has_new ? 'active' : ''}">
-                        ${story.user_name.charAt(0)}
+        renderGroups() {
+            const container = document.getElementById('groupsContainer');
+            const groups = Array.from(this.groups.values());
+            
+            container.innerHTML = groups.map(group => `
+                <div class="group-card" data-group-id="${group.id}">
+                    <div class="avatar" style="width: 60px; height: 60px; border-radius: 12px;">
+                        <i class="fas fa-users"></i>
                     </div>
-                    <div class="story-username">${story.user_name}</div>
+                    <div class="group-info">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <h4 style="margin: 0;">${group.name}</h4>
+                            <span style="font-size: 12px; color: var(--text-secondary);">
+                                ${group.is_private ? 'Private' : 'Public'}
+                            </span>
+                        </div>
+                        <p style="color: var(--text-secondary); margin: 8px 0; font-size: 14px;">
+                            ${group.description || 'No description'}
+                        </p>
+                        <div class="member-count">
+                            <i class="fas fa-user"></i>
+                            <span>${group.members?.[0]?.count || 1} members</span>
+                        </div>
+                    </div>
                 </div>
-            `).join('')}
-        `;
-    }
-
-    async function loadProfileStats() {
-        // Get post count
-        const { count: postCount } = await supabase
-            .from('posts')
-            .select('*', { count: 'exact', head: true })
-            .eq('author_id', currentUser.id);
-
-        document.getElementById('postCount').textContent = postCount || 0;
-        document.getElementById('followerCount').textContent = '0';
-        document.getElementById('followingCount').textContent = '0';
-    }
-
-    function showAuth() {
-        authModal.classList.add('active');
-    }
-
-    function hideAuth() {
-        authModal.classList.remove('active');
-    }
-
-    function showAuthForm(form) {
-        loginForm.classList.remove('active');
-        signupForm.classList.remove('active');
-        loginError.classList.remove('show');
-        signupError.classList.remove('show');
-        
-        if (form === 'login') {
-            loginForm.classList.add('active');
-            document.querySelectorAll('.auth-tab')[0].classList.add('active');
-            document.querySelectorAll('.auth-tab')[1].classList.remove('active');
-        } else {
-            signupForm.classList.add('active');
-            document.querySelectorAll('.auth-tab')[0].classList.remove('active');
-            document.querySelectorAll('.auth-tab')[1].classList.add('active');
-        }
-    }
-
-    function showApp() {
-        hideAuth();
-        appContainer.classList.add('active');
-    }
-
-    function showPage(pageId) {
-        // Hide all pages
-        document.querySelectorAll('.page').forEach(page => {
-            page.classList.remove('active');
-        });
-        
-        // Update navigation
-        document.querySelectorAll('.nav-item').forEach(item => {
-            item.classList.remove('active');
-        });
-        
-        // Show selected page
-        document.getElementById(pageId).classList.add('active');
-        
-        // Update nav item
-        const navItems = document.querySelectorAll('.nav-item');
-        const pageIndex = ['homePage', 'chatPage', '', 'notificationsPage', 'profilePage'].indexOf(pageId);
-        if (pageIndex !== -1 && navItems[pageIndex]) {
-            navItems[pageIndex].classList.add('active');
-        }
-        
-        // Load page data
-        switch(pageId) {
-            case 'homePage':
-                loadPosts();
-                break;
-            case 'profilePage':
-                loadUserPosts();
-                break;
-            case 'notificationsPage':
-                loadNotifications();
-                break;
-        }
-    }
-
-    async function loadUserPosts() {
-        const { data, error } = await supabase
-            .from('posts')
-            .select(`
-                *,
-                profiles:author_id (
-                    name,
-                    avatar
-                )
-            `)
-            .eq('author_id', currentUser.id)
-            .order('created_at', { ascending: false });
-
-        if (error) {
-            console.error('Error loading user posts:', error);
-            return;
+            `).join('');
         }
 
-        posts = data || [];
-        renderPosts(profileFeed);
-    }
+        // PWA Methods
+        setupPWA() {
+            // Listen for install prompt
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                this.deferredPrompt = e;
+                this.showInstallPrompt();
+            });
 
-    function showToast(message, type = 'info') {
-        const toast = document.createElement('div');
-        toast.className = 'toast';
-        toast.textContent = message;
-        toast.style.borderLeftColor = type === 'success' ? 'var(--success)' : 
-                                   type === 'error' ? 'var(--accent)' : 'var(--primary)';
-        
-        document.getElementById('toastContainer').appendChild(toast);
-        
-        setTimeout(() => {
-            toast.remove();
-        }, 3000);
-    }
+            // Check if app is already installed
+            if (window.matchMedia('(display-mode: standalone)').matches) {
+                console.log('App is running in standalone mode');
+            }
 
-    function showError(element, message) {
-        element.textContent = message;
-        element.classList.add('show');
-        
-        setTimeout(() => {
-            element.classList.remove('show');
-        }, 5000);
-    }
+            // Setup offline detection
+            window.addEventListener('online', () => {
+                this.isOnline = true;
+                this.showNotification('You are back online', 'success');
+            });
 
-    function formatTimeAgo(timestamp) {
-        const now = new Date();
-        const time = new Date(timestamp);
-        const diff = now - time;
-        const minutes = Math.floor(diff / 60000);
-        const hours = Math.floor(minutes / 60);
-        const days = Math.floor(hours / 24);
-
-        if (minutes < 1) return 'just now';
-        if (minutes < 60) return `${minutes}m ago`;
-        if (hours < 24) return `${hours}h ago`;
-        if (days < 7) return `${days}d ago`;
-        return time.toLocaleDateString();
-    }
-
-    function toggleProfileMenu() {
-        const menu = document.getElementById('profileMenu');
-        menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
-    }
-
-    function showSettings() {
-        toggleProfileMenu();
-        document.getElementById('settingsModal').classList.add('active');
-    }
-
-    function closeModal(modalId) {
-        document.getElementById(modalId).classList.remove('active');
-    }
-
-    function closeAllModals() {
-        document.querySelectorAll('.modal').forEach(modal => {
-            modal.classList.remove('active');
-        });
-    }
-
-    async function saveSettings() {
-        const theme = document.getElementById('themeSelect').value;
-        // Save settings logic here
-        closeModal('settingsModal');
-        showToast('Settings saved', 'success');
-    }
-
-    function editProfile() {
-        document.getElementById('editName').value = userProfile.name;
-        document.getElementById('editBio').value = userProfile.bio || '';
-        document.getElementById('editProfileModal').classList.add('active');
-    }
-
-    async function saveProfile() {
-        const name = document.getElementById('editName').value.trim();
-        const bio = document.getElementById('editBio').value.trim();
-
-        const { error } = await supabase
-            .from('profiles')
-            .update({ name, bio })
-            .eq('id', currentUser.id);
-
-        if (error) {
-            console.error('Profile update error:', error);
-            showToast('Failed to update profile', 'error');
-            return;
+            window.addEventListener('offline', () => {
+                this.isOnline = false;
+                this.showNotification('You are offline', 'error');
+            });
         }
 
-        userProfile.name = name;
-        userProfile.bio = bio;
-        updateProfileUI();
-        closeModal('editProfileModal');
-        showToast('Profile updated successfully', 'success');
-    }
+        showInstallPrompt() {
+            if (this.deferredPrompt) {
+                document.getElementById('installPrompt').classList.add('show');
+            }
+        }
 
-    async function logout() {
-        await supabase.auth.signOut();
-        currentUser = null;
-        userProfile = null;
-        posts = [];
-        conversations = [];
-        notifications = [];
-        appContainer.classList.remove('active');
-        showAuth();
-        showToast('Logged out successfully', 'success');
-    }
+        hideInstallPrompt() {
+            document.getElementById('installPrompt').classList.remove('show');
+        }
 
-    function showCreatePost() {
-        postInput.focus();
-        showPage('homePage');
-    }
+        async installApp() {
+            if (!this.deferredPrompt) return;
+            
+            this.deferredPrompt.prompt();
+            const { outcome } = await this.deferredPrompt.userChoice;
+            
+            if (outcome === 'accepted') {
+                this.showNotification('App installed successfully!', 'success');
+            }
+            
+            this.deferredPrompt = null;
+            this.hideInstallPrompt();
+        }
 
-    function attachMedia() {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = 'image/*,video/*';
-        input.multiple = true;
-        input.onchange = (e) => {
-            const files = Array.from(e.target.files);
-            previewMedia(files);
-        };
-        input.click();
-    }
-
-    function previewMedia(files) {
-        mediaPreview.innerHTML = '';
-        mediaPreview.style.display = 'grid';
-        
-        files.forEach(file => {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const img = document.createElement('img');
-                img.src = e.target.result;
-                const div = document.createElement('div');
-                div.className = 'media-item';
-                div.appendChild(img);
-                mediaPreview.appendChild(div);
+        // Notification System
+        showNotification(message, type = 'info') {
+            const container = document.getElementById('notificationsContainer');
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            
+            const icons = {
+                success: 'fas fa-check-circle',
+                error: 'fas fa-exclamation-circle',
+                info: 'fas fa-info-circle',
+                warning: 'fas fa-exclamation-triangle'
             };
-            reader.readAsDataURL(file);
-        });
-    }
-
-    function showEmojiPicker() {
-        if (emojiPicker.classList.contains('active')) {
-            emojiPicker.classList.remove('active');
-            return;
+            
+            notification.innerHTML = `
+                <div class="notification-icon">
+                    <i class="${icons[type] || icons.info}"></i>
+                </div>
+                <div style="flex: 1;">
+                    <div style="font-weight: 600; font-size: 14px;">${message}</div>
+                    <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+                        ${new Date().toLocaleTimeString()}
+                    </div>
+                </div>
+                <button onclick="this.parentElement.remove()" style="background: none; border: none; color: var(--text-secondary); cursor: pointer;">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            
+            container.appendChild(notification);
+            
+            setTimeout(() => notification.classList.add('show'), 10);
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => notification.remove(), 300);
+            }, 5000);
         }
 
-        // Create emoji list
-        const emojis = ['😀', '😂', '🥰', '😎', '😜', '🤔', '😍', '🥳', '😭', '😡', '🤯', '🥶', '🤢', '👻', '💩', '🤡', '👀', '🙏', '💪', '🦄', '🌈', '🔥', '🌟', '🎉', '💯'];
-        
-        emojiPicker.innerHTML = emojis.map(emoji => `
-            <span class="emoji" onclick="insertEmoji('${emoji}')">${emoji}</span>
-        `).join('');
+        // Utility Methods
+        formatTime(timestamp) {
+            if (!timestamp) return 'just now';
+            
+            const now = new Date();
+            const time = new Date(timestamp);
+            const diff = now - time;
+            const seconds = Math.floor(diff / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const hours = Math.floor(minutes / 60);
+            const days = Math.floor(hours / 24);
 
-        emojiPicker.classList.add('active');
-    }
-
-    function insertEmoji(emoji) {
-        postInput.value += emoji;
-        postInput.focus();
-        emojiPicker.classList.remove('active');
-    }
-
-    function createPoll() {
-        pollEditor.style.display = pollEditor.style.display === 'none' ? 'block' : 'none';
-    }
-
-    function addPollOption() {
-        const optionCount = pollOptions.children.length + 1;
-        const div = document.createElement('div');
-        div.className = 'poll-option';
-        div.innerHTML = `
-            <input type="text" class="form-input" placeholder="Option ${optionCount}" style="background: transparent; border: none; padding: 0;">
-        `;
-        pollOptions.appendChild(div);
-    }
-
-    async function markAllAsRead() {
-        const { error } = await supabase
-            .from('notifications')
-            .update({ read: true })
-            .eq('user_id', currentUser.id)
-            .eq('read', false);
-
-        if (error) {
-            console.error('Mark read error:', error);
-            return;
+            if (seconds < 60) return 'just now';
+            if (minutes < 60) return `${minutes}m`;
+            if (hours < 24) return `${hours}h`;
+            if (days < 7) return `${days}d`;
+            return time.toLocaleDateString();
         }
 
-        notifications = [];
-        renderNotifications();
-        updateNotificationBadge();
-        showToast('All notifications marked as read', 'success');
+        parseContent(content) {
+            return content
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/\n/g, '<br>')
+                .replace(/#(\w+)/g, '<span style="color: var(--primary-color);">#$1</span>')
+                .replace(/@(\w+)/g, '<span style="color: var(--secondary-color);">@$1</span>');
+        }
+
+        updateLoadingStatus(message, progress) {
+            document.getElementById('loadingStatus').textContent = message;
+            document.getElementById('loadingProgress').style.width = `${progress}%`;
+        }
+
+        showApp() {
+            document.getElementById('appContainer').classList.add('active');
+            this.setupEventListeners();
+        }
+
+        showPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            
+            document.querySelectorAll('.nav-item').forEach(nav => {
+                nav.classList.remove('active');
+                if (nav.dataset.page === pageId) nav.classList.add('active');
+            });
+            
+            if (pageId !== 'searchPage') this.hideSearchResults();
+        }
+
+        // Event Listeners Setup
+        setupEventListeners() {
+            // Navigation
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', () => this.showPage(item.dataset.page));
+            });
+
+            // Search
+            const searchInput = document.getElementById('searchInput');
+            let searchTimeout;
+            
+            searchInput.addEventListener('input', (e) => {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    this.search(e.target.value);
+                }, 300);
+            });
+
+            // Post composer
+            const postTextarea = document.getElementById('postTextarea');
+            postTextarea.addEventListener('input', () => {
+                // Enable/disable post button
+            });
+
+            // Call controls
+            document.getElementById('endCallBtn').addEventListener('click', () => this.endCall());
+            document.getElementById('muteBtn').addEventListener('click', function() {
+                const icon = this.querySelector('i');
+                if (icon.classList.contains('fa-microphone')) {
+                    icon.classList.replace('fa-microphone', 'fa-microphone-slash');
+                } else {
+                    icon.classList.replace('fa-microphone-slash', 'fa-microphone');
+                }
+            });
+
+            document.getElementById('videoBtn').addEventListener('click', function() {
+                const icon = this.querySelector('i');
+                if (icon.classList.contains('fa-video')) {
+                    icon.classList.replace('fa-video', 'fa-video-slash');
+                } else {
+                    icon.classList.replace('fa-video-slash', 'fa-video');
+                }
+            });
+
+            // Click outside to close search
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.search-container')) {
+                    this.hideSearchResults();
+                }
+            });
+        }
+
+        // Public methods for onclick handlers
+        viewProfile(userId) {
+            this.showNotification(`Viewing profile ${userId}`, 'info');
+        }
+
+        openGroup(groupId) {
+            this.showNotification(`Opening group ${groupId}`, 'info');
+        }
+
+        viewPost(postId) {
+            this.showNotification(`Viewing post ${postId}`, 'info');
+        }
+
+        openConversation(convId) {
+            const conversation = this.conversations.get(convId);
+            if (!conversation) return;
+            
+            this.currentChat = conversation;
+            this.showPage('messagesPage');
+            
+            // Update chat UI
+            const otherUser = conversation.user1_id === this.currentUser.id ? 
+                conversation.participant2 : conversation.participant1;
+            
+            document.getElementById('chatInfo').innerHTML = `
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="avatar" style="width: 40px; height: 40px;">${otherUser?.name?.charAt(0) || 'U'}</div>
+                    <div>
+                        <div style="font-weight: 600;">${otherUser?.name || 'User'}</div>
+                        <div style="font-size: 12px; color: var(--text-secondary);">
+                            ${this.onlineUsers.has(otherUser?.id) ? 'Online' : 'Offline'}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('callButtons').innerHTML = `
+                <button class="call-btn" onclick="primeMar.startVoiceCall('${otherUser?.id}')" style="background: none; border: none; color: var(--text-secondary); font-size: 20px; cursor: pointer;">
+                    <i class="fas fa-phone"></i>
+                </button>
+                <button class="call-btn" onclick="primeMar.startVideoCall('${otherUser?.id}')" style="background: none; border: none; color: var(--text-secondary); font-size: 20px; cursor: pointer;">
+                    <i class="fas fa-video"></i>
+                </button>
+            `;
+            
+            // Load messages
+            this.loadChatMessages(convId);
+            
+            // Setup input
+            document.getElementById('chatInputContainer').innerHTML = `
+                <div style="display: flex; gap: 10px; padding: 15px 20px; border-top: 1px solid var(--card-border-dark);">
+                    <input type="text" class="chat-input" id="chatMessageInput" placeholder="Type a message..." style="flex: 1; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--card-border-dark); border-radius: 20px; color: inherit; outline: none;">
+                    <button class="send-btn" onclick="primeMar.sendCurrentMessage()" style="width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, var(--secondary-color), var(--primary-color)); border: none; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            `;
+            
+            // Focus input
+            setTimeout(() => {
+                document.getElementById('chatMessageInput')?.focus();
+            }, 100);
+        }
+
+        async loadChatMessages(conversationId) {
+            try {
+                const { data: messages, error } = await this.supabase
+                    .from('messages')
+                    .select('*')
+                    .eq('conversation_id', conversationId)
+                    .order('created_at', { ascending: true });
+                
+                if (!error && messages) {
+                    const container = document.getElementById('chatMessages');
+                    container.innerHTML = messages.map(msg => `
+                        <div class="message ${msg.sender_id === this.currentUser.id ? 'own' : ''}">
+                            <div class="avatar" style="width: 32px; height: 32px; font-size: 14px;">
+                                ${msg.sender_name?.charAt(0) || 'U'}
+                            </div>
+                            <div>
+                                <div class="message-content">
+                                    ${this.decryptMessage(msg.content)}
+                                </div>
+                                <div class="message-status">
+                                    ${this.formatTime(msg.created_at)}
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                    
+                    // Scroll to bottom
+                    container.scrollTop = container.scrollHeight;
+                }
+            } catch (error) {
+                console.error('Messages load error:', error);
+            }
+        }
+
+        sendCurrentMessage() {
+            const input = document.getElementById('chatMessageInput');
+            const message = input.value.trim();
+            
+            if (!message || !this.currentChat) return;
+            
+            this.sendMessage(this.currentChat.id, message);
+            input.value = '';
+            input.focus();
+            
+            // Add to UI immediately
+            const container = document.getElementById('chatMessages');
+            container.innerHTML += `
+                <div class="message own">
+                    <div class="avatar" style="width: 32px; height: 32px; font-size: 14px;">
+                        ${this.userProfile.name.charAt(0)}
+                    </div>
+                    <div>
+                        <div class="message-content">${message}</div>
+                        <div class="message-status">just now</div>
+                    </div>
+                </div>
+            `;
+            
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // Demo placeholder methods
+        toggleLike(postId) {
+            this.showNotification('Liked post', 'info');
+        }
+
+        toggleComments(postId) {
+            this.showNotification('Opening comments', 'info');
+        }
+
+        sharePost(postId) {
+            this.showNotification('Sharing post', 'info');
+        }
+
+        showUserPosts() {
+            this.showNotification('Showing user posts', 'info');
+        }
+
+        showFollowers() {
+            this.showNotification('Showing followers list', 'info');
+        }
+
+        showFollowing() {
+            this.showNotification('Showing following list', 'info');
+        }
     }
 
-    // Feature functions
-    function createStory() {
-        showToast('Story feature - Coming soon', 'info');
-    }
-
-    function viewStory(storyId) {
-        showToast(`Viewing story ${storyId}`, 'info');
-    }
-
-    function goLive() {
-        showToast('Live streaming - Coming soon', 'info');
-    }
-
-    function commentOnPost(postId) {
-        showToast(`Comment on post ${postId}`, 'info');
-    }
-
-    function sharePost(postId) {
-        showToast(`Share post ${postId}`, 'info');
-    }
-
-    function voteOnPoll(pollId, optionIndex) {
-        showToast(`Voted on poll ${pollId}, option ${optionIndex}`, 'success');
-    }
-
-    function viewMedia(url) {
-        window.open(url, '_blank');
-    }
-
-    function editBanner() {
-        showToast('Edit banner - Coming soon', 'info');
-    }
-
-    function editAvatar() {
-        showToast('Edit avatar - Coming soon', 'info');
-    }
-
-    function showUserPosts() {
-        showPage('profilePage');
-    }
-
-    function showFollowers() {
-        showToast('Followers list - Coming soon', 'info');
-    }
-
-    function showFollowing() {
-        showToast('Following list - Coming soon', 'info');
-    }
-
-    // Global functions for HTML onclick
-    window.showAuthForm = showAuthForm;
-    window.login = login;
-    window.signup = signup;
-    window.showPage = showPage;
-    window.createPost = createPost;
-    window.likePost = likePost;
-    window.sendMessage = sendMessage;
-    window.toggleProfileMenu = toggleProfileMenu;
-    window.logout = logout;
-    window.showSettings = showSettings;
-    window.editProfile = editProfile;
-    window.saveProfile = saveProfile;
-    window.closeModal = closeModal;
-    window.saveSettings = saveSettings;
-    window.attachMedia = attachMedia;
-    window.showEmojiPicker = showEmojiPicker;
-    window.insertEmoji = insertEmoji;
-    window.createPoll = createPoll;
-    window.addPollOption = addPollOption;
-    window.markAllAsRead = markAllAsRead;
-    window.createStory = createStory;
-    window.viewStory = viewStory;
-    window.goLive = goLive;
-    window.commentOnPost = commentOnPost;
-    window.sharePost = sharePost;
-    window.voteOnPoll = voteOnPoll;
-    window.viewMedia = viewMedia;
-    window.editBanner = editBanner;
-    window.editAvatar = editAvatar;
-    window.showUserPosts = showUserPosts;
-    window.showFollowers = showFollowers;
-    window.showFollowing = showFollowing;
-    window.openChat = openChat;
-    window.showCreatePost = showCreatePost;
+    // Initialize the enhanced app
+    document.addEventListener('DOMContentLoaded', () => {
+        window.primeMar = new PrimeMar();
+    });
     </script>
 </body>
 </html>
